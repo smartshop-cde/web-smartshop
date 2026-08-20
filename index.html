@@ -34,17 +34,26 @@
           alt=""
           fetchpriority="high"
         >
-        <span class="brand-copy">
-          <strong data-store-name>SmartShop</strong>
-          <small data-store-tagline>Catalogo con stock actualizado</small>
-        </span>
       </a>
+
+      <label class="search-field header-search">
+        <span class="sr-only">Buscar producto</span>
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="Buscar producto, SKU o categoria"
+          autocomplete="off"
+        >
+      </label>
 
       <nav class="site-nav" aria-label="Secciones principales">
         <a href="#catalogo">Productos</a>
         <a href="#vendedores">Vendedores</a>
         <a href="#ubicacion">Ubicacion</a>
-        <a href="admin.html">Admin</a>
+        <a class="login-link" href="admin.html" aria-label="Iniciar sesion en el panel privado">
+          <span class="login-icon" aria-hidden="true"></span>
+          <span>Iniciar Sesion</span>
+        </a>
       </nav>
     </header>
 
@@ -69,17 +78,7 @@
           </div>
         </div>
 
-        <div class="toolbar" role="search">
-          <label class="search-field">
-            <span class="sr-only">Buscar producto</span>
-            <input
-              id="searchInput"
-              type="search"
-              placeholder="Buscar producto, SKU o categoria"
-              autocomplete="off"
-            >
-          </label>
-
+        <div class="toolbar">
           <label class="select-field">
             <span class="sr-only">Ordenar productos</span>
             <select id="sortSelect">
@@ -119,8 +118,6 @@
                 <dd id="soldOutProducts">0</dd>
               </div>
             </dl>
-
-            <a class="ghost-button" href="admin.html">Panel privado</a>
           </aside>
 
           <section class="product-area" aria-labelledby="productListTitle">
@@ -188,7 +185,7 @@
       </div>
       <div class="footer-links">
         <a href="#ubicacion">Ubicacion</a>
-        <a href="admin.html">Administracion</a>
+        <a href="#catalogo">Productos</a>
       </div>
     </footer>
 
