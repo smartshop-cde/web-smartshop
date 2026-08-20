@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SmartShop | Administracion</title>
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#0b2f89">
+    <link rel="preload" href="assets/logo-smartshop.webp" as="image" type="image/webp">
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <link rel="stylesheet" href="assets/styles.css">
+    <script defer src="assets/store-data.js"></script>
+    <script defer src="assets/admin.js"></script>
+  </head>
+  <body class="admin-body">
+    <main class="admin-shell">
+      <section id="loginView" class="login-card" aria-labelledby="loginTitle">
+        <img src="assets/logo-smartshop.webp" width="86" height="86" alt="">
+        <div>
+          <p class="eyebrow">Acceso privado</p>
+          <h1 id="loginTitle">Panel SmartShop</h1>
+          <p class="admin-notice">Ingresa el PIN de administracion para editar el catalogo.</p>
+        </div>
+        <form id="loginForm" class="admin-actions">
+          <label class="admin-field">
+            <span>PIN</span>
+            <input id="pinInput" class="admin-input" type="password" inputmode="numeric" autocomplete="current-password">
+          </label>
+          <button class="admin-button is-primary" type="submit">Entrar</button>
+        </form>
+        <p id="loginError" class="admin-status" role="alert"></p>
+      </section>
+
+      <section id="adminView" hidden>
+        <header class="admin-header">
+          <div class="admin-title">
+            <img src="assets/logo-smartshop.webp" width="58" height="58" alt="">
+            <div>
+              <p class="eyebrow">Administracion</p>
+              <h1>Catalogo SmartShop</h1>
+              <p>Productos, stock, vendedores, ubicacion y redes.</p>
+            </div>
+          </div>
+          <div class="admin-actions">
+            <a class="admin-button" href="index.html">Vista publica</a>
+            <button id="exportButton" class="admin-button" type="button">Exportar datos</button>
+            <button id="logoutButton" class="admin-button is-danger" type="button">Salir</button>
+          </div>
+        </header>
+
+        <div class="admin-grid">
+          <aside class="admin-panel" aria-label="Resumen de administracion">
+            <nav>
+              <a href="#storePanel">Tienda</a>
+              <a href="#productsPanel">Productos</a>
+              <a href="#sellersPanel">Vendedores</a>
+            </nav>
+            <div class="admin-summary">
+              <div>
+                <span>Productos</span>
+                <strong id="adminProductCount">0</strong>
+              </div>
+              <div>
+                <span>Stock total</span>
+                <strong id="adminStockTotal">0</strong>
+              </div>
+              <div>
+                <span>Vendedores</span>
+                <strong id="adminSellerCount">0</strong>
+              </div>
+            </div>
+            <button id="saveButton" class="admin-button is-primary" type="button">Guardar cambios</button>
+            <button id="resetButton" class="admin-button is-danger" type="button">Restaurar base</button>
+            <p id="adminStatus" class="admin-status" role="status"></p>
+          </aside>
+
+          <div class="admin-stack">
+            <section id="storePanel" class="admin-card" aria-labelledby="storeTitle">
+              <div>
+                <p class="panel-kicker">Datos generales</p>
+                <h2 id="storeTitle">Tienda</h2>
+              </div>
+              <div class="admin-form-grid">
+                <label class="admin-field">
+                  <span>Nombre</span>
+                  <input class="admin-input" data-store-field="name">
+                </label>
+                <label class="admin-field">
+                  <span>Dominio</span>
+                  <input class="admin-input" data-store-field="domain">
+                </label>
+                <label class="admin-field is-wide">
+                  <span>Descripcion corta</span>
+                  <input class="admin-input" data-store-field="tagline">
+                </label>
+                <label class="admin-field">
+                  <span>Direccion</span>
+                  <input class="admin-input" data-store-field="address">
+                </label>
+                <label class="admin-field">
+                  <span>Horario</span>
+                  <input class="admin-input" data-store-field="hours">
+                </label>
+                <label class="admin-field is-wide">
+                  <span>Google Place ID</span>
+                  <input class="admin-input" data-store-field="googlePlaceId">
+                </label>
+                <label class="admin-field is-wide">
+                  <span>Mensaje base de WhatsApp</span>
+                  <input class="admin-input" data-store-field="whatsappFallbackMessage">
+                </label>
+                <label class="admin-field">
+                  <span>Instagram</span>
+                  <input class="admin-input" data-social-field="instagram">
+                </label>
+                <label class="admin-field">
+                  <span>TikTok</span>
+                  <input class="admin-input" data-social-field="tiktok">
+                </label>
+                <label class="admin-field">
+                  <span>Usuario de redes</span>
+                  <input class="admin-input" data-social-field="username">
+                </label>
+                <label class="admin-field">
+                  <span>PIN del panel</span>
+                  <input class="admin-input" data-store-field="adminPin" type="password">
+                </label>
+              </div>
+            </section>
+
+            <section id="productsPanel" class="admin-card" aria-labelledby="productsTitle">
+              <div class="section-title-row">
+                <div>
+                  <p class="panel-kicker">Inventario</p>
+                  <h2 id="productsTitle">Productos</h2>
+                </div>
+                <button id="addProductButton" class="admin-button is-primary" type="button">Agregar producto</button>
+              </div>
+              <div id="adminProducts" class="admin-list"></div>
+            </section>
+
+            <section id="sellersPanel" class="admin-card" aria-labelledby="sellersTitle">
+              <div class="section-title-row">
+                <div>
+                  <p class="panel-kicker">Equipo comercial</p>
+                  <h2 id="sellersTitle">Vendedores</h2>
+                </div>
+                <button id="addSellerButton" class="admin-button is-primary" type="button">Agregar vendedor</button>
+              </div>
+              <div id="adminSellers" class="admin-list"></div>
+            </section>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SmartShop | Catalogo con stock</title>
+    <meta
+      name="description"
+      content="SmartShop Ciudad del Este: catalogo de celulares, tecnologia y accesorios con precio, stock, vendedores por WhatsApp y ubicacion en Google Maps."
+    >
+    <meta name="theme-color" content="#0b2f89">
+    <meta property="og:title" content="SmartShop | Catalogo con stock">
+    <meta
+      property="og:description"
+      content="Productos disponibles, precios y contacto directo por WhatsApp."
+    >
+    <meta property="og:image" content="assets/logo-smartshop.png">
+    <link rel="preconnect" href="https://images.unsplash.com">
+    <link rel="preload" href="assets/logo-smartshop.webp" as="image" type="image/webp">
+    <link rel="icon" href="assets/favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+    <link rel="stylesheet" href="assets/styles.css">
+    <script defer src="assets/store-data.js"></script>
+    <script defer src="assets/app.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#catalogo" aria-label="Ir al catalogo">
+        <img
+          class="brand-logo"
+          src="assets/logo-smartshop.webp"
+          width="56"
+          height="56"
+          alt=""
+          fetchpriority="high"
+        >
+        <span class="brand-copy">
+          <strong data-store-name>SmartShop</strong>
+          <small data-store-tagline>Catalogo con stock actualizado</small>
+        </span>
+      </a>
+
+      <nav class="site-nav" aria-label="Secciones principales">
+        <a href="#catalogo">Productos</a>
+        <a href="#vendedores">Vendedores</a>
+        <a href="#ubicacion">Ubicacion</a>
+        <a href="admin.html">Admin</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="workspace" id="catalogo" aria-labelledby="catalogTitle">
+        <div class="workspace-head">
+          <div class="workspace-copy">
+            <p class="eyebrow">SmartShop CDE</p>
+            <h1 id="catalogTitle">Tecnologia lista para llevar</h1>
+            <p class="lead">
+              Compra celulares, audio y accesorios con precio visible, stock actualizado y atencion directa por WhatsApp.
+            </p>
+          </div>
+
+          <div class="hero-card" aria-label="Resumen de tienda">
+            <img src="assets/logo-smartshop.webp" width="96" height="96" alt="">
+            <div class="hero-card-copy">
+              <strong>Catalogo actualizado</strong>
+              <span id="availableProducts">0 disponibles</span>
+              <span id="stockHealth">Stock listo para consultar</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="toolbar" role="search">
+          <label class="search-field">
+            <span class="sr-only">Buscar producto</span>
+            <input
+              id="searchInput"
+              type="search"
+              placeholder="Buscar producto, SKU o categoria"
+              autocomplete="off"
+            >
+          </label>
+
+          <label class="select-field">
+            <span class="sr-only">Ordenar productos</span>
+            <select id="sortSelect">
+              <option value="featured">Destacados primero</option>
+              <option value="price-asc">Menor precio</option>
+              <option value="price-desc">Mayor precio</option>
+              <option value="stock-desc">Mas stock</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="content-grid">
+          <aside class="control-panel" aria-label="Filtros del catalogo">
+            <div>
+              <p class="panel-kicker">Filtros</p>
+              <h2>Categorias</h2>
+            </div>
+
+            <div id="categoryFilters" class="filter-group"></div>
+
+            <label class="switch-row">
+              <input id="onlyAvailable" type="checkbox">
+              <span>Mostrar solo disponibles</span>
+            </label>
+
+            <dl class="stock-summary">
+              <div>
+                <dt>Productos</dt>
+                <dd id="totalProducts">0</dd>
+              </div>
+              <div>
+                <dt>Unidades</dt>
+                <dd id="totalUnits">0</dd>
+              </div>
+              <div>
+                <dt>Agotados</dt>
+                <dd id="soldOutProducts">0</dd>
+              </div>
+            </dl>
+
+            <a class="ghost-button" href="admin.html">Panel privado</a>
+          </aside>
+
+          <section class="product-area" aria-labelledby="productListTitle">
+            <div class="section-title-row">
+              <h2 id="productListTitle">Productos</h2>
+              <span id="resultCount">0 productos</span>
+            </div>
+
+            <div id="productGrid" class="product-grid" aria-live="polite"></div>
+
+            <p id="emptyState" class="empty-state" hidden>
+              No encontramos productos con esos filtros.
+            </p>
+          </section>
+        </div>
+      </section>
+
+      <section class="section-band" id="vendedores" aria-labelledby="sellerTitle">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Atencion comercial</p>
+            <h2 id="sellerTitle">Vendedores por WhatsApp</h2>
+          </div>
+          <span>Respuesta directa desde el catalogo</span>
+        </div>
+
+        <div id="sellerGrid" class="seller-grid"></div>
+      </section>
+
+      <section class="section-band section-band-alt" id="ubicacion" aria-labelledby="locationTitle">
+        <div class="google-layout">
+          <div>
+            <p class="eyebrow">Ubicacion y redes</p>
+            <h2 id="locationTitle">SmartShop en Ciudad del Este</h2>
+            <p class="section-copy">
+              Encuentra la tienda en Google Maps y sigue las novedades en TikTok e Instagram.
+            </p>
+            <div class="social-row" aria-label="Redes sociales de SmartShop">
+              <a id="instagramLink" class="social-link" href="#" target="_blank" rel="noopener">
+                Instagram <span data-social-username>@smartshopcde</span>
+              </a>
+              <a id="tiktokLink" class="social-link" href="#" target="_blank" rel="noopener">
+                TikTok <span data-social-username>@smartshopcde</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="google-panel">
+            <span class="panel-kicker">Google Place ID</span>
+            <strong id="placeIdText">Pendiente de configurar</strong>
+            <p id="addressText">Direccion pendiente</p>
+            <p id="hoursText">Horario pendiente</p>
+            <a id="mapsLink" class="primary-link" href="#" target="_blank" rel="noopener">
+              Abrir ficha en Google Maps
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong data-footer-store>SmartShop</strong>
+        <span data-domain-text>Dominio pendiente</span>
+      </div>
+      <div class="footer-links">
+        <a href="#ubicacion">Ubicacion</a>
+        <a href="admin.html">Administracion</a>
+      </div>
+    </footer>
+
+    <dialog id="productDialog" class="product-dialog" aria-labelledby="dialogTitle">
+      <div class="dialog-shell">
+        <button id="dialogClose" class="dialog-close" type="button" aria-label="Cerrar detalle">
+          x
+        </button>
+        <div id="dialogContent"></div>
+      </div>
+    </dialog>
+  </body>
+</html>
