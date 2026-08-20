@@ -488,6 +488,8 @@ h3 {
 
 .product-card {
   grid-template-rows: 210px 1fr;
+  content-visibility: auto;
+  contain-intrinsic-size: 430px;
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
@@ -658,6 +660,8 @@ h3 {
 
 .section-band {
   padding: 24px 0;
+  content-visibility: auto;
+  contain-intrinsic-size: 520px;
 }
 
 .seller-grid {
@@ -1072,6 +1076,17 @@ h3 {
 
 [hidden] {
   display: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 @media (max-width: 960px) {

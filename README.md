@@ -1,6 +1,6 @@
 # SmartShop Web
 
-Sitio estatico para publicar un catalogo de productos con precio, stock disponible, vendedores por WhatsApp y enlace a la ficha de Google Maps usando Place ID.
+Sitio estatico para publicar un catalogo profesional de productos con precio, stock disponible, vendedores por WhatsApp, redes sociales, ubicacion y enlace a la ficha de Google Maps usando Place ID.
 
 ## Configurar la tienda
 
@@ -8,20 +8,28 @@ Edita [assets/store-data.js](assets/store-data.js) y cambia:
 
 - `store.domain`: tu dominio comprado en NIC.py.
 - `store.googlePlaceId`: el Place ID real de la tienda en Google.
+- `store.social`: enlaces de Instagram y TikTok. Actualmente ambos usan `@smartshopcde`.
 - `products`: nombre, categoria, SKU, precio, stock inicial e imagen.
 - `sellers`: nombre, rol, numero de WhatsApp con codigo de pais y mensaje inicial.
 
-Los cambios de stock hechos desde el boton **Gestionar stock** se guardan en el navegador con `localStorage`. Para que el stock se sincronice entre varios vendedores o dispositivos, el siguiente paso seria agregar una base de datos y un panel privado.
+## Panel privado
+
+Abre [admin.html](admin.html) para editar la tienda, productos, stock y vendedores desde una interfaz privada.
+
+- PIN inicial: `2026`.
+- Los cambios se guardan en el navegador con `localStorage`.
+- El boton **Exportar datos** descarga un nuevo `store-data.js` para reemplazar el archivo publicado.
+- El panel incluye `noindex,nofollow`, pero en un sitio estatico el PIN no es seguridad real de servidor. Para acceso privado real entre varios usuarios, el siguiente paso seria agregar backend, base de datos y autenticacion.
 
 ## Google Place ID
 
-Cuando tengas el Place ID, reemplaza:
+El Place ID actual esta cargado en `store.googlePlaceId`:
 
 ```js
-googlePlaceId: "TU_PLACE_ID_AQUI",
+googlePlaceId: "ChIJxXxmNJqF9pQRmS5k26rNhvE",
 ```
 
-por el valor real. El sitio arma automaticamente el enlace de Google Maps y agrega datos estructurados `Store` para buscadores.
+El sitio arma automaticamente el enlace de Google Maps y agrega datos estructurados `Store` y `Offer` para buscadores.
 
 ## Publicar con dominio NIC.py
 
