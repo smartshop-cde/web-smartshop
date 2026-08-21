@@ -131,10 +131,20 @@
     state.error = "";
     renderProducts();
     try {
-      const response = await fetch("/api/catalog", { cache: "no-store" });
-      if (!response.ok) throw new Error("API no disponible");
-      data = normalizeCatalog(await response.json());
-    } catch (error) {
+      const [catalogResult, productsResult] = await Promise.allSettled([
+        fetch("/api/catalog", { cache: "no-store" }),
+        fetch("/api/products?limit=100", { cache: "no-store" }),
+      ]);
+      const catalogResponse = catalogResult.status === "fulfilled" ? catalogResult.value : null;
+      if (!catalogResponse?.ok) throw new Error("API no disponible");
+      const catalogData = await catalogResponse.json();
+      const productsResponse = productsResult.status === "fulfilled" ? productsResult.value : null;
+      if (productsResponse?.ok) {
+        const productsPayload = await productsResponse.json();
+        catalogData.products = productsPayload.success ? productsPayload.data : catalogData.products;
+      }
+      data = normalizeCatalog(catalogData);
+    } catch {
       data = normalizeCatalog(baseData);
       if (!data.products.length) {
         state.error = "No pudimos cargar el catalogo.";
@@ -161,7 +171,7 @@
     const social = store.social || {};
     const socialUsername = social.username || "@smartshopcde";
     const address = store.address || DEFAULT_ADDRESS;
-    const hours = store.hours || "Lunes a viernes\n07:30 a 15:30";
+    const hours = store.hours || "Lunes a Sabado\n07:30 a 15:30";
     const mapsUrl = getMapsUrl(address);
     const directionsUrl = getDirectionsUrl(address);
     const heroSeller = sellers.find((seller) => seller.phone) || sellers[0];

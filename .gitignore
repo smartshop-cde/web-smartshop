@@ -2,3 +2,9 @@ __pycache__/
 *.pyc
 data/*.sqlite3
 *.xlsx
+backups/*
+!backups/.gitkeep
+node_modules/
+.pnpm-store/
+.env
+coverage/

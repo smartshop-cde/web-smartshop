@@ -180,7 +180,7 @@
       if (!response.ok) throw new Error("API no disponible");
       data = normalizeCatalog(await response.json());
       apiAvailable = true;
-    } catch (error) {
+    } catch {
       data = readLocalCatalog(baseData);
       apiAvailable = false;
     }
@@ -195,7 +195,7 @@
           body: JSON.stringify({ pin }),
         });
         return response.ok;
-      } catch (error) {
+      } catch {
         return false;
       }
     }
@@ -424,7 +424,7 @@
       name: "",
       role: "",
       phone: "",
-      schedule: "Lunes a viernes, 07:30 a 15:30",
+      schedule: "Lunes a Sabado, 07:30 a 15:30",
       message: "Hola, quiero consultar un producto de SmartShop.",
       image: "assets/logo-smartshop.png",
     };
@@ -478,7 +478,7 @@
     try {
       const savedData = JSON.parse(localStorage.getItem(CATALOG_STORAGE_KEY) || "null");
       return normalizeCatalog(savedData || fallbackData);
-    } catch (error) {
+    } catch {
       return normalizeCatalog(fallbackData);
     }
   }

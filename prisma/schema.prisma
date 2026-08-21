@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model StoreSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("store_settings")
+}
+
+model Seller {
+  id        String   @id @default(uuid()) @db.Uuid
+  legacyId  String?  @unique @map("legacy_id")
+  name      String
+  role      String   @default("")
+  phone     String   @default("")
+  schedule  String   @default("")
+  message   String   @default("")
+  image     String   @default("")
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([active, sortOrder])
+  @@map("sellers")
+}
+
+model Category {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String    @unique
+  active    Boolean   @default(true)
+  sortOrder Int       @default(0) @map("sort_order")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  products  Product[]
+
+  @@index([active, sortOrder])
+  @@map("categories")
+}
+
+model Product {
+  id          String           @id @default(uuid()) @db.Uuid
+  publicCode  String           @unique @map("public_code") @db.VarChar(5)
+  legacyId    String?          @unique @map("legacy_id")
+  name        String
+  slug        String           @unique
+  description String           @default("")
+  details     Json             @default("[]")
+  brand       String           @default("")
+  badge       String           @default("")
+  condition   String           @default("")
+  warranty    String           @default("")
+  delivery    String           @default("")
+  image       String           @default("")
+  featured    Boolean          @default(false)
+  active      Boolean          @default(true)
+  sortOrder   Int              @default(0) @map("sort_order")
+  categoryId  String           @map("category_id") @db.Uuid
+  category    Category         @relation(fields: [categoryId], references: [id])
+  variants    ProductVariant[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@index([active, featured, sortOrder])
+  @@index([categoryId])
+  @@map("products")
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid()) @db.Uuid
+  productId String   @map("product_id") @db.Uuid
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku       String?  @unique
+  name      String   @default("Default")
+  price     Decimal  @default(0) @db.Decimal(12, 2)
+  stock     Int      @default(0)
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([productId, active, sortOrder])
+  @@map("product_variants")
+}

@@ -1,0 +1,42 @@
+{
+  "name": "smartshop-ecommerce-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "postinstall": "prisma generate --schema prisma/schema.prisma",
+    "lint": "eslint .",
+    "typecheck": "node --check src/server.js && node --check public/assets/app.js && node --check public/assets/admin.js && node --check public/assets/store-data.js",
+    "test": "node --test",
+    "build": "node --check src/server.js && node --check public/assets/app.js && node --check public/assets/admin.js && node --check public/assets/store-data.js",
+    "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
+    "db:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
+    "db:generate": "prisma generate --schema prisma/schema.prisma",
+    "db:seed": "node scripts/seed-postgres.js",
+    "db:studio": "prisma studio",
+    "backup:sqlite": "node scripts/backup-sqlite.js",
+    "migrate:sqlite": "node scripts/migrate-sqlite-to-postgres.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.14.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^7.1.0",
+    "pino": "^9.3.2",
+    "pino-http": "^10.2.0",
+    "xlsx": "^0.18.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.0",
+    "eslint": "^9.9.0",
+    "prisma": "^6.14.0",
+    "supertest": "^7.0.0"
+  }
+}

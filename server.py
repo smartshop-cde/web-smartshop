@@ -15,6 +15,7 @@ from openpyxl import Workbook, load_workbook
 
 
 ROOT = Path(__file__).resolve().parent
+PUBLIC_DIR = ROOT / "public"
 DATA_DIR = ROOT / "data"
 DB_PATH = DATA_DIR / "smartshop.sqlite3"
 SEED_PATH = DATA_DIR / "seed.json"
@@ -395,9 +396,11 @@ class SmartShopHandler(SimpleHTTPRequestHandler):
 
     def translate_path(self, path: str) -> str:
         path = unquote(path.split("?", 1)[0].split("#", 1)[0]).lstrip("/")
-        resolved = (ROOT / path).resolve()
-        if resolved != ROOT and ROOT not in resolved.parents:
-            return str(ROOT / "index.html")
+        resolved = (PUBLIC_DIR / path).resolve()
+        if resolved != PUBLIC_DIR and PUBLIC_DIR not in resolved.parents:
+            return str(PUBLIC_DIR / "index.html")
+        if resolved.is_dir():
+            return str(resolved / "index.html")
         return str(resolved)
 
     def do_GET(self) -> None:
