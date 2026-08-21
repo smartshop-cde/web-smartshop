@@ -2,6 +2,7 @@
   const CATALOG_STORAGE_KEY = "smartshop-catalog-data";
   const AUTH_STORAGE_KEY = "smartshop-admin-authenticated";
   const AUTH_PIN_KEY = "smartshop-admin-pin";
+  const PRODUCT_CODE_RE = /^\d{5}$/;
 
   const baseData = structuredCloneSafe(window.STORE_DATA || {});
   let data = readLocalCatalog(baseData);
@@ -15,6 +16,7 @@
     cacheElements();
     bindEvents();
     await loadCatalog();
+    ensureProductCodes();
     if (sessionStorage.getItem(AUTH_STORAGE_KEY) === "true") {
       showAdmin();
     } else {
@@ -65,6 +67,7 @@
 
     els.saveButton.addEventListener("click", async () => {
       collectFormData();
+      ensureProductCodes();
       try {
         if (apiAvailable) {
           await saveCatalogToApi();
@@ -153,6 +156,8 @@
       if (button.dataset.productAction === "duplicate") {
         const copy = structuredCloneSafe(data.products[index]);
         copy.id = uniqueId(copy.name || "producto");
+        copy.code = "";
+        copy.sku = "";
         copy.name = `${copy.name || "Producto"} copia`;
         data.products.splice(index + 1, 0, copy);
       }
@@ -253,9 +258,11 @@
               </div>
             </div>
             <div class="admin-form-grid">
+              ${readonlyCode(product, index)}
               ${input("Nombre", "name", product.name, index)}
               ${input("Categoria", "category", product.category, index)}
-              ${input("SKU", "sku", product.sku, index)}
+              ${input("Marca", "brand", product.brand, index)}
+              ${input("Variante o capacidad", "variant", product.variant, index)}
               ${input("Precio Gs.", "price", product.price, index, "number")}
               ${input("Stock", "stock", product.stock, index, "number")}
               ${input("Etiqueta", "badge", product.badge, index)}
@@ -333,6 +340,8 @@
       product.id = product.id || uniqueId(product.name || product.sku || "producto");
     });
 
+    ensureProductCodes();
+
     document.querySelectorAll("[data-seller-index]").forEach((input) => {
       const seller = data.sellers[Number(input.dataset.sellerIndex)];
       if (!seller) return;
@@ -346,6 +355,16 @@
       <label class="admin-field${wide ? " is-wide" : ""}">
         <span>${label}</span>
         <input class="admin-input" type="${type}" value="${escapeHtml(value)}" data-product-index="${index}" data-product-field="${field}">
+      </label>
+    `;
+  }
+
+  function readonlyCode(product, index) {
+    const code = product.code || "";
+    return `
+      <label class="admin-field">
+        <span>Codigo automatico</span>
+        <input class="admin-input" type="text" value="${escapeHtml(code || "Se asigna al guardar")}" data-product-index="${index}" data-product-field="code" readonly>
       </label>
     `;
   }
@@ -380,18 +399,21 @@
   function createProduct() {
     return {
       id: uniqueId("producto"),
-      name: "Nuevo producto",
+      code: generateProductCode(),
+      sku: "",
+      name: "",
       category: "General",
-      sku: `SKU-${Date.now().toString(36).toUpperCase()}`,
+      brand: "",
+      variant: "",
       price: 0,
       stock: 0,
       featured: false,
-      badge: "Nuevo",
+      badge: "",
       condition: "Nuevo",
       warranty: "Garantia de tienda",
       delivery: "Retiro en tienda o envio coordinado",
-      description: "Descripcion del producto.",
-      details: ["Detalle principal"],
+      description: "",
+      details: [],
       image: "assets/logo-smartshop.png",
     };
   }
@@ -399,13 +421,38 @@
   function createSeller() {
     return {
       id: uniqueId("vendedor"),
-      name: "Nuevo vendedor",
-      role: "Atencion comercial",
-      phone: "595981000000",
-      schedule: "Lunes a sabado, 08:00 a 18:00",
+      name: "",
+      role: "",
+      phone: "",
+      schedule: "Lunes a viernes, 07:30 a 15:30",
       message: "Hola, quiero consultar un producto de SmartShop.",
       image: "assets/logo-smartshop.png",
     };
+  }
+
+  function ensureProductCodes() {
+    const usedCodes = new Set();
+    data.products.forEach((product) => {
+      const code = String(product.code || "").trim();
+      if (PRODUCT_CODE_RE.test(code) && !usedCodes.has(code)) {
+        product.code = code;
+        usedCodes.add(code);
+      } else {
+        product.code = generateProductCode(usedCodes);
+      }
+      if (!product.sku) product.sku = `SKU-${product.code}`;
+    });
+  }
+
+  function generateProductCode(usedCodes = new Set(data.products.map((product) => String(product.code || "")))) {
+    for (let attempt = 0; attempt < 1000; attempt += 1) {
+      const code = String(Math.floor(10000 + Math.random() * 90000));
+      if (!usedCodes.has(code)) {
+        usedCodes.add(code);
+        return code;
+      }
+    }
+    return String(Date.now()).slice(-5).padStart(5, "1");
   }
 
   function authHeaders() {
@@ -443,9 +490,9 @@
       products: Array.isArray(source.products) ? source.products : [],
       sellers: Array.isArray(source.sellers)
         ? source.sellers.map((seller, index) => ({
+            ...seller,
             id: seller.id || `seller-${index + 1}`,
             image: seller.image || "assets/logo-smartshop.png",
-            ...seller,
           }))
         : [],
     };

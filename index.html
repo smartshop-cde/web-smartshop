@@ -25,7 +25,7 @@
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="#catalogo" aria-label="Ir al catalogo">
+      <a class="brand" href="#inicio" aria-label="Ir al inicio">
         <img
           class="brand-logo"
           src="assets/logo-smartshop.webp"
@@ -41,7 +41,7 @@
         <input
           id="searchInput"
           type="search"
-          placeholder="Buscar producto, SKU o categoria"
+          placeholder="Buscar producto, codigo o categoria"
           autocomplete="off"
         >
       </label>
@@ -64,36 +64,89 @@
     </header>
 
     <main>
-      <section class="workspace" id="catalogo" aria-labelledby="catalogTitle">
-        <div class="workspace-head">
-          <div class="workspace-copy">
-            <p class="eyebrow">SmartShop CDE</p>
-            <h1 id="catalogTitle">Tecnologia lista para llevar</h1>
-            <p class="lead">
-              Compra celulares, audio y accesorios con precio visible, stock actualizado y atencion directa por WhatsApp.
-            </p>
-          </div>
-
-          <div class="hero-card" aria-label="Resumen de tienda">
-            <img src="assets/logo-smartshop.webp" width="96" height="96" alt="">
-            <div class="hero-card-copy">
-              <strong>Catalogo actualizado</strong>
-              <span id="availableProducts">0 disponibles</span>
-              <span id="stockHealth">Stock listo para consultar</span>
-            </div>
+      <section class="hero-section" id="inicio" aria-labelledby="heroTitle">
+        <div class="hero-copy">
+          <p class="eyebrow">SmartShop CDE</p>
+          <h1 id="heroTitle">Tecnologia al mejor precio en CDE.</h1>
+          <p class="lead">Stock real. Precio claro. Compra rapida.</p>
+          <div class="hero-actions">
+            <a class="primary-link" href="#catalogo">Ver productos</a>
+            <a id="heroWhatsappLink" class="ghost-link" href="#" target="_blank" rel="noopener">Hablar por WhatsApp</a>
           </div>
         </div>
 
-        <div class="toolbar">
-          <label class="select-field">
-            <span class="sr-only">Ordenar productos</span>
-            <select id="sortSelect">
-              <option value="featured">Destacados primero</option>
-              <option value="price-asc">Menor precio</option>
-              <option value="price-desc">Mayor precio</option>
-              <option value="stock-desc">Mas stock</option>
-            </select>
-          </label>
+        <div class="hero-card" aria-label="Resumen de tienda">
+          <img src="assets/logo-smartshop.webp" width="112" height="112" alt="">
+          <div class="hero-card-copy">
+            <strong>Catalogo SmartShop</strong>
+            <span id="availableProducts">Cargando catalogo</span>
+            <span id="stockHealth">Preparando stock y precios</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="benefits-band" aria-label="Beneficios de compra">
+        <article>
+          <span class="benefit-icon" aria-hidden="true">ST</span>
+          <strong>Stock actualizado</strong>
+          <span>Disponibilidad visible antes de consultar.</span>
+        </article>
+        <article>
+          <span class="benefit-icon" aria-hidden="true">CDE</span>
+          <strong>Retiro en Ciudad del Este</strong>
+          <span>Coordina la compra y pasa por la tienda.</span>
+        </article>
+        <article>
+          <span class="benefit-icon" aria-hidden="true">WA</span>
+          <strong>Atencion por WhatsApp</strong>
+          <span>Consulta rapido con un vendedor.</span>
+        </article>
+        <article>
+          <span class="benefit-icon" aria-hidden="true">Gs</span>
+          <strong>Precios transparentes</strong>
+          <span>Importes claros en guaranies.</span>
+        </article>
+      </section>
+
+      <section class="section-band category-section" id="categorias" aria-labelledby="categoryTitle">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Explorar</p>
+            <h2 id="categoryTitle">Categorias</h2>
+          </div>
+          <span>Elige una linea y el catalogo se filtra automaticamente</span>
+        </div>
+        <div id="categoryCards" class="category-cards"></div>
+      </section>
+
+      <section id="featuredSection" class="section-band" aria-labelledby="featuredTitle" hidden>
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Seleccion SmartShop</p>
+            <h2 id="featuredTitle">Productos destacados</h2>
+          </div>
+          <span>Opciones con prioridad en el catalogo</span>
+        </div>
+        <div id="featuredGrid" class="product-grid featured-grid"></div>
+      </section>
+
+      <section class="workspace" id="catalogo" aria-labelledby="catalogTitle">
+        <div class="catalog-head">
+          <div>
+            <p class="eyebrow">Catalogo</p>
+            <h2 id="catalogTitle">Productos</h2>
+          </div>
+          <div class="toolbar">
+            <label class="select-field">
+              <span class="sr-only">Ordenar productos</span>
+              <select id="sortSelect">
+                <option value="featured">Destacados primero</option>
+                <option value="price-asc">Menor precio</option>
+                <option value="price-desc">Mayor precio</option>
+                <option value="stock-desc">Mas stock</option>
+              </select>
+            </label>
+          </div>
         </div>
 
         <div class="content-grid">
@@ -110,7 +163,7 @@
               <span>Mostrar solo disponibles</span>
             </label>
 
-            <dl class="stock-summary">
+            <dl id="stockSummary" class="stock-summary" hidden>
               <div>
                 <dt>Productos</dt>
                 <dd id="totalProducts">0</dd>
@@ -128,15 +181,23 @@
 
           <section class="product-area" aria-labelledby="productListTitle">
             <div class="section-title-row">
-              <h2 id="productListTitle">Productos</h2>
-              <span id="resultCount">0 productos</span>
+              <h2 id="productListTitle">Listado</h2>
+              <span id="resultCount">Cargando</span>
             </div>
 
-            <div id="productGrid" class="product-grid" aria-live="polite"></div>
+            <div id="productGrid" class="product-grid" aria-live="polite" aria-busy="true"></div>
 
-            <p id="emptyState" class="empty-state" hidden>
-              No encontramos productos con esos filtros.
-            </p>
+            <div id="emptyState" class="empty-state" hidden>
+              <strong>No encontramos productos con estos filtros.</strong>
+              <p>Ajusta tu busqueda o vuelve a ver todo el catalogo.</p>
+              <button id="clearFilters" class="ghost-button" type="button">Limpiar filtros</button>
+            </div>
+
+            <div id="catalogError" class="empty-state is-error" hidden>
+              <strong>No pudimos cargar el catalogo.</strong>
+              <p>Revisa la conexion o intenta nuevamente.</p>
+              <button id="retryCatalog" class="primary-link" type="button">Reintentar</button>
+            </div>
           </section>
         </div>
       </section>
@@ -166,9 +227,7 @@
           <div>
             <p class="eyebrow">Ubicacion y redes</p>
             <h2 id="locationTitle">SmartShop en Ciudad del Este</h2>
-            <p class="section-copy">
-              Encuentra la tienda en Google Maps y sigue las novedades en TikTok e Instagram.
-            </p>
+            <p class="section-copy">Visitanos en Ciudad del Este y sigue las novedades en TikTok e Instagram.</p>
             <div class="social-row" aria-label="Redes sociales de SmartShop">
               <a id="instagramLink" class="social-link" href="#" target="_blank" rel="noopener">
                 Instagram <span data-social-username>@smartshopcde</span>
@@ -180,13 +239,13 @@
           </div>
 
           <div class="google-panel">
-            <span class="panel-kicker">Google Place ID</span>
-            <strong id="placeIdText">Pendiente de configurar</strong>
-            <p id="addressText">Direccion pendiente</p>
-            <p id="hoursText">Horario pendiente</p>
-            <a id="mapsLink" class="primary-link" href="#" target="_blank" rel="noopener">
-              Abrir ficha en Google Maps
-            </a>
+            <span class="panel-kicker">Direccion</span>
+            <strong id="addressText">Avda. Adrian Jara esquina Avda. Carlos Antonio Lopez, Galeria Jebai 4to piso</strong>
+            <p id="hoursText">Lunes a viernes<br>07:30 a 15:30</p>
+            <div class="map-shell">
+              <iframe id="mapsEmbed" title="Mapa de SmartShop en Ciudad del Este" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+            <a id="directionsLink" class="primary-link" href="#" target="_blank" rel="noopener">Como llegar</a>
           </div>
         </div>
       </section>
@@ -195,11 +254,11 @@
     <footer class="site-footer">
       <div>
         <strong data-footer-store>SmartShop</strong>
-        <span data-domain-text>Dominio pendiente</span>
+        <span>Ciudad del Este, Paraguay</span>
       </div>
       <div class="footer-links">
         <a href="#ubicacion">Ubicacion</a>
-        <a href="#catalogo">Productos</a>
+        <a href="#catalogo">Catalogo</a>
       </div>
     </footer>
 
