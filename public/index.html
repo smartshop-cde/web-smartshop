@@ -15,7 +15,13 @@
       content="Productos disponibles, precios y contacto directo por WhatsApp."
     >
     <meta property="og:image" content="assets/logo-smartshop.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://images.unsplash.com">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    >
     <link rel="preload" href="assets/logo-smartshop.webp" as="image" type="image/webp">
     <link rel="icon" href="assets/favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -29,8 +35,8 @@
         <img
           class="brand-logo"
           src="assets/logo-smartshop.webp"
-          width="56"
-          height="56"
+          width="52"
+          height="52"
           alt=""
           fetchpriority="high"
         >
@@ -38,27 +44,41 @@
 
       <label class="search-field header-search">
         <span class="sr-only">Buscar producto</span>
+        <span class="search-icon" data-icon="search" aria-hidden="true"></span>
         <input
           id="searchInput"
           type="search"
-          placeholder="Buscar producto, codigo o categoria"
+          placeholder="Buscar productos, marcas o codigos..."
           autocomplete="off"
         >
       </label>
 
-      <nav class="site-nav" aria-label="Secciones principales">
+      <button id="mobileMenuToggle" class="icon-button mobile-menu-toggle" type="button" aria-label="Abrir menu" aria-controls="siteNav" aria-expanded="false">
+        <span data-icon="menu" aria-hidden="true"></span>
+      </button>
+
+      <nav id="siteNav" class="site-nav" aria-label="Secciones principales">
+        <a href="#inicio">Inicio</a>
         <div class="nav-menu">
           <a href="#catalogo" aria-haspopup="true" aria-expanded="false">Categoria</a>
           <div id="navCategoryList" class="nav-dropdown" aria-label="Categorias disponibles"></div>
         </div>
+        <a href="#featuredSection">Ofertas</a>
         <div class="nav-menu">
           <a href="#vendedores" aria-haspopup="true" aria-expanded="false">Vendedores</a>
           <div id="navSellerList" class="nav-dropdown" aria-label="Vendedores disponibles"></div>
         </div>
         <a href="#ubicacion">Ubicacion</a>
-        <a class="login-link" href="admin.html" aria-label="Iniciar sesion en el panel privado">
-          <span class="login-icon" aria-hidden="true"></span>
+        <a class="icon-button" href="#catalogo" aria-label="Favoritos">
+          <span data-icon="heart" aria-hidden="true"></span>
+        </a>
+        <a class="icon-button login-link" href="admin.html" aria-label="Iniciar sesion en el panel privado">
+          <span data-icon="user" aria-hidden="true"></span>
           <span>Iniciar Sesion</span>
+        </a>
+        <a class="icon-button cart-link" href="#catalogo" aria-label="Carrito">
+          <span data-icon="shopping-cart" aria-hidden="true"></span>
+          <span class="cart-badge" aria-label="0 productos en carrito">0</span>
         </a>
       </nav>
     </header>
@@ -67,16 +87,30 @@
       <section class="hero-section" id="inicio" aria-labelledby="heroTitle">
         <div class="hero-copy">
           <p class="eyebrow">SmartShop CDE</p>
-          <h1 id="heroTitle">Tecnologia al mejor precio en CDE.</h1>
-          <p class="lead">Stock real. Precio claro. Compra rapida.</p>
+          <h1 id="heroTitle">
+            <span>Tecnologia que quieres.</span>
+            <span>Precios que te convienen.</span>
+          </h1>
+          <p class="lead">Encuentra celulares, audio y accesorios con stock actualizado, precio claro y atencion directa por WhatsApp.</p>
           <div class="hero-actions">
-            <a class="primary-link" href="#catalogo">Ver productos</a>
-            <a id="heroWhatsappLink" class="ghost-link" href="#" target="_blank" rel="noopener">Hablar por WhatsApp</a>
+            <a class="primary-link" href="#catalogo">
+              Explorar productos
+              <span data-icon="chevron-right" aria-hidden="true"></span>
+            </a>
+            <a id="heroWhatsappLink" class="ghost-link" href="#" target="_blank" rel="noopener">
+              <span data-icon="message-circle" aria-hidden="true"></span>
+              Hablar por WhatsApp
+            </a>
+          </div>
+          <div class="hero-trust" aria-label="Resumen de beneficios">
+            <span><span data-icon="package-check" aria-hidden="true"></span> Stock actualizado</span>
+            <span><span data-icon="map-pin" aria-hidden="true"></span> Retiro en CDE</span>
+            <span><span data-icon="phone" aria-hidden="true"></span> Atencion rapida</span>
           </div>
         </div>
 
-        <div class="hero-card" aria-label="Resumen de tienda">
-          <img src="assets/logo-smartshop.webp" width="112" height="112" alt="">
+        <div class="hero-card" aria-label="Productos destacados de SmartShop">
+          <div id="heroShowcase" class="hero-showcase" aria-hidden="true"></div>
           <div class="hero-card-copy">
             <strong>Catalogo SmartShop</strong>
             <span id="availableProducts">Cargando catalogo</span>
@@ -87,22 +121,22 @@
 
       <section class="benefits-band" aria-label="Beneficios de compra">
         <article>
-          <span class="benefit-icon" aria-hidden="true">ST</span>
+          <span class="benefit-icon" data-icon="package-check" aria-hidden="true"></span>
           <strong>Stock actualizado</strong>
           <span>Disponibilidad visible antes de consultar.</span>
         </article>
         <article>
-          <span class="benefit-icon" aria-hidden="true">CDE</span>
+          <span class="benefit-icon" data-icon="map-pin" aria-hidden="true"></span>
           <strong>Retiro en Ciudad del Este</strong>
           <span>Coordina la compra y pasa por la tienda.</span>
         </article>
         <article>
-          <span class="benefit-icon" aria-hidden="true">WA</span>
+          <span class="benefit-icon" data-icon="message-circle" aria-hidden="true"></span>
           <strong>Atencion por WhatsApp</strong>
           <span>Consulta rapido con un vendedor.</span>
         </article>
         <article>
-          <span class="benefit-icon" aria-hidden="true">Gs</span>
+          <span class="benefit-icon" data-icon="badge-dollar-sign" aria-hidden="true"></span>
           <strong>Precios transparentes</strong>
           <span>Importes claros en guaranies.</span>
         </article>
@@ -130,6 +164,17 @@
         <div id="featuredGrid" class="product-grid featured-grid"></div>
       </section>
 
+      <section id="brandsSection" class="section-band brand-section" aria-labelledby="brandsTitle" hidden>
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow">Marcas</p>
+            <h2 id="brandsTitle">Compra por marca</h2>
+          </div>
+          <span>Filtra por las marcas disponibles en el catalogo.</span>
+        </div>
+        <div id="brandStrip" class="brand-strip"></div>
+      </section>
+
       <section class="workspace" id="catalogo" aria-labelledby="catalogTitle">
         <div class="catalog-head">
           <div>
@@ -137,10 +182,15 @@
             <h2 id="catalogTitle">Productos</h2>
           </div>
           <div class="toolbar">
+            <button id="filterToggle" class="ghost-button filter-toggle" type="button" aria-expanded="false" aria-controls="catalogFilters">
+              <span data-icon="sliders-horizontal" aria-hidden="true"></span>
+              Filtros
+            </button>
             <label class="select-field">
               <span class="sr-only">Ordenar productos</span>
               <select id="sortSelect">
                 <option value="featured">Destacados primero</option>
+                <option value="name-asc">Nombre A-Z</option>
                 <option value="price-asc">Menor precio</option>
                 <option value="price-desc">Mayor precio</option>
                 <option value="stock-desc">Mas stock</option>
@@ -150,7 +200,10 @@
         </div>
 
         <div class="content-grid">
-          <aside class="control-panel" aria-label="Filtros del catalogo">
+          <aside id="catalogFilters" class="control-panel" aria-label="Filtros del catalogo">
+            <button id="filterClose" class="icon-button filter-close" type="button" aria-label="Cerrar filtros">
+              <span data-icon="x" aria-hidden="true"></span>
+            </button>
             <div>
               <p class="panel-kicker">Filtros</p>
               <h2>Categorias</h2>
@@ -158,10 +211,31 @@
 
             <div id="categoryFilters" class="filter-group"></div>
 
+            <div class="filter-section">
+              <h3>Marca</h3>
+              <div id="brandFilters" class="filter-group"></div>
+            </div>
+
+            <div class="filter-section">
+              <h3>Precio</h3>
+              <div class="price-filter-grid">
+                <label>
+                  <span>Desde</span>
+                  <input id="minPriceInput" class="filter-input" type="number" min="0" inputmode="numeric" placeholder="0">
+                </label>
+                <label>
+                  <span>Hasta</span>
+                  <input id="maxPriceInput" class="filter-input" type="number" min="0" inputmode="numeric" placeholder="Sin limite">
+                </label>
+              </div>
+            </div>
+
             <label class="switch-row">
               <input id="onlyAvailable" type="checkbox">
               <span>Mostrar solo disponibles</span>
             </label>
+
+            <button id="clearFiltersPanel" class="ghost-button" type="button">Limpiar filtros</button>
 
             <dl id="stockSummary" class="stock-summary" hidden>
               <div>
@@ -206,9 +280,9 @@
         <div class="section-title-row">
           <div>
             <p class="eyebrow">Atencion comercial</p>
-            <h2 id="sellerTitle">Vendedores por WhatsApp</h2>
+            <h2 id="sellerTitle">Necesitas ayuda para elegir?</h2>
           </div>
-          <span>Respuesta directa desde el catalogo</span>
+          <span>Habla directamente con nuestro equipo.</span>
         </div>
 
         <div class="seller-carousel-shell">
@@ -226,13 +300,15 @@
         <div class="google-layout">
           <div>
             <p class="eyebrow">Ubicacion y redes</p>
-            <h2 id="locationTitle">SmartShop en Ciudad del Este</h2>
-            <p class="section-copy">Visitanos en Ciudad del Este y sigue las novedades en TikTok e Instagram.</p>
+            <h2 id="locationTitle">Visitanos</h2>
+            <p class="section-copy">SmartShop te espera en Galeria Jebai, 4to piso, Ciudad del Este.</p>
             <div class="social-row" aria-label="Redes sociales de SmartShop">
               <a id="instagramLink" class="social-link" href="#" target="_blank" rel="noopener">
+                <span data-icon="instagram" aria-hidden="true"></span>
                 Instagram <span data-social-username>@smartshopcde</span>
               </a>
               <a id="tiktokLink" class="social-link" href="#" target="_blank" rel="noopener">
+                <span data-icon="music-2" aria-hidden="true"></span>
                 TikTok <span data-social-username>@smartshopcde</span>
               </a>
             </div>
@@ -245,22 +321,46 @@
             <div class="map-shell">
               <iframe id="mapsEmbed" title="Mapa de SmartShop en Ciudad del Este" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
-            <a id="directionsLink" class="primary-link" href="#" target="_blank" rel="noopener">Como llegar</a>
+            <a id="directionsLink" class="primary-link" href="#" target="_blank" rel="noopener">
+              <span data-icon="navigation" aria-hidden="true"></span>
+              Como llegar
+            </a>
           </div>
         </div>
       </section>
     </main>
 
     <footer class="site-footer">
-      <div>
-        <strong data-footer-store>SmartShop</strong>
-        <span>Ciudad del Este, Paraguay</span>
+      <div class="footer-brand">
+        <img src="assets/logo-smartshop.webp" width="54" height="54" alt="">
+        <div>
+          <strong data-footer-store>SmartShop</strong>
+          <span>Tecnologia y atencion directa en Ciudad del Este.</span>
+        </div>
       </div>
-      <div class="footer-links">
-        <a href="#ubicacion">Ubicacion</a>
+      <div class="footer-column">
+        <strong>Productos</strong>
         <a href="#catalogo">Catalogo</a>
+        <a href="#categorias">Categorias</a>
+        <a href="#featuredSection">Ofertas</a>
+      </div>
+      <div class="footer-column">
+        <strong>Ayuda</strong>
+        <a href="#vendedores">WhatsApp</a>
+        <a href="#ubicacion">Ubicacion</a>
+        <a href="#ubicacion">Horarios</a>
+      </div>
+      <div class="footer-column">
+        <strong>SmartShop</strong>
+        <a id="footerInstagramLink" href="https://www.instagram.com/smartshopcde" target="_blank" rel="noopener">Instagram</a>
+        <a id="footerTiktokLink" href="https://www.tiktok.com/@smartshopcde" target="_blank" rel="noopener">TikTok</a>
+        <span>© SmartShop</span>
       </div>
     </footer>
+
+    <a id="floatingWhatsapp" class="floating-whatsapp" href="#" target="_blank" rel="noopener" aria-label="Hablar por WhatsApp">
+      <span data-icon="message-circle" aria-hidden="true"></span>
+    </a>
 
     <dialog id="productDialog" class="product-dialog" aria-labelledby="dialogTitle">
       <div class="dialog-shell">
