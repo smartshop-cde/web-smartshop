@@ -1,18 +1,20 @@
 (function () {
   const CATALOG_STORAGE_KEY = "smartshop-catalog-data";
-  const STOCK_STORAGE_KEY = "smartshop-stock-overrides";
   const AUTH_STORAGE_KEY = "smartshop-admin-authenticated";
+  const AUTH_PIN_KEY = "smartshop-admin-pin";
 
   const baseData = structuredCloneSafe(window.STORE_DATA || {});
-  let data = readCatalogData(baseData);
+  let data = readLocalCatalog(baseData);
+  let apiAvailable = false;
 
   const els = {};
 
   document.addEventListener("DOMContentLoaded", init);
 
-  function init() {
+  async function init() {
     cacheElements();
     bindEvents();
+    await loadCatalog();
     if (sessionStorage.getItem(AUTH_STORAGE_KEY) === "true") {
       showAdmin();
     } else {
@@ -29,7 +31,8 @@
     els.logoutButton = document.querySelector("#logoutButton");
     els.saveButton = document.querySelector("#saveButton");
     els.resetButton = document.querySelector("#resetButton");
-    els.exportButton = document.querySelector("#exportButton");
+    els.exportExcelButton = document.querySelector("#exportExcelButton");
+    els.importExcelInput = document.querySelector("#importExcelInput");
     els.addProductButton = document.querySelector("#addProductButton");
     els.addSellerButton = document.querySelector("#addSellerButton");
     els.adminProducts = document.querySelector("#adminProducts");
@@ -41,10 +44,12 @@
   }
 
   function bindEvents() {
-    els.loginForm.addEventListener("submit", (event) => {
+    els.loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      if (els.pinInput.value === String(data.store?.adminPin || baseData.store?.adminPin || "")) {
+      const pin = els.pinInput.value;
+      if (await validatePin(pin)) {
         sessionStorage.setItem(AUTH_STORAGE_KEY, "true");
+        sessionStorage.setItem(AUTH_PIN_KEY, pin);
         els.pinInput.value = "";
         showAdmin();
       } else {
@@ -54,30 +59,75 @@
 
     els.logoutButton.addEventListener("click", () => {
       sessionStorage.removeItem(AUTH_STORAGE_KEY);
+      sessionStorage.removeItem(AUTH_PIN_KEY);
       showLogin();
     });
 
-    els.saveButton.addEventListener("click", () => {
+    els.saveButton.addEventListener("click", async () => {
       collectFormData();
-      localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify(data));
-      localStorage.removeItem(STOCK_STORAGE_KEY);
+      try {
+        if (apiAvailable) {
+          await saveCatalogToApi();
+        } else {
+          localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify(data));
+          showStatus("Cambios guardados localmente. Inicia el servidor para usar la base de datos.");
+        }
+      } catch (error) {
+        showStatus(error.message);
+      }
       renderAll();
-      showStatus("Cambios guardados en este navegador.");
     });
 
-    els.resetButton.addEventListener("click", () => {
-      if (!confirm("Restaurar datos base del archivo store-data.js?")) return;
+    els.resetButton.addEventListener("click", async () => {
+      if (!confirm("Restaurar datos base?")) return;
       data = structuredCloneSafe(baseData);
-      localStorage.removeItem(CATALOG_STORAGE_KEY);
-      localStorage.removeItem(STOCK_STORAGE_KEY);
+      if (apiAvailable) {
+        await saveCatalogToApi();
+      } else {
+        localStorage.removeItem(CATALOG_STORAGE_KEY);
+      }
       renderAll();
       showStatus("Datos base restaurados.");
     });
 
-    els.exportButton.addEventListener("click", () => {
-      collectFormData();
-      exportStoreData();
-      showStatus("Archivo store-data.js generado.");
+    els.exportExcelButton.addEventListener("click", () => {
+      if (!apiAvailable) {
+        showStatus("La exportacion Excel requiere iniciar el servidor con base de datos.");
+        return;
+      }
+      fetch("/api/products/export-excel", { headers: authHeaders() })
+        .then((response) => {
+          if (!response.ok) throw new Error("No se pudo exportar.");
+          return response.blob();
+        })
+        .then((blob) => downloadBlob(blob, "smartshop-productos.xlsx"))
+        .catch((error) => showStatus(error.message));
+    });
+
+    els.importExcelInput.addEventListener("change", async () => {
+      const file = els.importExcelInput.files[0];
+      if (!file) return;
+      if (!apiAvailable) {
+        showStatus("La importacion Excel requiere iniciar el servidor con base de datos.");
+        els.importExcelInput.value = "";
+        return;
+      }
+      try {
+        const response = await fetch("/api/products/import-excel", {
+          method: "POST",
+          headers: { ...authHeaders(), "Content-Type": "application/octet-stream" },
+          body: file,
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "No se pudo importar.");
+        await loadCatalog();
+        renderAll();
+        showStatus(`Excel importado: ${result.imported} altas/actualizaciones, ${result.deleted} eliminados.`);
+      } catch (error) {
+        showStatus(error.message);
+      } finally {
+        els.importExcelInput.value = "";
+      }
     });
 
     els.addProductButton.addEventListener("click", () => {
@@ -99,9 +149,7 @@
       if (!button) return;
       collectFormData();
       const index = Number(button.dataset.index);
-      if (button.dataset.productAction === "delete") {
-        data.products.splice(index, 1);
-      }
+      if (button.dataset.productAction === "delete") data.products.splice(index, 1);
       if (button.dataset.productAction === "duplicate") {
         const copy = structuredCloneSafe(data.products[index]);
         copy.id = uniqueId(copy.name || "producto");
@@ -116,11 +164,50 @@
       if (!button) return;
       collectFormData();
       const index = Number(button.dataset.index);
-      if (button.dataset.sellerAction === "delete") {
-        data.sellers.splice(index, 1);
-      }
+      if (button.dataset.sellerAction === "delete") data.sellers.splice(index, 1);
       renderAll();
     });
+  }
+
+  async function loadCatalog() {
+    try {
+      const response = await fetch("/api/catalog", { cache: "no-store" });
+      if (!response.ok) throw new Error("API no disponible");
+      data = normalizeCatalog(await response.json());
+      apiAvailable = true;
+    } catch (error) {
+      data = readLocalCatalog(baseData);
+      apiAvailable = false;
+    }
+  }
+
+  async function validatePin(pin) {
+    if (apiAvailable) {
+      try {
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ pin }),
+        });
+        return response.ok;
+      } catch (error) {
+        return false;
+      }
+    }
+    return pin === String(data.store?.adminPin || baseData.store?.adminPin || "");
+  }
+
+  async function saveCatalogToApi() {
+    const response = await fetch("/api/catalog", {
+      method: "PUT",
+      headers: { ...authHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) {
+      const result = await response.json().catch(() => ({}));
+      throw new Error(result.error || "No se pudo guardar en la base de datos.");
+    }
+    showStatus("Cambios guardados en la base de datos.");
   }
 
   function showLogin() {
@@ -161,12 +248,8 @@
             <div class="admin-item-head">
               <strong>${escapeHtml(product.name || "Producto sin nombre")}</strong>
               <div class="admin-actions">
-                <button class="admin-button" type="button" data-product-action="duplicate" data-index="${index}">
-                  Duplicar
-                </button>
-                <button class="admin-button is-danger" type="button" data-product-action="delete" data-index="${index}">
-                  Eliminar
-                </button>
+                <button class="admin-button" type="button" data-product-action="duplicate" data-index="${index}">Duplicar</button>
+                <button class="admin-button is-danger" type="button" data-product-action="delete" data-index="${index}">Eliminar</button>
               </div>
             </div>
             <div class="admin-form-grid">
@@ -180,9 +263,7 @@
               ${input("Garantia", "warranty", product.warranty, index)}
               ${input("Entrega", "delivery", product.delivery, index)}
               <label class="admin-check">
-                <input type="checkbox" data-product-index="${index}" data-product-field="featured" ${
-                  product.featured ? "checked" : ""
-                }>
+                <input type="checkbox" data-product-index="${index}" data-product-field="featured" ${product.featured ? "checked" : ""}>
                 Destacado
               </label>
               ${input("Imagen URL", "image", product.image, index, "url", true)}
@@ -202,15 +283,14 @@
           <article class="admin-item">
             <div class="admin-item-head">
               <strong>${escapeHtml(seller.name || "Vendedor sin nombre")}</strong>
-              <button class="admin-button is-danger" type="button" data-seller-action="delete" data-index="${index}">
-                Eliminar
-              </button>
+              <button class="admin-button is-danger" type="button" data-seller-action="delete" data-index="${index}">Eliminar</button>
             </div>
             <div class="admin-form-grid">
               ${sellerInput("Nombre", "name", seller.name, index)}
               ${sellerInput("Rol", "role", seller.role, index)}
               ${sellerInput("Telefono WhatsApp", "phone", seller.phone, index)}
               ${sellerInput("Horario", "schedule", seller.schedule, index)}
+              ${sellerInput("Foto URL", "image", seller.image, index, true)}
               ${sellerTextarea("Mensaje", "message", seller.message, index)}
             </div>
           </article>
@@ -246,10 +326,7 @@
       } else if (field === "price" || field === "stock") {
         product[field] = Math.max(0, Number(input.value || 0));
       } else if (field === "details") {
-        product[field] = input.value
-          .split("\n")
-          .map((line) => line.trim())
-          .filter(Boolean);
+        product[field] = input.value.split("\n").map((line) => line.trim()).filter(Boolean);
       } else {
         product[field] = input.value.trim();
       }
@@ -260,29 +337,15 @@
       const seller = data.sellers[Number(input.dataset.sellerIndex)];
       if (!seller) return;
       seller[input.dataset.sellerField] = input.value.trim();
+      seller.id = seller.id || uniqueId(seller.name || "vendedor");
     });
-  }
-
-  function exportStoreData() {
-    const js = `window.STORE_DATA = ${JSON.stringify(data, null, 2)};\n`;
-    const blob = new Blob([js], { type: "text/javascript" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "store-data.js";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
   }
 
   function input(label, field, value, index, type = "text", wide = false) {
     return `
       <label class="admin-field${wide ? " is-wide" : ""}">
         <span>${label}</span>
-        <input class="admin-input" type="${type}" value="${escapeHtml(
-          value
-        )}" data-product-index="${index}" data-product-field="${field}">
+        <input class="admin-input" type="${type}" value="${escapeHtml(value)}" data-product-index="${index}" data-product-field="${field}">
       </label>
     `;
   }
@@ -291,20 +354,16 @@
     return `
       <label class="admin-field is-wide">
         <span>${label}</span>
-        <textarea class="admin-textarea" data-product-index="${index}" data-product-field="${field}">${escapeHtml(
-      value
-    )}</textarea>
+        <textarea class="admin-textarea" data-product-index="${index}" data-product-field="${field}">${escapeHtml(value)}</textarea>
       </label>
     `;
   }
 
-  function sellerInput(label, field, value, index) {
+  function sellerInput(label, field, value, index, wide = false) {
     return `
-      <label class="admin-field">
+      <label class="admin-field${wide ? " is-wide" : ""}">
         <span>${label}</span>
-        <input class="admin-input" value="${escapeHtml(
-          value
-        )}" data-seller-index="${index}" data-seller-field="${field}">
+        <input class="admin-input" value="${escapeHtml(value)}" data-seller-index="${index}" data-seller-field="${field}">
       </label>
     `;
   }
@@ -313,9 +372,7 @@
     return `
       <label class="admin-field is-wide">
         <span>${label}</span>
-        <textarea class="admin-textarea" data-seller-index="${index}" data-seller-field="${field}">${escapeHtml(
-      value
-    )}</textarea>
+        <textarea class="admin-textarea" data-seller-index="${index}" data-seller-field="${field}">${escapeHtml(value)}</textarea>
       </label>
     `;
   }
@@ -325,7 +382,7 @@
       id: uniqueId("producto"),
       name: "Nuevo producto",
       category: "General",
-      sku: "SKU-NUEVO",
+      sku: `SKU-${Date.now().toString(36).toUpperCase()}`,
       price: 0,
       stock: 0,
       featured: false,
@@ -341,24 +398,57 @@
 
   function createSeller() {
     return {
+      id: uniqueId("vendedor"),
       name: "Nuevo vendedor",
       role: "Atencion comercial",
       phone: "595981000000",
       schedule: "Lunes a sabado, 08:00 a 18:00",
       message: "Hola, quiero consultar un producto de SmartShop.",
+      image: "assets/logo-smartshop.png",
     };
   }
 
-  function readCatalogData(fallbackData) {
+  function authHeaders() {
+    return { "X-Admin-Pin": getPin() };
+  }
+
+  function getPin() {
+    return sessionStorage.getItem(AUTH_PIN_KEY) || "";
+  }
+
+  function downloadBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function readLocalCatalog(fallbackData) {
     try {
       const savedData = JSON.parse(localStorage.getItem(CATALOG_STORAGE_KEY) || "null");
-      if (savedData && Array.isArray(savedData.products) && Array.isArray(savedData.sellers)) {
-        return savedData;
-      }
-      return structuredCloneSafe(fallbackData);
+      return normalizeCatalog(savedData || fallbackData);
     } catch (error) {
-      return structuredCloneSafe(fallbackData);
+      return normalizeCatalog(fallbackData);
     }
+  }
+
+  function normalizeCatalog(catalog) {
+    const source = catalog || {};
+    return {
+      store: source.store || {},
+      products: Array.isArray(source.products) ? source.products : [],
+      sellers: Array.isArray(source.sellers)
+        ? source.sellers.map((seller, index) => ({
+            id: seller.id || `seller-${index + 1}`,
+            image: seller.image || "assets/logo-smartshop.png",
+            ...seller,
+          }))
+        : [],
+    };
   }
 
   function structuredCloneSafe(value) {
@@ -381,7 +471,7 @@
     window.clearTimeout(showStatus.timeout);
     showStatus.timeout = window.setTimeout(() => {
       els.adminStatus.textContent = "";
-    }, 2600);
+    }, 3600);
   }
 
   function escapeHtml(value) {

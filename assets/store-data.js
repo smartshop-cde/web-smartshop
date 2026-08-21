@@ -120,18 +120,22 @@ window.STORE_DATA = {
   ],
   sellers: [
     {
+      id: "ventas-smartshop",
       name: "Ventas SmartShop",
       role: "Atencion general",
       phone: "595981000000",
       schedule: "Lunes a sabado, 08:00 a 18:00",
       message: "Hola, vi el catalogo web de SmartShop y quiero consultar un producto.",
+      image: "assets/logo-smartshop.png",
     },
     {
+      id: "soporte-tienda",
       name: "Soporte de tienda",
       role: "Consultas de stock y retiro",
       phone: "595982000000",
       schedule: "Lunes a viernes, 09:00 a 17:00",
       message: "Hola, quiero confirmar stock y coordinar retiro en tienda.",
+      image: "assets/logo-smartshop.png",
     },
   ],
 };

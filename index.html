@@ -47,8 +47,14 @@
       </label>
 
       <nav class="site-nav" aria-label="Secciones principales">
-        <a href="#catalogo">Productos</a>
-        <a href="#vendedores">Vendedores</a>
+        <div class="nav-menu">
+          <a href="#catalogo" aria-haspopup="true" aria-expanded="false">Categoria</a>
+          <div id="navCategoryList" class="nav-dropdown" aria-label="Categorias disponibles"></div>
+        </div>
+        <div class="nav-menu">
+          <a href="#vendedores" aria-haspopup="true" aria-expanded="false">Vendedores</a>
+          <div id="navSellerList" class="nav-dropdown" aria-label="Vendedores disponibles"></div>
+        </div>
         <a href="#ubicacion">Ubicacion</a>
         <a class="login-link" href="admin.html" aria-label="Iniciar sesion en el panel privado">
           <span class="login-icon" aria-hidden="true"></span>
@@ -144,7 +150,15 @@
           <span>Respuesta directa desde el catalogo</span>
         </div>
 
-        <div id="sellerGrid" class="seller-grid"></div>
+        <div class="seller-carousel-shell">
+          <button class="carousel-button" type="button" data-seller-scroll="-1" aria-label="Ver vendedores anteriores">
+            ‹
+          </button>
+          <div id="sellerGrid" class="seller-grid" tabindex="0"></div>
+          <button class="carousel-button" type="button" data-seller-scroll="1" aria-label="Ver mas vendedores">
+            ›
+          </button>
+        </div>
       </section>
 
       <section class="section-band section-band-alt" id="ubicacion" aria-labelledby="locationTitle">

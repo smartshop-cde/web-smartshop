@@ -44,7 +44,11 @@
           </div>
           <div class="admin-actions">
             <a class="admin-button" href="index.html">Vista publica</a>
-            <button id="exportButton" class="admin-button" type="button">Exportar datos</button>
+            <button id="exportExcelButton" class="admin-button" type="button">Exportar Excel</button>
+            <label class="admin-button file-button">
+              Importar Excel
+              <input id="importExcelInput" type="file" accept=".xlsx" hidden>
+            </label>
             <button id="logoutButton" class="admin-button is-danger" type="button">Salir</button>
           </div>
         </header>
@@ -72,6 +76,7 @@
             </div>
             <button id="saveButton" class="admin-button is-primary" type="button">Guardar cambios</button>
             <button id="resetButton" class="admin-button is-danger" type="button">Restaurar base</button>
+            <p class="admin-notice">Las fotos de productos y vendedores se editan desde este panel, no desde Excel.</p>
             <p id="adminStatus" class="admin-status" role="status"></p>
           </aside>
 

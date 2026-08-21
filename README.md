@@ -17,9 +17,41 @@ Edita [assets/store-data.js](assets/store-data.js) y cambia:
 Abre [admin.html](admin.html) para editar la tienda, productos, stock y vendedores desde una interfaz privada.
 
 - PIN inicial: `2026`.
-- Los cambios se guardan en el navegador con `localStorage`.
-- El boton **Exportar datos** descarga un nuevo `store-data.js` para reemplazar el archivo publicado.
-- El panel incluye `noindex,nofollow`, pero en un sitio estatico el PIN no es seguridad real de servidor. Para acceso privado real entre varios usuarios, el siguiente paso seria agregar backend, base de datos y autenticacion.
+- Con `server.py`, los cambios se guardan en `data/smartshop.sqlite3`.
+- Si abres los HTML directamente sin servidor, el sitio usa los datos estaticos como respaldo.
+- El panel incluye `noindex,nofollow`, pero el PIN no reemplaza una autenticacion fuerte para produccion publica.
+
+## Base de datos
+
+Para usar la base SQLite local:
+
+```bash
+python server.py
+```
+
+Luego abre:
+
+```text
+http://127.0.0.1:8000
+```
+
+La base se crea automaticamente desde [data/seed.json](data/seed.json) la primera vez que corre el servidor.
+
+## Excel
+
+Desde el panel administrador puedes:
+
+- **Exportar Excel**: descarga `smartshop-productos.xlsx`.
+- **Importar Excel**: agrega, actualiza o elimina productos por SKU.
+
+Columnas principales:
+
+- `accion`: dejar vacio para agregar/actualizar, usar `eliminar` para quitar.
+- `sku`, `name`, `category`, `price`, `stock`.
+- `featured`: `SI` o `NO`.
+- `badge`, `condition`, `warranty`, `delivery`, `description`, `details`.
+
+Las fotos no se cargan desde Excel. Despues de importar, edita `Imagen URL` directamente en el panel de administrador.
 
 ## Google Place ID
 

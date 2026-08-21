@@ -1,34 +1,28 @@
 (function () {
-  const CATALOG_STORAGE_KEY = "smartshop-catalog-data";
-  const STOCK_STORAGE_KEY = "smartshop-stock-overrides";
   const PLACE_ID_PLACEHOLDER = "TU_PLACE_ID_AQUI";
 
   const baseData = window.STORE_DATA || {};
-  const data = readCatalogData(baseData);
-  const store = data.store || {};
-  const products = Array.isArray(data.products) ? data.products : [];
-  const sellers = Array.isArray(data.sellers) ? data.sellers : [];
+  let data = normalizeCatalog(baseData);
+  let store = data.store;
+  let products = data.products;
+  let sellers = data.sellers;
 
   const state = {
     category: "Todos",
     onlyAvailable: false,
     search: "",
     sort: "featured",
-    stockOverrides: readStockOverrides(),
   };
 
   const els = {};
 
   document.addEventListener("DOMContentLoaded", init);
 
-  function init() {
+  async function init() {
     cacheElements();
-    renderStoreInfo();
-    renderCategories();
-    renderSellers();
     bindEvents();
-    renderProducts();
-    injectStructuredData();
+    await loadCatalog();
+    renderAll();
   }
 
   function cacheElements() {
@@ -36,6 +30,8 @@
     els.sortSelect = document.querySelector("#sortSelect");
     els.onlyAvailable = document.querySelector("#onlyAvailable");
     els.categoryFilters = document.querySelector("#categoryFilters");
+    els.navCategoryList = document.querySelector("#navCategoryList");
+    els.navSellerList = document.querySelector("#navSellerList");
     els.productGrid = document.querySelector("#productGrid");
     els.resultCount = document.querySelector("#resultCount");
     els.emptyState = document.querySelector("#emptyState");
@@ -74,10 +70,22 @@
 
     els.categoryFilters.addEventListener("click", (event) => {
       const button = event.target.closest("[data-category]");
-      if (!button) return;
-      state.category = button.dataset.category;
-      renderCategories();
-      renderProducts();
+      if (button) setCategory(button.dataset.category);
+    });
+
+    els.navCategoryList.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-category]");
+      if (button) setCategory(button.dataset.category);
+    });
+
+    document.querySelectorAll("[data-seller-scroll]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const direction = Number(button.dataset.sellerScroll);
+        els.sellerGrid.scrollBy({
+          left: direction * Math.max(260, els.sellerGrid.clientWidth * 0.78),
+          behavior: "smooth",
+        });
+      });
     });
 
     els.productGrid.addEventListener("click", (event) => {
@@ -96,6 +104,31 @@
     });
   }
 
+  async function loadCatalog() {
+    try {
+      const response = await fetch("/api/catalog", { cache: "no-store" });
+      if (!response.ok) throw new Error("API no disponible");
+      data = normalizeCatalog(await response.json());
+      store = data.store;
+      products = data.products;
+      sellers = data.sellers;
+    } catch (error) {
+      data = normalizeCatalog(baseData);
+      store = data.store;
+      products = data.products;
+      sellers = data.sellers;
+    }
+  }
+
+  function renderAll() {
+    renderStoreInfo();
+    renderCategories();
+    renderNavigationMenus();
+    renderSellers();
+    renderProducts();
+    injectStructuredData();
+  }
+
   function renderStoreInfo() {
     const social = store.social || {};
     const socialUsername = social.username || "@smartshopcde";
@@ -110,9 +143,7 @@
       node.textContent = store.name || "SmartShop";
     });
     document.querySelectorAll("[data-domain-text]").forEach((node) => {
-      node.textContent = store.domain
-        ? `Dominio: ${store.domain}`
-        : "Dominio pendiente";
+      node.textContent = store.domain ? `Dominio: ${store.domain}` : "Dominio pendiente";
     });
     document.querySelectorAll("[data-social-username]").forEach((node) => {
       node.textContent = socialUsername;
@@ -124,29 +155,49 @@
     els.addressText.textContent = store.address || "Direccion pendiente";
     els.hoursText.textContent = store.hours || "Horario pendiente";
     els.mapsLink.href = mapsUrl;
-    els.mapsLink.textContent = hasPlaceId
-      ? "Abrir ficha en Google Maps"
-      : "Buscar tienda en Google Maps";
+    els.mapsLink.textContent = hasPlaceId ? "Abrir ficha en Google Maps" : "Buscar tienda en Google Maps";
     els.instagramLink.href = social.instagram || "https://www.instagram.com/smartshopcde";
     els.tiktokLink.href = social.tiktok || "https://www.tiktok.com/@smartshopcde";
   }
 
   function renderCategories() {
-    const categories = ["Todos", ...new Set(products.map((product) => product.category))];
+    const categories = getCategories();
     els.categoryFilters.innerHTML = categories
       .map((category) => {
         const selected = category === state.category;
         return `
-          <button
-            type="button"
-            class="filter-chip${selected ? " is-active" : ""}"
-            data-category="${escapeHtml(category)}"
-            aria-pressed="${selected}"
-          >
+          <button type="button" class="filter-chip${selected ? " is-active" : ""}" data-category="${escapeHtml(category)}" aria-pressed="${selected}">
             ${escapeHtml(category)}
           </button>
         `;
       })
+      .join("");
+  }
+
+  function renderNavigationMenus() {
+    els.navCategoryList.innerHTML = getCategories()
+      .map(
+        (category) => `
+          <button type="button" data-category="${escapeHtml(category)}">
+            <span>${escapeHtml(category)}</span>
+            <small>${category === "Todos" ? products.length : products.filter((product) => product.category === category).length}</small>
+          </button>
+        `
+      )
+      .join("");
+
+    els.navSellerList.innerHTML = sellers
+      .map(
+        (seller) => `
+          <a href="${getWhatsAppUrl(seller.phone, seller.message || store.whatsappFallbackMessage || "")}" target="_blank" rel="noopener">
+            <img src="${escapeHtml(seller.image)}" alt="" loading="lazy" decoding="async">
+            <span>
+              <strong>${escapeHtml(seller.name)}</strong>
+              <small>${escapeHtml(seller.role)}</small>
+            </span>
+          </a>
+        `
+      )
       .join("");
   }
 
@@ -158,18 +209,9 @@
 
     els.productGrid.innerHTML = filteredProducts.map(renderProductCard).join("");
     els.emptyState.hidden = filteredProducts.length > 0;
-    els.resultCount.textContent = `${filteredProducts.length} ${pluralize(
-      filteredProducts.length,
-      "producto",
-      "productos"
-    )}`;
-    els.availableProducts.textContent = `${availableCount} ${pluralize(
-      availableCount,
-      "disponible",
-      "disponibles"
-    )}`;
-    els.stockHealth.textContent =
-      soldOutCount > 0 ? `${soldOutCount} sin stock` : "Stock listo para consultar";
+    els.resultCount.textContent = `${filteredProducts.length} ${pluralize(filteredProducts.length, "producto", "productos")}`;
+    els.availableProducts.textContent = `${availableCount} ${pluralize(availableCount, "disponible", "disponibles")}`;
+    els.stockHealth.textContent = soldOutCount > 0 ? `${soldOutCount} sin stock` : "Stock listo para consultar";
     els.totalProducts.textContent = products.length;
     els.totalUnits.textContent = totalUnits;
     els.soldOutProducts.textContent = soldOutCount;
@@ -178,61 +220,36 @@
   function renderProductCard(product) {
     const stock = getStock(product);
     const stockStatus = getStockStatus(stock);
-    const productMessage = buildProductMessage(product, stock);
     const seller = sellers[0];
-    const whatsappUrl = seller ? getWhatsAppUrl(seller.phone, productMessage) : "#";
+    const whatsappUrl = seller ? getWhatsAppUrl(seller.phone, buildProductMessage(product, stock)) : "#";
     const actionText = stock > 0 ? "Consultar por WhatsApp" : "Consultar reposicion";
 
     return `
       <article class="product-card ${stockStatus.className}">
         <div class="product-image">
           ${product.badge ? `<span class="product-badge">${escapeHtml(product.badge)}</span>` : ""}
-          <img
-            src="${escapeHtml(product.image)}"
-            alt="${escapeHtml(product.name)}"
-            loading="lazy"
-            decoding="async"
-            width="760"
-            height="570"
-            onerror="this.parentElement.classList.add('image-fallback'); this.remove();"
-          >
+          <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy" decoding="async" width="760" height="570" onerror="this.parentElement.classList.add('image-fallback'); this.remove();">
         </div>
-
         <div class="product-body">
           <div class="product-meta">
             <span>${escapeHtml(product.category)}</span>
             <span>${escapeHtml(product.sku)}</span>
           </div>
-
           <h3>${escapeHtml(product.name)}</h3>
           <p>${escapeHtml(product.description)}</p>
-
           <ul class="product-specs">
             ${getProductDetails(product)
               .slice(0, 3)
               .map((detail) => `<li>${escapeHtml(detail)}</li>`)
               .join("")}
           </ul>
-
           <div class="price-row">
             <strong>${formatPrice(product.price)}</strong>
-            <span class="stock-pill ${stockStatus.className}">
-              ${stockStatus.label}: ${stock}
-            </span>
+            <span class="stock-pill ${stockStatus.className}">${stockStatus.label}: ${stock}</span>
           </div>
-
           <div class="product-actions">
-            <button
-              class="ghost-button"
-              type="button"
-              data-product-detail
-              data-id="${escapeHtml(product.id)}"
-            >
-              Ver detalle
-            </button>
-            <a class="product-action" href="${whatsappUrl}" target="_blank" rel="noopener">
-              ${actionText}
-            </a>
+            <button class="ghost-button" type="button" data-product-detail data-id="${escapeHtml(product.id)}">Ver detalle</button>
+            <a class="product-action" href="${whatsappUrl}" target="_blank" rel="noopener">${actionText}</a>
           </div>
         </div>
       </article>
@@ -245,17 +262,13 @@
         const message = seller.message || store.whatsappFallbackMessage || "";
         return `
           <article class="seller-card">
+            <img class="seller-photo" src="${escapeHtml(seller.image)}" alt="${escapeHtml(seller.name)}" loading="lazy" decoding="async" onerror="this.src='assets/logo-smartshop.png';">
             <div>
               <span class="seller-role">${escapeHtml(seller.role)}</span>
               <h3>${escapeHtml(seller.name)}</h3>
               <p>${escapeHtml(seller.schedule)}</p>
             </div>
-            <a class="seller-link" href="${getWhatsAppUrl(
-              seller.phone,
-              message
-            )}" target="_blank" rel="noopener">
-              WhatsApp
-            </a>
+            <a class="seller-link" href="${getWhatsAppUrl(seller.phone, message)}" target="_blank" rel="noopener">WhatsApp</a>
           </article>
         `;
       })
@@ -267,30 +280,19 @@
     const stockStatus = getStockStatus(stock);
     const details = getProductDetails(product);
     const sellerButtons = sellers
-      .map((seller) => {
-        const message = buildProductMessage(product, stock);
-        return `
-          <a class="seller-link" href="${getWhatsAppUrl(
-            seller.phone,
-            message
-          )}" target="_blank" rel="noopener">
+      .map(
+        (seller) => `
+          <a class="seller-link" href="${getWhatsAppUrl(seller.phone, buildProductMessage(product, stock))}" target="_blank" rel="noopener">
             ${escapeHtml(seller.name)}
           </a>
-        `;
-      })
+        `
+      )
       .join("");
 
     els.dialogContent.innerHTML = `
       <div class="dialog-product">
         <div class="dialog-image">
-          <img
-            src="${escapeHtml(product.image)}"
-            alt="${escapeHtml(product.name)}"
-            width="760"
-            height="570"
-            loading="lazy"
-            decoding="async"
-          >
+          <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" width="760" height="570" loading="lazy" decoding="async">
         </div>
         <div class="dialog-info">
           <span class="product-badge">${escapeHtml(product.badge || product.category)}</span>
@@ -298,34 +300,16 @@
           <p>${escapeHtml(product.description)}</p>
           <div class="price-row">
             <strong>${formatPrice(product.price)}</strong>
-            <span class="stock-pill ${stockStatus.className}">
-              ${stockStatus.label}: ${stock}
-            </span>
+            <span class="stock-pill ${stockStatus.className}">${stockStatus.label}: ${stock}</span>
           </div>
           <dl class="detail-list">
-            <div>
-              <dt>SKU</dt>
-              <dd>${escapeHtml(product.sku)}</dd>
-            </div>
-            <div>
-              <dt>Estado</dt>
-              <dd>${escapeHtml(product.condition || "Nuevo")}</dd>
-            </div>
-            <div>
-              <dt>Garantia</dt>
-              <dd>${escapeHtml(product.warranty || "Consultar con tienda")}</dd>
-            </div>
-            <div>
-              <dt>Entrega</dt>
-              <dd>${escapeHtml(product.delivery || "Retiro en tienda o envio coordinado")}</dd>
-            </div>
+            <div><dt>SKU</dt><dd>${escapeHtml(product.sku)}</dd></div>
+            <div><dt>Estado</dt><dd>${escapeHtml(product.condition || "Nuevo")}</dd></div>
+            <div><dt>Garantia</dt><dd>${escapeHtml(product.warranty || "Consultar con tienda")}</dd></div>
+            <div><dt>Entrega</dt><dd>${escapeHtml(product.delivery || "Retiro en tienda o envio coordinado")}</dd></div>
           </dl>
-          <ul class="product-specs is-large">
-            ${details.map((detail) => `<li>${escapeHtml(detail)}</li>`).join("")}
-          </ul>
-          <div class="dialog-actions">
-            ${sellerButtons}
-          </div>
+          <ul class="product-specs is-large">${details.map((detail) => `<li>${escapeHtml(detail)}</li>`).join("")}</ul>
+          <div class="dialog-actions">${sellerButtons}</div>
         </div>
       </div>
     `;
@@ -345,17 +329,24 @@
     }
   }
 
+  function setCategory(category) {
+    state.category = category;
+    renderCategories();
+    renderProducts();
+  }
+
+  function getCategories() {
+    return ["Todos", ...new Set(products.map((product) => product.category).filter(Boolean))];
+  }
+
   function getVisibleProducts() {
     const search = normalizeText(state.search);
     return products
       .filter((product) => {
-        const matchesCategory =
-          state.category === "Todos" || product.category === state.category;
+        const matchesCategory = state.category === "Todos" || product.category === state.category;
         const stock = getStock(product);
         const matchesAvailability = !state.onlyAvailable || stock > 0;
-        const haystack = normalizeText(
-          `${product.name} ${product.category} ${product.sku} ${product.description}`
-        );
+        const haystack = normalizeText(`${product.name} ${product.category} ${product.sku} ${product.description}`);
         return matchesCategory && matchesAvailability && haystack.includes(search);
       })
       .sort(sortProducts);
@@ -369,40 +360,12 @@
   }
 
   function getStock(product) {
-    const override = state.stockOverrides[product.id];
-    return Number.isFinite(override) ? override : Number(product.stock) || 0;
-  }
-
-  function readCatalogData(fallbackData) {
-    try {
-      const savedData = JSON.parse(localStorage.getItem(CATALOG_STORAGE_KEY) || "null");
-      if (savedData && Array.isArray(savedData.products) && Array.isArray(savedData.sellers)) {
-        return savedData;
-      }
-      return fallbackData;
-    } catch (error) {
-      return fallbackData;
-    }
-  }
-
-  function readStockOverrides() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(STOCK_STORAGE_KEY) || "{}");
-      return Object.fromEntries(
-        Object.entries(parsed).map(([key, value]) => [key, Number(value)])
-      );
-    } catch (error) {
-      return {};
-    }
+    return Number(product.stock) || 0;
   }
 
   function getStockStatus(stock) {
-    if (stock <= 0) {
-      return { label: "Agotado", className: "is-sold-out" };
-    }
-    if (stock <= 3) {
-      return { label: "Ultimas", className: "is-low-stock" };
-    }
+    if (stock <= 0) return { label: "Agotado", className: "is-sold-out" };
+    if (stock <= 3) return { label: "Ultimas", className: "is-low-stock" };
     return { label: "Disponible", className: "is-available" };
   }
 
@@ -424,10 +387,22 @@
     return pieces.join(" | ");
   }
 
+  function normalizeCatalog(catalog) {
+    const normalized = catalog || {};
+    const normalizedSellers = Array.isArray(normalized.sellers) ? normalized.sellers : [];
+    return {
+      store: normalized.store || {},
+      products: Array.isArray(normalized.products) ? normalized.products : [],
+      sellers: normalizedSellers.map((seller, index) => ({
+        id: seller.id || `seller-${index + 1}`,
+        image: seller.image || "assets/logo-smartshop.png",
+        ...seller,
+      })),
+    };
+  }
+
   function formatPrice(value) {
-    const amount = new Intl.NumberFormat("es-PY", {
-      maximumFractionDigits: 0,
-    }).format(Number(value) || 0);
+    const amount = new Intl.NumberFormat("es-PY", { maximumFractionDigits: 0 }).format(Number(value) || 0);
     return `Gs. ${amount}`;
   }
 
@@ -439,16 +414,16 @@
   function getMapsUrl() {
     const query = encodeURIComponent(`${store.name || "SmartShop"} ${store.address || ""}`);
     if (isConfiguredPlaceId(store.googlePlaceId)) {
-      return `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${encodeURIComponent(
-        store.googlePlaceId
-      )}`;
+      return `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${encodeURIComponent(store.googlePlaceId)}`;
     }
     return `https://www.google.com/maps/search/?api=1&query=${query}`;
   }
 
   function injectStructuredData() {
+    document.querySelectorAll('script[data-smartshop-jsonld="true"]').forEach((script) => script.remove());
     const script = document.createElement("script");
     script.type = "application/ld+json";
+    script.dataset.smartshopJsonld = "true";
     script.textContent = JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Store",
@@ -458,11 +433,7 @@
       address: store.address,
       openingHours: store.hours,
       identifier: isConfiguredPlaceId(store.googlePlaceId)
-        ? {
-            "@type": "PropertyValue",
-            propertyID: "Google Place ID",
-            value: store.googlePlaceId,
-          }
+        ? { "@type": "PropertyValue", propertyID: "Google Place ID", value: store.googlePlaceId }
         : undefined,
       sameAs: [
         getMapsUrl(),
@@ -480,10 +451,7 @@
         },
         priceCurrency: "PYG",
         price: Number(product.price) || 0,
-        availability:
-          getStock(product) > 0
-            ? "https://schema.org/InStock"
-            : "https://schema.org/OutOfStock",
+        availability: getStock(product) > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       })),
     });
     document.head.appendChild(script);
