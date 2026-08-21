@@ -11,16 +11,18 @@
     "start": "node src/server.js",
     "postinstall": "prisma generate --schema prisma/schema.prisma",
     "lint": "eslint .",
-    "typecheck": "node --check src/server.js && node --check public/assets/app.js && node --check public/assets/admin.js && node --check public/assets/store-data.js",
+    "typecheck": "node --check src/server.js && node --check public/assets/app.js && node --check public/assets/admin.js && node --check public/assets/supabase-client.js && node --check public/assets/store-data.js && node --check scripts/build-pages.js && node --check scripts/export-store-data-to-supabase-sql.js",
     "test": "node --test",
-    "build": "node --check src/server.js && node --check public/assets/app.js && node --check public/assets/admin.js && node --check public/assets/store-data.js",
+    "build": "node --check src/server.js && node --check public/assets/app.js && node --check public/assets/admin.js && node --check public/assets/supabase-client.js && node --check public/assets/store-data.js && node --check scripts/build-pages.js && node --check scripts/export-store-data-to-supabase-sql.js && node scripts/build-pages.js",
+    "build:pages": "node scripts/build-pages.js",
     "db:migrate": "prisma migrate deploy --schema prisma/schema.prisma",
     "db:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
     "db:generate": "prisma generate --schema prisma/schema.prisma",
     "db:seed": "node scripts/seed-postgres.js",
     "db:studio": "prisma studio",
     "backup:sqlite": "node scripts/backup-sqlite.js",
-    "migrate:sqlite": "node scripts/migrate-sqlite-to-postgres.js"
+    "migrate:sqlite": "node scripts/migrate-sqlite-to-postgres.js",
+    "supabase:export-seed": "node scripts/export-store-data-to-supabase-sql.js"
   },
   "dependencies": {
     "@prisma/client": "^6.14.0",

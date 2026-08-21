@@ -195,6 +195,10 @@
     state.error = "";
     renderProducts();
     try {
+      if (window.SmartShopSupabase?.isConfigured()) {
+        data = normalizeCatalog(await window.SmartShopSupabase.loadPublicCatalog());
+        return;
+      }
       const [catalogResult, productsResult] = await Promise.allSettled([
         fetch(apiUrl("/api/catalog"), { cache: "no-store" }),
         fetch(apiUrl("/api/products?limit=100"), { cache: "no-store" }),
@@ -209,9 +213,14 @@
       }
       data = normalizeCatalog(catalogData);
     } catch {
-      data = normalizeCatalog(baseData);
-      if (!data.products.length) {
+      if (window.SmartShopSupabase?.isConfigured()) {
+        data = normalizeCatalog({ store: baseData.store, products: [], sellers: [] });
         state.error = "No pudimos cargar el catalogo.";
+      } else {
+        data = normalizeCatalog(baseData);
+        if (!data.products.length) {
+          state.error = "No pudimos cargar el catalogo.";
+        }
       }
     } finally {
       store = data.store;

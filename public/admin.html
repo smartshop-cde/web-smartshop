@@ -10,7 +10,9 @@
     <link rel="icon" href="assets/favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
     <link rel="stylesheet" href="assets/styles.css">
-    <script defer src="assets/api-config.js"></script>
+    <script defer src="assets/supabase-env.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="assets/supabase-client.js"></script>
     <script defer src="assets/store-data.js"></script>
     <script defer src="assets/admin.js"></script>
   </head>
@@ -21,16 +23,20 @@
         <div>
           <p class="eyebrow">Acceso privado</p>
           <h1 id="loginTitle">Panel SmartShop</h1>
-          <p class="admin-notice">Ingresa el PIN de administracion para editar el catalogo.</p>
+          <p class="admin-notice">Inicia sesion con tu usuario administrador de Supabase.</p>
         </div>
         <form id="loginForm" class="admin-actions">
           <label class="admin-field">
-            <span>PIN</span>
-            <input id="pinInput" class="admin-input" type="password" inputmode="numeric" autocomplete="current-password">
+            <span>Email</span>
+            <input id="emailInput" class="admin-input" type="email" autocomplete="username" required>
           </label>
-          <button class="admin-button is-primary" type="submit">Entrar</button>
+          <label class="admin-field">
+            <span>Contrasena</span>
+            <input id="passwordInput" class="admin-input" type="password" autocomplete="current-password" required>
+          </label>
+          <button id="loginButton" class="admin-button is-primary" type="submit">Entrar</button>
         </form>
-        <p id="loginError" class="admin-status" role="alert"></p>
+        <p id="loginError" class="admin-status is-error" role="alert"></p>
       </section>
 
       <section id="adminView" hidden>
@@ -40,125 +46,97 @@
             <div>
               <p class="eyebrow">Administracion</p>
               <h1>Catalogo SmartShop</h1>
-              <p>Productos, stock, vendedores, ubicacion y redes.</p>
+              <p>Productos, categorias, stock, imagenes y vendedores.</p>
             </div>
           </div>
           <div class="admin-actions">
-            <a class="admin-button" href="index.html">Vista publica</a>
-            <button id="exportExcelButton" class="admin-button" type="button">Exportar Excel</button>
-            <label class="admin-button file-button">
-              Importar Excel
-              <input id="importExcelInput" type="file" accept=".xlsx" hidden>
-            </label>
-            <button id="logoutButton" class="admin-button is-danger" type="button">Salir</button>
+            <a class="admin-button" href="/">Vista publica</a>
+            <button id="reloadButton" class="admin-button" type="button">Actualizar</button>
+            <button id="logoutButton" class="admin-button is-danger" type="button">Cerrar sesion</button>
           </div>
         </header>
 
         <div class="admin-grid">
-          <aside class="admin-panel" aria-label="Resumen de administracion">
-            <nav>
-              <a href="#storePanel">Tienda</a>
-              <a href="#productsPanel">Productos</a>
-              <a href="#sellersPanel">Vendedores</a>
+          <aside class="admin-panel" aria-label="Navegacion de administracion">
+            <nav class="admin-tabs" aria-label="Secciones del panel">
+              <button class="admin-tab is-active" type="button" data-admin-tab="dashboardPanel">Dashboard</button>
+              <button class="admin-tab" type="button" data-admin-tab="productsPanel">Productos</button>
+              <button class="admin-tab" type="button" data-admin-tab="categoriesPanel">Categorias</button>
+              <button class="admin-tab" type="button" data-admin-tab="sellersPanel">Vendedores</button>
             </nav>
             <div class="admin-summary">
               <div>
-                <span>Productos</span>
-                <strong id="adminProductCount">0</strong>
+                <span>Productos activos</span>
+                <strong id="activeProductsCount">0</strong>
               </div>
               <div>
-                <span>Stock total</span>
-                <strong id="adminStockTotal">0</strong>
+                <span>Sin stock</span>
+                <strong id="soldOutProductsCount">0</strong>
+              </div>
+              <div>
+                <span>Categorias</span>
+                <strong id="categoryCount">0</strong>
               </div>
               <div>
                 <span>Vendedores</span>
-                <strong id="adminSellerCount">0</strong>
+                <strong id="sellerCount">0</strong>
               </div>
             </div>
-            <button id="saveButton" class="admin-button is-primary" type="button">Guardar cambios</button>
-            <button id="resetButton" class="admin-button is-danger" type="button">Restaurar base</button>
-            <p class="admin-notice">Las fotos de productos y vendedores se editan desde este panel, no desde Excel.</p>
-            <p id="adminStatus" class="admin-status" role="status"></p>
+            <p class="admin-notice">Los cambios se guardan en Supabase y se reflejan en la web sin redeploy.</p>
           </aside>
 
           <div class="admin-stack">
-            <section id="storePanel" class="admin-card" aria-labelledby="storeTitle">
-              <div>
-                <p class="panel-kicker">Datos generales</p>
-                <h2 id="storeTitle">Tienda</h2>
+            <section id="dashboardPanel" class="admin-card admin-tab-panel" aria-labelledby="dashboardTitle">
+              <div class="section-title-row">
+                <div>
+                  <p class="panel-kicker">Resumen</p>
+                  <h2 id="dashboardTitle">Dashboard</h2>
+                </div>
+                <span id="adminSyncStatus">Conectando con Supabase...</span>
               </div>
-              <div class="admin-form-grid">
-                <label class="admin-field">
-                  <span>Nombre</span>
-                  <input class="admin-input" data-store-field="name">
-                </label>
-                <label class="admin-field">
-                  <span>Dominio</span>
-                  <input class="admin-input" data-store-field="domain">
-                </label>
-                <label class="admin-field is-wide">
-                  <span>Descripcion corta</span>
-                  <input class="admin-input" data-store-field="tagline">
-                </label>
-                <label class="admin-field">
-                  <span>Direccion</span>
-                  <input class="admin-input" data-store-field="address">
-                </label>
-                <label class="admin-field">
-                  <span>Horario</span>
-                  <input class="admin-input" data-store-field="hours">
-                </label>
-                <label class="admin-field is-wide">
-                  <span>Google Place ID</span>
-                  <input class="admin-input" data-store-field="googlePlaceId">
-                </label>
-                <label class="admin-field is-wide">
-                  <span>Mensaje base de WhatsApp</span>
-                  <input class="admin-input" data-store-field="whatsappFallbackMessage">
-                </label>
-                <label class="admin-field">
-                  <span>Instagram</span>
-                  <input class="admin-input" data-social-field="instagram">
-                </label>
-                <label class="admin-field">
-                  <span>TikTok</span>
-                  <input class="admin-input" data-social-field="tiktok">
-                </label>
-                <label class="admin-field">
-                  <span>Usuario de redes</span>
-                  <input class="admin-input" data-social-field="username">
-                </label>
-                <label class="admin-field">
-                  <span>PIN del panel</span>
-                  <input class="admin-input" data-store-field="adminPin" type="password">
-                </label>
-              </div>
+              <div id="dashboardCards" class="dashboard-cards"></div>
             </section>
 
-            <section id="productsPanel" class="admin-card" aria-labelledby="productsTitle">
+            <section id="productsPanel" class="admin-card admin-tab-panel" aria-labelledby="productsTitle" hidden>
               <div class="section-title-row">
                 <div>
                   <p class="panel-kicker">Inventario</p>
                   <h2 id="productsTitle">Productos</h2>
                 </div>
-                <button id="addProductButton" class="admin-button is-primary" type="button">Agregar producto</button>
+                <button id="newProductButton" class="admin-button is-primary" type="button">+ Nuevo producto</button>
               </div>
-              <div id="adminProducts" class="admin-list"></div>
+              <div id="productEditor" class="admin-editor" hidden></div>
+              <div id="productsTable" class="admin-table-wrap"></div>
             </section>
 
-            <section id="sellersPanel" class="admin-card" aria-labelledby="sellersTitle">
+            <section id="categoriesPanel" class="admin-card admin-tab-panel" aria-labelledby="categoriesTitle" hidden>
+              <div class="section-title-row">
+                <div>
+                  <p class="panel-kicker">Organizacion</p>
+                  <h2 id="categoriesTitle">Categorias</h2>
+                </div>
+                <button id="newCategoryButton" class="admin-button is-primary" type="button">+ Nueva categoria</button>
+              </div>
+              <div id="categoryEditor" class="admin-editor" hidden></div>
+              <div id="categoriesTable" class="admin-table-wrap"></div>
+            </section>
+
+            <section id="sellersPanel" class="admin-card admin-tab-panel" aria-labelledby="sellersTitle" hidden>
               <div class="section-title-row">
                 <div>
                   <p class="panel-kicker">Equipo comercial</p>
                   <h2 id="sellersTitle">Vendedores</h2>
                 </div>
-                <button id="addSellerButton" class="admin-button is-primary" type="button">Agregar vendedor</button>
+                <button id="newSellerButton" class="admin-button is-primary" type="button">+ Nuevo vendedor</button>
               </div>
-              <div id="adminSellers" class="admin-list"></div>
+              <div id="sellerEditor" class="admin-editor" hidden></div>
+              <div id="sellersTable" class="admin-table-wrap"></div>
             </section>
           </div>
         </div>
       </section>
     </main>
+
+    <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
   </body>
 </html>

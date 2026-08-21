@@ -1,6 +1,18 @@
 # SmartShop Web
 
-SmartShop esta evolucionando desde catalogo estatico con SQLite hacia una arquitectura preparada para e-commerce:
+SmartShop esta evolucionando desde catalogo estatico con SQLite hacia una arquitectura preparada para e-commerce.
+
+La plataforma activa para el catalogo publicado queda preparada asi:
+
+```text
+Cloudflare Pages
+        ↓
+HTML/CSS/JS
+        ↓
+Supabase Auth + PostgreSQL + Storage
+```
+
+La arquitectura Node/Express + Prisma se conserva para una etapa futura de carrito, pedidos, pagos y facturacion:
 
 ```text
 Frontend HTML/CSS/JS
@@ -21,6 +33,7 @@ El frontend actual se conserva en `public/` y mantiene las mejoras visuales: her
 - Node.js 22.5 o superior.
 - PostgreSQL 14 o superior.
 - SQLite actual solo para migracion/respaldo.
+- Proyecto Supabase para el despliegue estatico en Cloudflare Pages.
 
 ## Instalacion
 
@@ -38,6 +51,8 @@ Variables principales:
 - `NODE_ENV`: `development`, `test` o `production`.
 - `ADMIN_PIN`: PIN inicial/fallback del panel.
 - `CORS_ORIGIN`: origen permitido, opcional.
+- `SUPABASE_URL`: URL publica del proyecto Supabase.
+- `SUPABASE_ANON_KEY`: clave anon/public de Supabase. No usar `service_role` en frontend.
 
 ## Base de datos PostgreSQL
 
@@ -132,22 +147,49 @@ Configura en el hosting:
 - `ADMIN_PIN`
 - `CORS_ORIGIN` si aplica
 
-### Cloudflare Pages y panel administrador
+## Supabase
 
-Cloudflare Pages sirve archivos estaticos. Si se publica solo `public/`, el panel puede abrir, pero no puede guardar cambios permanentes porque no existe `/api` ni conexion a PostgreSQL en ese despliegue.
+Ejecuta la migracion reproducible:
 
-Para que el panel administrador guarde productos, stock, vendedores y tienda en base de datos, la API Node/Express debe estar desplegada como servicio backend con PostgreSQL. Hay dos opciones:
-
-- servir la web desde el mismo backend Node, donde `/api/catalog` existe en el mismo dominio;
-- servir la web estatica en Cloudflare Pages y apuntarla a una API externa configurando `window.SMARTSHOP_API_BASE_URL` en `public/assets/api-config.js`.
-
-Ejemplo:
-
-```js
-window.SMARTSHOP_API_BASE_URL = "https://api.smartshop.com.py";
+```text
+supabase/migrations/20260821160000_smartshop_catalog.sql
 ```
 
-En ese caso, configura `CORS_ORIGIN` en el backend con el dominio publico de la web, por ejemplo `https://smartshop.com.py`.
+Crea el primer usuario administrador desde Supabase Auth y asigna rol:
+
+```sql
+insert into public.profiles (id, role)
+values ('UUID_DEL_USUARIO', 'admin')
+on conflict (id) do update
+set role = 'admin';
+```
+
+Generar SQL para importar los datos actuales de `public/assets/store-data.js`:
+
+```bash
+pnpm run supabase:export-seed
+```
+
+El archivo generado queda en `supabase/generated/import-store-data.sql` y no se sube a Git.
+
+## Cloudflare Pages
+
+Configuracion recomendada:
+
+```text
+Framework preset: None
+Build command: pnpm run build
+Build output directory: dist
+Environment variables:
+  SUPABASE_URL
+  SUPABASE_ANON_KEY
+```
+
+El script de build copia `public/` a `dist/` y genera `assets/supabase-env.js` con las variables publicas de Supabase.
+
+`/admin` funciona mediante `public/_redirects`, que apunta a `admin.html`.
+
+Guia detallada: `docs/supabase-cloudflare.md`.
 
 ## API principal
 

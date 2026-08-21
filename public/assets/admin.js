@@ -1,29 +1,36 @@
 (function () {
-  const CATALOG_STORAGE_KEY = "smartshop-catalog-data";
-  const AUTH_STORAGE_KEY = "smartshop-admin-authenticated";
-  const AUTH_PIN_KEY = "smartshop-admin-pin";
-  const PRODUCT_CODE_RE = /^\d{5}$/;
-  const API_BASE_URL = String(
-    window.SMARTSHOP_API_BASE_URL || localStorage.getItem("smartshop-api-base-url") || ""
-  ).replace(/\/$/, "");
-
-  const baseData = structuredCloneSafe(window.STORE_DATA || {});
-  let data = readLocalCatalog(baseData);
-  let apiAvailable = false;
-
+  const IMAGE_ACCEPT = "image/png,image/jpeg,image/webp,image/gif";
   const els = {};
+  const state = {
+    catalog: { products: [], categories: [], sellers: [] },
+    loading: false,
+  };
 
   document.addEventListener("DOMContentLoaded", init);
 
   async function init() {
     cacheElements();
     bindEvents();
-    await loadCatalog();
-    ensureProductCodes();
-    if (sessionStorage.getItem(AUTH_STORAGE_KEY) === "true") {
-      showAdmin();
-    } else {
+
+    if (!window.SmartShopSupabase?.isConfigured()) {
       showLogin();
+      setLoginError("Configura SUPABASE_URL y SUPABASE_ANON_KEY para usar el panel.");
+      setLoginDisabled(true);
+      return;
+    }
+
+    try {
+      const session = await window.SmartShopSupabase.getSession();
+      if (session?.user) {
+        await window.SmartShopSupabase.assertAdmin(session.user.id);
+        await showAdmin();
+      } else {
+        showLogin();
+      }
+    } catch (error) {
+      await window.SmartShopSupabase.signOut().catch(() => {});
+      showLogin();
+      setLoginError(error.message);
     }
   }
 
@@ -31,523 +38,811 @@
     els.loginView = document.querySelector("#loginView");
     els.adminView = document.querySelector("#adminView");
     els.loginForm = document.querySelector("#loginForm");
-    els.pinInput = document.querySelector("#pinInput");
+    els.emailInput = document.querySelector("#emailInput");
+    els.passwordInput = document.querySelector("#passwordInput");
+    els.loginButton = document.querySelector("#loginButton");
     els.loginError = document.querySelector("#loginError");
     els.logoutButton = document.querySelector("#logoutButton");
-    els.saveButton = document.querySelector("#saveButton");
-    els.resetButton = document.querySelector("#resetButton");
-    els.exportExcelButton = document.querySelector("#exportExcelButton");
-    els.importExcelInput = document.querySelector("#importExcelInput");
-    els.addProductButton = document.querySelector("#addProductButton");
-    els.addSellerButton = document.querySelector("#addSellerButton");
-    els.adminProducts = document.querySelector("#adminProducts");
-    els.adminSellers = document.querySelector("#adminSellers");
-    els.adminStatus = document.querySelector("#adminStatus");
-    els.adminProductCount = document.querySelector("#adminProductCount");
-    els.adminStockTotal = document.querySelector("#adminStockTotal");
-    els.adminSellerCount = document.querySelector("#adminSellerCount");
+    els.reloadButton = document.querySelector("#reloadButton");
+    els.adminSyncStatus = document.querySelector("#adminSyncStatus");
+    els.dashboardCards = document.querySelector("#dashboardCards");
+    els.activeProductsCount = document.querySelector("#activeProductsCount");
+    els.soldOutProductsCount = document.querySelector("#soldOutProductsCount");
+    els.categoryCount = document.querySelector("#categoryCount");
+    els.sellerCount = document.querySelector("#sellerCount");
+    els.productsTable = document.querySelector("#productsTable");
+    els.categoriesTable = document.querySelector("#categoriesTable");
+    els.sellersTable = document.querySelector("#sellersTable");
+    els.productEditor = document.querySelector("#productEditor");
+    els.categoryEditor = document.querySelector("#categoryEditor");
+    els.sellerEditor = document.querySelector("#sellerEditor");
+    els.newProductButton = document.querySelector("#newProductButton");
+    els.newCategoryButton = document.querySelector("#newCategoryButton");
+    els.newSellerButton = document.querySelector("#newSellerButton");
+    els.toastRegion = document.querySelector("#toastRegion");
+    els.tabs = [...document.querySelectorAll("[data-admin-tab]")];
+    els.panels = [...document.querySelectorAll(".admin-tab-panel")];
   }
 
   function bindEvents() {
-    els.loginForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const pin = els.pinInput.value;
-      if (await validatePin(pin)) {
-        sessionStorage.setItem(AUTH_STORAGE_KEY, "true");
-        sessionStorage.setItem(AUTH_PIN_KEY, pin);
-        els.pinInput.value = "";
-        showAdmin();
-      } else {
-        els.loginError.textContent = "PIN incorrecto.";
-      }
+    els.loginForm.addEventListener("submit", handleLogin);
+    els.logoutButton.addEventListener("click", handleLogout);
+    els.reloadButton.addEventListener("click", () => loadAndRenderCatalog(true));
+    els.newProductButton.addEventListener("click", () => openProductEditor());
+    els.newCategoryButton.addEventListener("click", () => openCategoryEditor());
+    els.newSellerButton.addEventListener("click", () => openSellerEditor());
+
+    els.tabs.forEach((button) => {
+      button.addEventListener("click", () => setTab(button.dataset.adminTab));
     });
 
-    els.logoutButton.addEventListener("click", () => {
-      sessionStorage.removeItem(AUTH_STORAGE_KEY);
-      sessionStorage.removeItem(AUTH_PIN_KEY);
-      showLogin();
-    });
-
-    els.saveButton.addEventListener("click", async () => {
-      collectFormData();
-      ensureProductCodes();
-      try {
-        await ensureApiAvailable();
-        await saveCatalogToApi();
-      } catch (error) {
-        showStatus(error.message);
-      }
-      renderAll();
-    });
-
-    els.resetButton.addEventListener("click", async () => {
-      if (!confirm("Restaurar datos base?")) return;
-      data = structuredCloneSafe(baseData);
-      try {
-        await ensureApiAvailable();
-        await saveCatalogToApi();
-        localStorage.removeItem(CATALOG_STORAGE_KEY);
-        renderAll();
-        showStatus("Datos base restaurados en la base de datos.");
-      } catch (error) {
-        renderAll();
-        showStatus(error.message);
-      }
-    });
-
-    els.exportExcelButton.addEventListener("click", () => {
-      if (!apiAvailable) {
-        showStatus("La exportacion Excel requiere iniciar el servidor con base de datos.");
-        return;
-      }
-      fetch(apiUrl("/api/products/export-excel"), { headers: authHeaders() })
-        .then((response) => {
-          if (!response.ok) throw new Error("No se pudo exportar.");
-          return response.blob();
-        })
-        .then((blob) => downloadBlob(blob, "smartshop-productos.xlsx"))
-        .catch((error) => showStatus(error.message));
-    });
-
-    els.importExcelInput.addEventListener("change", async () => {
-      const file = els.importExcelInput.files[0];
-      if (!file) return;
-      if (!apiAvailable) {
-        showStatus("La importacion Excel requiere iniciar el servidor con base de datos.");
-        els.importExcelInput.value = "";
-        return;
-      }
-      try {
-        const response = await fetch(apiUrl("/api/products/import-excel"), {
-          method: "POST",
-          headers: { ...authHeaders(), "Content-Type": "application/octet-stream" },
-          body: file,
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || "No se pudo importar.");
-        await loadCatalog();
-        renderAll();
-        showStatus(`Excel importado: ${result.imported} altas/actualizaciones, ${result.deleted} eliminados.`);
-      } catch (error) {
-        showStatus(error.message);
-      } finally {
-        els.importExcelInput.value = "";
-      }
-    });
-
-    els.addProductButton.addEventListener("click", () => {
-      collectFormData();
-      data.products.push(createProduct());
-      renderAll();
-      showStatus("Producto agregado.");
-    });
-
-    els.addSellerButton.addEventListener("click", () => {
-      collectFormData();
-      data.sellers.push(createSeller());
-      renderAll();
-      showStatus("Vendedor agregado.");
-    });
-
-    els.adminProducts.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-product-action]");
-      if (!button) return;
-      collectFormData();
-      const index = Number(button.dataset.index);
-      if (button.dataset.productAction === "delete") data.products.splice(index, 1);
-      if (button.dataset.productAction === "duplicate") {
-        const copy = structuredCloneSafe(data.products[index]);
-        copy.id = uniqueId(copy.name || "producto");
-        copy.code = "";
-        copy.sku = "";
-        copy.name = `${copy.name || "Producto"} copia`;
-        data.products.splice(index + 1, 0, copy);
-      }
-      renderAll();
-    });
-
-    els.adminSellers.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-seller-action]");
-      if (!button) return;
-      collectFormData();
-      const index = Number(button.dataset.index);
-      if (button.dataset.sellerAction === "delete") data.sellers.splice(index, 1);
-      renderAll();
-    });
+    els.productsTable.addEventListener("click", handleProductTableAction);
+    els.categoriesTable.addEventListener("click", handleCategoryTableAction);
+    els.sellersTable.addEventListener("click", handleSellerTableAction);
+    els.productEditor.addEventListener("submit", handleProductSubmit);
+    els.categoryEditor.addEventListener("submit", handleCategorySubmit);
+    els.sellerEditor.addEventListener("submit", handleSellerSubmit);
+    els.productEditor.addEventListener("click", handleEditorClick);
+    els.categoryEditor.addEventListener("click", handleEditorClick);
+    els.sellerEditor.addEventListener("click", handleEditorClick);
+    els.productEditor.addEventListener("change", handleImagePreview);
+    els.sellerEditor.addEventListener("change", handleImagePreview);
   }
 
-  async function loadCatalog() {
+  async function handleLogin(event) {
+    event.preventDefault();
+    setLoginError("");
+    setLoginDisabled(true);
     try {
-      const response = await fetch(apiUrl("/api/catalog"), { cache: "no-store" });
-      if (!response.ok) throw new Error("API no disponible");
-      data = normalizeCatalog(await response.json());
-      apiAvailable = true;
-    } catch {
-      data = readLocalCatalog(baseData);
-      apiAvailable = false;
+      await window.SmartShopSupabase.signIn(els.emailInput.value.trim(), els.passwordInput.value);
+      els.passwordInput.value = "";
+      await showAdmin();
+      toast("Sesion iniciada.");
+    } catch (error) {
+      setLoginError(error.message);
+    } finally {
+      setLoginDisabled(false);
     }
   }
 
-  async function validatePin(pin) {
-    if (apiAvailable) {
-      try {
-      const response = await fetch(apiUrl("/api/login"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ pin }),
-        });
-        return response.ok;
-      } catch {
-        return false;
-      }
-    }
-    return pin === String(data.store?.adminPin || baseData.store?.adminPin || "");
+  async function handleLogout() {
+    await window.SmartShopSupabase.signOut();
+    state.catalog = { products: [], categories: [], sellers: [] };
+    showLogin();
+    toast("Sesion cerrada.");
   }
 
-  async function saveCatalogToApi() {
-    const response = await fetch(apiUrl("/api/catalog"), {
-      method: "PUT",
-      headers: { ...authHeaders(), "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      const result = await response.json().catch(() => ({}));
-      throw new Error(result.error || "No se pudo guardar en la base de datos.");
-    }
-    showStatus("Cambios guardados en la base de datos.");
-  }
-
-  async function ensureApiAvailable() {
-    if (!apiAvailable) {
-      try {
-        const response = await fetch(apiUrl("/api/health"), { cache: "no-store" });
-        apiAvailable = response.ok;
-      } catch {
-        apiAvailable = false;
-      }
-    }
-    if (!apiAvailable) {
-      throw new Error(
-        "No hay conexion con la API/base de datos. Abre el panel desde el servidor Node o configura SMARTSHOP_API_BASE_URL."
-      );
-    }
+  async function showAdmin() {
+    els.loginView.hidden = true;
+    els.adminView.hidden = false;
+    await loadAndRenderCatalog();
   }
 
   function showLogin() {
     els.loginView.hidden = false;
     els.adminView.hidden = true;
-    els.loginError.textContent = "";
-    els.pinInput.focus();
+    els.emailInput.focus();
   }
 
-  function showAdmin() {
-    els.loginView.hidden = true;
-    els.adminView.hidden = false;
-    renderAll();
-    if (!apiAvailable) {
-      showStatus("Modo sin API: puedes revisar datos, pero para guardar necesitas conectar la base de datos.");
+  async function loadAndRenderCatalog(forceNotice = false) {
+    setLoading(true, "Cargando datos...");
+    try {
+      state.catalog = await window.SmartShopSupabase.loadAdminCatalog();
+      renderAll();
+      els.adminSyncStatus.textContent = "Conectado a Supabase";
+      if (forceNotice) toast("Datos actualizados.");
+    } catch (error) {
+      toast(error.message, "error");
+      els.adminSyncStatus.textContent = "No se pudo sincronizar";
+    } finally {
+      setLoading(false);
     }
   }
 
   function renderAll() {
-    renderStoreFields();
-    renderProducts();
-    renderSellers();
-    renderSummary();
+    renderDashboard();
+    renderProductsTable();
+    renderCategoriesTable();
+    renderSellersTable();
   }
 
-  function renderStoreFields() {
-    document.querySelectorAll("[data-store-field]").forEach((input) => {
-      input.value = data.store?.[input.dataset.storeField] || "";
-    });
-    document.querySelectorAll("[data-social-field]").forEach((input) => {
-      input.value = data.store?.social?.[input.dataset.socialField] || "";
-    });
+  function renderDashboard() {
+    const activeProducts = state.catalog.products.filter((product) => product.active);
+    const soldOut = activeProducts.filter((product) => getProductStock(product) <= 0);
+    const activeCategories = state.catalog.categories.filter((category) => category.active);
+    const activeSellers = state.catalog.sellers.filter((seller) => seller.active);
+    const totalStock = activeProducts.reduce((sum, product) => sum + getProductStock(product), 0);
+
+    els.activeProductsCount.textContent = activeProducts.length;
+    els.soldOutProductsCount.textContent = soldOut.length;
+    els.categoryCount.textContent = activeCategories.length;
+    els.sellerCount.textContent = activeSellers.length;
+
+    els.dashboardCards.innerHTML = [
+      ["Productos activos", activeProducts.length, "Publicados actualmente en el catalogo."],
+      ["Productos sin stock", soldOut.length, "Aparecen como agotados si siguen activos."],
+      ["Unidades disponibles", totalStock, "Suma de stock en variantes activas."],
+      ["Vendedores activos", activeSellers.length, "Disponibles para WhatsApp en la web."],
+    ]
+      .map(
+        ([label, value, detail]) => `
+          <article class="dashboard-card">
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(value)}</strong>
+            <p>${escapeHtml(detail)}</p>
+          </article>
+        `
+      )
+      .join("");
   }
 
-  function renderProducts() {
-    els.adminProducts.innerHTML = data.products
-      .map((product, index) => {
-        const details = Array.isArray(product.details) ? product.details.join("\n") : "";
+  function renderProductsTable() {
+    const rows = state.catalog.products
+      .map((product) => {
+        const primaryImage = getProductImage(product);
+        const stock = getProductStock(product);
+        const price = getProductPrice(product);
         return `
-          <article class="admin-item">
-            <div class="admin-item-head">
-              <strong>${escapeHtml(product.name || "Producto sin nombre")}</strong>
-              <div class="admin-actions">
-                <button class="admin-button" type="button" data-product-action="duplicate" data-index="${index}">Duplicar</button>
-                <button class="admin-button is-danger" type="button" data-product-action="delete" data-index="${index}">Eliminar</button>
+          <tr class="${product.active ? "" : "is-muted"}">
+            <td><strong>${escapeHtml(product.public_code || "Auto")}</strong></td>
+            <td><img class="admin-thumb" src="${escapeHtml(primaryImage)}" alt="" loading="lazy"></td>
+            <td>
+              <strong>${escapeHtml(product.name)}</strong>
+              <small>${escapeHtml([product.brand, getVariantLabel(product)].filter(Boolean).join(" | "))}</small>
+            </td>
+            <td>${escapeHtml(product.category?.name || "Sin categoria")}</td>
+            <td>${formatPrice(price)}</td>
+            <td>${stock}</td>
+            <td><span class="status-pill ${product.active ? "is-active" : "is-inactive"}">${product.active ? "Activo" : "Oculto"}</span></td>
+            <td>
+              <div class="table-actions">
+                <button class="admin-button" type="button" data-product-action="edit" data-id="${product.id}">Editar</button>
+                <button class="admin-button" type="button" data-product-action="${product.active ? "hide" : "show"}" data-id="${product.id}">${product.active ? "Ocultar" : "Activar"}</button>
+                <button class="admin-button is-danger" type="button" data-product-action="delete" data-id="${product.id}">Eliminar</button>
               </div>
-            </div>
-            <div class="admin-form-grid">
-              ${readonlyCode(product, index)}
-              ${input("Nombre", "name", product.name, index)}
-              ${input("Categoria", "category", product.category, index)}
-              ${input("Marca", "brand", product.brand, index)}
-              ${input("Variante o capacidad", "variant", product.variant, index)}
-              ${input("Precio Gs.", "price", product.price, index, "number")}
-              ${input("Stock", "stock", product.stock, index, "number")}
-              ${input("Etiqueta", "badge", product.badge, index)}
-              ${input("Estado", "condition", product.condition, index)}
-              ${input("Garantia", "warranty", product.warranty, index)}
-              ${input("Entrega", "delivery", product.delivery, index)}
-              <label class="admin-check">
-                <input type="checkbox" data-product-index="${index}" data-product-field="featured" ${product.featured ? "checked" : ""}>
-                Destacado
-              </label>
-              ${input("Imagen URL", "image", product.image, index, "url", true)}
-              ${textarea("Descripcion", "description", product.description, index)}
-              ${textarea("Detalles, uno por linea", "details", details, index)}
-            </div>
-          </article>
+            </td>
+          </tr>
         `;
       })
       .join("");
+
+    els.productsTable.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Codigo</th>
+            <th>Imagen</th>
+            <th>Producto</th>
+            <th>Categoria</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>${rows || `<tr><td colspan="8">No hay productos cargados.</td></tr>`}</tbody>
+      </table>
+    `;
   }
 
-  function renderSellers() {
-    els.adminSellers.innerHTML = data.sellers
-      .map((seller, index) => {
-        return `
-          <article class="admin-item">
-            <div class="admin-item-head">
-              <strong>${escapeHtml(seller.name || "Vendedor sin nombre")}</strong>
-              <button class="admin-button is-danger" type="button" data-seller-action="delete" data-index="${index}">Eliminar</button>
-            </div>
-            <div class="admin-form-grid">
-              ${sellerInput("Nombre", "name", seller.name, index)}
-              ${sellerInput("Rol", "role", seller.role, index)}
-              ${sellerInput("Telefono WhatsApp", "phone", seller.phone, index)}
-              ${sellerInput("Horario", "schedule", seller.schedule, index)}
-              ${sellerInput("Foto URL", "image", seller.image, index, true)}
-              ${sellerTextarea("Mensaje", "message", seller.message, index)}
-            </div>
-          </article>
-        `;
-      })
+  function renderCategoriesTable() {
+    const rows = state.catalog.categories
+      .map(
+        (category) => `
+          <tr class="${category.active ? "" : "is-muted"}">
+            <td><strong>${escapeHtml(category.name)}</strong></td>
+            <td>${escapeHtml(category.slug)}</td>
+            <td>${Number(category.sort_order || 0)}</td>
+            <td><span class="status-pill ${category.active ? "is-active" : "is-inactive"}">${category.active ? "Activa" : "Oculta"}</span></td>
+            <td>
+              <div class="table-actions">
+                <button class="admin-button" type="button" data-category-action="edit" data-id="${category.id}">Editar</button>
+                <button class="admin-button" type="button" data-category-action="toggle" data-id="${category.id}">${category.active ? "Ocultar" : "Activar"}</button>
+                <button class="admin-button is-danger" type="button" data-category-action="delete" data-id="${category.id}">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        `
+      )
       .join("");
-  }
 
-  function renderSummary() {
-    const stockTotal = data.products.reduce((sum, product) => sum + Number(product.stock || 0), 0);
-    els.adminProductCount.textContent = data.products.length;
-    els.adminStockTotal.textContent = stockTotal;
-    els.adminSellerCount.textContent = data.sellers.length;
-  }
-
-  function collectFormData() {
-    data.store = data.store || {};
-    data.store.social = data.store.social || {};
-
-    document.querySelectorAll("[data-store-field]").forEach((input) => {
-      data.store[input.dataset.storeField] = input.value.trim();
-    });
-    document.querySelectorAll("[data-social-field]").forEach((input) => {
-      data.store.social[input.dataset.socialField] = input.value.trim();
-    });
-
-    document.querySelectorAll("[data-product-index]").forEach((input) => {
-      const product = data.products[Number(input.dataset.productIndex)];
-      if (!product) return;
-      const field = input.dataset.productField;
-      if (input.type === "checkbox") {
-        product[field] = input.checked;
-      } else if (field === "price" || field === "stock") {
-        product[field] = Math.max(0, Number(input.value || 0));
-      } else if (field === "details") {
-        product[field] = input.value.split("\n").map((line) => line.trim()).filter(Boolean);
-      } else {
-        product[field] = input.value.trim();
-      }
-      product.id = product.id || uniqueId(product.name || product.sku || "producto");
-    });
-
-    ensureProductCodes();
-
-    document.querySelectorAll("[data-seller-index]").forEach((input) => {
-      const seller = data.sellers[Number(input.dataset.sellerIndex)];
-      if (!seller) return;
-      seller[input.dataset.sellerField] = input.value.trim();
-      seller.id = seller.id || uniqueId(seller.name || "vendedor");
-    });
-  }
-
-  function input(label, field, value, index, type = "text", wide = false) {
-    return `
-      <label class="admin-field${wide ? " is-wide" : ""}">
-        <span>${label}</span>
-        <input class="admin-input" type="${type}" value="${escapeHtml(value)}" data-product-index="${index}" data-product-field="${field}">
-      </label>
+    els.categoriesTable.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Categoria</th>
+            <th>Slug</th>
+            <th>Orden</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>${rows || `<tr><td colspan="5">No hay categorias cargadas.</td></tr>`}</tbody>
+      </table>
     `;
   }
 
-  function readonlyCode(product, index) {
-    const code = product.code || "";
-    return `
-      <label class="admin-field">
-        <span>Codigo automatico</span>
-        <input class="admin-input" type="text" value="${escapeHtml(code || "Se asigna al guardar")}" data-product-index="${index}" data-product-field="code" readonly>
-      </label>
+  function renderSellersTable() {
+    const rows = state.catalog.sellers
+      .map(
+        (seller) => `
+          <tr class="${seller.active ? "" : "is-muted"}">
+            <td><img class="admin-thumb" src="${escapeHtml(seller.image_url || "assets/logo-smartshop.png")}" alt="" loading="lazy"></td>
+            <td>
+              <strong>${escapeHtml(seller.name)}</strong>
+              <small>${escapeHtml(seller.role || "")}</small>
+            </td>
+            <td>${escapeHtml(seller.whatsapp || "")}</td>
+            <td>${Number(seller.sort_order || 0)}</td>
+            <td><span class="status-pill ${seller.active ? "is-active" : "is-inactive"}">${seller.active ? "Activo" : "Oculto"}</span></td>
+            <td>
+              <div class="table-actions">
+                <button class="admin-button" type="button" data-seller-action="edit" data-id="${seller.id}">Editar</button>
+                <button class="admin-button" type="button" data-seller-action="toggle" data-id="${seller.id}">${seller.active ? "Ocultar" : "Activar"}</button>
+                <button class="admin-button is-danger" type="button" data-seller-action="delete" data-id="${seller.id}">Eliminar</button>
+              </div>
+            </td>
+          </tr>
+        `
+      )
+      .join("");
+
+    els.sellersTable.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Foto</th>
+            <th>Vendedor</th>
+            <th>WhatsApp</th>
+            <th>Orden</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>${rows || `<tr><td colspan="6">No hay vendedores cargados.</td></tr>`}</tbody>
+      </table>
     `;
   }
 
-  function textarea(label, field, value, index) {
-    return `
-      <label class="admin-field is-wide">
-        <span>${label}</span>
-        <textarea class="admin-textarea" data-product-index="${index}" data-product-field="${field}">${escapeHtml(value)}</textarea>
-      </label>
+  function openProductEditor(product = null) {
+    const variant = product?.variants?.[0] || {};
+    const image = getProductImage(product);
+    els.productEditor.hidden = false;
+    els.productEditor.innerHTML = `
+      <form class="admin-form-grid" data-editor-form="product" data-id="${product?.id || ""}" data-variant-id="${variant.id || ""}">
+        <label class="admin-field">
+          <span>Codigo automatico</span>
+          <input class="admin-input" value="${escapeHtml(product?.public_code || "Se asigna al guardar")}" readonly>
+        </label>
+        <label class="admin-field">
+          <span>Nombre</span>
+          <input name="name" class="admin-input" value="${escapeHtml(product?.name || "")}" required>
+        </label>
+        <label class="admin-field">
+          <span>Marca</span>
+          <input name="brand" class="admin-input" value="${escapeHtml(product?.brand || "")}">
+        </label>
+        <label class="admin-field">
+          <span>Categoria</span>
+          <select name="category_id" class="admin-input" required>${renderCategoryOptions(product?.category_id)}</select>
+        </label>
+        <label class="admin-field">
+          <span>Variante</span>
+          <input name="variant_name" class="admin-input" value="${escapeHtml(variant.name || "Default")}" required>
+        </label>
+        <label class="admin-field">
+          <span>SKU operativo</span>
+          <input name="sku" class="admin-input" value="${escapeHtml(variant.sku || "")}">
+        </label>
+        <label class="admin-field">
+          <span>Precio Gs.</span>
+          <input name="price" class="admin-input" type="number" min="0" step="1" value="${Number(variant.price || 0)}" required>
+        </label>
+        <label class="admin-field">
+          <span>Stock</span>
+          <input name="stock" class="admin-input" type="number" min="0" step="1" value="${Number(variant.stock || 0)}" required>
+        </label>
+        <label class="admin-check">
+          <input name="featured" type="checkbox" ${product?.featured ? "checked" : ""}>
+          Destacado
+        </label>
+        <label class="admin-check">
+          <input name="active" type="checkbox" ${product?.active === false ? "" : "checked"}>
+          Activo
+        </label>
+        <label class="admin-field is-wide">
+          <span>Descripcion</span>
+          <textarea name="description" class="admin-textarea">${escapeHtml(product?.description || "")}</textarea>
+        </label>
+        <label class="admin-field is-wide">
+          <span>Imagen principal</span>
+          <input name="image" class="admin-input" type="file" accept="${IMAGE_ACCEPT}" data-preview-target="productImagePreview">
+        </label>
+        <div class="image-preview is-wide">
+          <img id="productImagePreview" src="${escapeHtml(image)}" alt="">
+          ${product?.id ? `<button class="admin-button" type="button" data-editor-action="remove-product-image" data-id="${product.id}">Quitar imagen</button>` : ""}
+        </div>
+        <div class="admin-form-actions is-wide">
+          <button class="admin-button is-primary" type="submit">${product ? "Guardar producto" : "Crear producto"}</button>
+          <button class="admin-button" type="button" data-editor-action="cancel">Cancelar</button>
+        </div>
+      </form>
     `;
+    els.productEditor.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function sellerInput(label, field, value, index, wide = false) {
-    return `
-      <label class="admin-field${wide ? " is-wide" : ""}">
-        <span>${label}</span>
-        <input class="admin-input" value="${escapeHtml(value)}" data-seller-index="${index}" data-seller-field="${field}">
-      </label>
+  function openCategoryEditor(category = null) {
+    els.categoryEditor.hidden = false;
+    els.categoryEditor.innerHTML = `
+      <form class="admin-form-grid" data-editor-form="category" data-id="${category?.id || ""}">
+        <label class="admin-field">
+          <span>Nombre</span>
+          <input name="name" class="admin-input" value="${escapeHtml(category?.name || "")}" required>
+        </label>
+        <label class="admin-field">
+          <span>Slug</span>
+          <input name="slug" class="admin-input" value="${escapeHtml(category?.slug || "")}" placeholder="automatico">
+        </label>
+        <label class="admin-field">
+          <span>Orden</span>
+          <input name="sort_order" class="admin-input" type="number" step="1" value="${Number(category?.sort_order || 0)}">
+        </label>
+        <label class="admin-check">
+          <input name="active" type="checkbox" ${category?.active === false ? "" : "checked"}>
+          Activa
+        </label>
+        <div class="admin-form-actions is-wide">
+          <button class="admin-button is-primary" type="submit">${category ? "Guardar categoria" : "Crear categoria"}</button>
+          <button class="admin-button" type="button" data-editor-action="cancel">Cancelar</button>
+        </div>
+      </form>
     `;
+    els.categoryEditor.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function sellerTextarea(label, field, value, index) {
-    return `
-      <label class="admin-field is-wide">
-        <span>${label}</span>
-        <textarea class="admin-textarea" data-seller-index="${index}" data-seller-field="${field}">${escapeHtml(value)}</textarea>
-      </label>
+  function openSellerEditor(seller = null) {
+    els.sellerEditor.hidden = false;
+    els.sellerEditor.innerHTML = `
+      <form class="admin-form-grid" data-editor-form="seller" data-id="${seller?.id || ""}">
+        <label class="admin-field">
+          <span>Nombre</span>
+          <input name="name" class="admin-input" value="${escapeHtml(seller?.name || "")}" required>
+        </label>
+        <label class="admin-field">
+          <span>Rol</span>
+          <input name="role" class="admin-input" value="${escapeHtml(seller?.role || "")}">
+        </label>
+        <label class="admin-field">
+          <span>WhatsApp</span>
+          <input name="whatsapp" class="admin-input" inputmode="tel" value="${escapeHtml(seller?.whatsapp || "")}" required>
+        </label>
+        <label class="admin-field">
+          <span>Orden</span>
+          <input name="sort_order" class="admin-input" type="number" step="1" value="${Number(seller?.sort_order || 0)}">
+        </label>
+        <label class="admin-check">
+          <input name="active" type="checkbox" ${seller?.active === false ? "" : "checked"}>
+          Activo
+        </label>
+        <label class="admin-field is-wide">
+          <span>Foto</span>
+          <input name="image" class="admin-input" type="file" accept="${IMAGE_ACCEPT}" data-preview-target="sellerImagePreview">
+        </label>
+        <div class="image-preview is-wide">
+          <img id="sellerImagePreview" src="${escapeHtml(seller?.image_url || "assets/logo-smartshop.png")}" alt="">
+        </div>
+        <div class="admin-form-actions is-wide">
+          <button class="admin-button is-primary" type="submit">${seller ? "Guardar vendedor" : "Crear vendedor"}</button>
+          <button class="admin-button" type="button" data-editor-action="cancel">Cancelar</button>
+        </div>
+      </form>
     `;
+    els.sellerEditor.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function createProduct() {
-    return {
-      id: uniqueId("producto"),
-      code: generateProductCode(),
-      sku: "",
-      name: "",
-      category: "General",
-      brand: "",
-      variant: "",
-      price: 0,
-      stock: 0,
-      featured: false,
-      badge: "",
-      condition: "Nuevo",
-      warranty: "Garantia de tienda",
-      delivery: "Retiro en tienda o envio coordinado",
-      description: "",
-      details: [],
-      image: "assets/logo-smartshop.png",
-    };
-  }
-
-  function createSeller() {
-    return {
-      id: uniqueId("vendedor"),
-      name: "",
-      role: "",
-      phone: "",
-      schedule: "Lunes a Sabado, 07:30 a 15:30",
-      message: "Hola, quiero consultar un producto de SmartShop.",
-      image: "assets/logo-smartshop.png",
-    };
-  }
-
-  function ensureProductCodes() {
-    const usedCodes = new Set();
-    data.products.forEach((product) => {
-      const code = String(product.code || "").trim();
-      if (PRODUCT_CODE_RE.test(code) && !usedCodes.has(code)) {
-        product.code = code;
-        usedCodes.add(code);
-      } else {
-        product.code = generateProductCode(usedCodes);
-      }
-      if (!product.sku) product.sku = `SKU-${product.code}`;
-    });
-  }
-
-  function generateProductCode(usedCodes = new Set(data.products.map((product) => String(product.code || "")))) {
-    for (let attempt = 0; attempt < 1000; attempt += 1) {
-      const code = String(Math.floor(10000 + Math.random() * 90000));
-      if (!usedCodes.has(code)) {
-        usedCodes.add(code);
-        return code;
-      }
-    }
-    return String(Date.now()).slice(-5).padStart(5, "1");
-  }
-
-  function authHeaders() {
-    return { "X-Admin-Pin": getPin() };
-  }
-
-  function apiUrl(path) {
-    return `${API_BASE_URL}${path}`;
-  }
-
-  function getPin() {
-    return sessionStorage.getItem(AUTH_PIN_KEY) || "";
-  }
-
-  function downloadBlob(blob, fileName) {
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  function readLocalCatalog(fallbackData) {
+  async function handleProductSubmit(event) {
+    event.preventDefault();
+    const form = event.target.closest("form");
+    if (!form) return;
+    const submitButton = form.querySelector("[type='submit']");
+    setButtonLoading(submitButton, true);
     try {
-      const savedData = JSON.parse(localStorage.getItem(CATALOG_STORAGE_KEY) || "null");
-      return normalizeCatalog(savedData || fallbackData);
-    } catch {
-      return normalizeCatalog(fallbackData);
+      const supabase = window.SmartShopSupabase.requireClient();
+      const formData = new FormData(form);
+      const productId = form.dataset.id;
+      const variantId = form.dataset.variantId;
+      const name = String(formData.get("name") || "").trim();
+      const categoryId = String(formData.get("category_id") || "").trim();
+      const price = Math.max(0, Number(formData.get("price") || 0));
+      const stock = Math.max(0, Number(formData.get("stock") || 0));
+      if (!name || !categoryId) throw new Error("Nombre y categoria son obligatorios.");
+
+      const productPayload = {
+        name,
+        slug: window.SmartShopSupabase.toSlug(name),
+        brand: String(formData.get("brand") || "").trim(),
+        category_id: categoryId,
+        description: String(formData.get("description") || "").trim(),
+        featured: formData.get("featured") === "on",
+        active: formData.get("active") === "on",
+      };
+
+      const savedProduct = productId
+        ? await updateRow("products", productId, productPayload)
+        : await insertRow("products", productPayload);
+
+      const variantPayload = {
+        product_id: savedProduct.id,
+        name: String(formData.get("variant_name") || "Default").trim() || "Default",
+        sku: nullableString(formData.get("sku")),
+        price,
+        stock,
+        active: true,
+      };
+
+      if (variantId) {
+        await updateRow("product_variants", variantId, variantPayload);
+      } else {
+        await insertRow("product_variants", variantPayload);
+      }
+
+      const imageFile = formData.get("image");
+      if (imageFile?.size) {
+        const uploaded = await window.SmartShopSupabase.uploadImage(
+          imageFile,
+          window.SmartShopSupabase.config.productBucket,
+          `products/${savedProduct.id}`
+        );
+        await supabase.from("product_images").update({ is_primary: false }).eq("product_id", savedProduct.id);
+        await insertRow("product_images", {
+          product_id: savedProduct.id,
+          url: uploaded.url,
+          sort_order: 0,
+          is_primary: true,
+        });
+      }
+
+      closeEditors();
+      await loadAndRenderCatalog();
+      toast(productId ? "Producto actualizado." : "Producto creado correctamente.");
+    } catch (error) {
+      toast(error.message, "error");
+    } finally {
+      setButtonLoading(submitButton, false);
     }
   }
 
-  function normalizeCatalog(catalog) {
-    const source = catalog || {};
-    return {
-      store: source.store || {},
-      products: Array.isArray(source.products) ? source.products : [],
-      sellers: Array.isArray(source.sellers)
-        ? source.sellers.map((seller, index) => ({
-            ...seller,
-            id: seller.id || `seller-${index + 1}`,
-            image: seller.image || "assets/logo-smartshop.png",
-          }))
-        : [],
-    };
+  async function handleCategorySubmit(event) {
+    event.preventDefault();
+    const form = event.target.closest("form");
+    if (!form) return;
+    const submitButton = form.querySelector("[type='submit']");
+    setButtonLoading(submitButton, true);
+    try {
+      const formData = new FormData(form);
+      const name = String(formData.get("name") || "").trim();
+      if (!name) throw new Error("El nombre de la categoria es obligatorio.");
+      const payload = {
+        name,
+        slug: nullableString(formData.get("slug")) || window.SmartShopSupabase.toSlug(name),
+        sort_order: Number(formData.get("sort_order") || 0),
+        active: formData.get("active") === "on",
+      };
+      if (form.dataset.id) {
+        await updateRow("categories", form.dataset.id, payload);
+      } else {
+        await insertRow("categories", payload);
+      }
+      closeEditors();
+      await loadAndRenderCatalog();
+      toast(form.dataset.id ? "Categoria actualizada." : "Categoria creada.");
+    } catch (error) {
+      toast(error.message, "error");
+    } finally {
+      setButtonLoading(submitButton, false);
+    }
   }
 
-  function structuredCloneSafe(value) {
-    return JSON.parse(JSON.stringify(value));
+  async function handleSellerSubmit(event) {
+    event.preventDefault();
+    const form = event.target.closest("form");
+    if (!form) return;
+    const submitButton = form.querySelector("[type='submit']");
+    setButtonLoading(submitButton, true);
+    try {
+      const formData = new FormData(form);
+      const name = String(formData.get("name") || "").trim();
+      const whatsapp = String(formData.get("whatsapp") || "").replace(/\D/g, "");
+      if (!name || !whatsapp) throw new Error("Nombre y WhatsApp son obligatorios.");
+      if (whatsapp.length < 8 || whatsapp.length > 15) throw new Error("Revisa el numero de WhatsApp.");
+
+      const payload = {
+        name,
+        whatsapp,
+        role: String(formData.get("role") || "").trim(),
+        sort_order: Number(formData.get("sort_order") || 0),
+        active: formData.get("active") === "on",
+      };
+
+      const imageFile = formData.get("image");
+      if (imageFile?.size) {
+        const sellerId = form.dataset.id || "nuevo";
+        const uploaded = await window.SmartShopSupabase.uploadImage(
+          imageFile,
+          window.SmartShopSupabase.config.sellerBucket,
+          `sellers/${sellerId}`
+        );
+        payload.image_url = uploaded.url;
+      }
+
+      if (form.dataset.id) {
+        await updateRow("sellers", form.dataset.id, payload);
+      } else {
+        await insertRow("sellers", payload);
+      }
+      closeEditors();
+      await loadAndRenderCatalog();
+      toast(form.dataset.id ? "Vendedor actualizado." : "Vendedor creado.");
+    } catch (error) {
+      toast(error.message, "error");
+    } finally {
+      setButtonLoading(submitButton, false);
+    }
   }
 
-  function uniqueId(value) {
-    const base = String(value || "item")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "")
-      .slice(0, 36);
-    return `${base || "item"}-${Date.now().toString(36)}`;
+  async function handleProductTableAction(event) {
+    const button = event.target.closest("[data-product-action]");
+    if (!button) return;
+    const product = state.catalog.products.find((item) => item.id === button.dataset.id);
+    if (!product) return;
+
+    if (button.dataset.productAction === "edit") {
+      openProductEditor(product);
+      return;
+    }
+
+    try {
+      if (button.dataset.productAction === "hide" || button.dataset.productAction === "show") {
+        await updateRow("products", product.id, { active: button.dataset.productAction === "show" });
+        toast(button.dataset.productAction === "show" ? "Producto activado." : "Producto ocultado.");
+      }
+      if (button.dataset.productAction === "delete") {
+        if (!confirm(`Seguro que quieres eliminar ${product.name}?`)) return;
+        await deleteRow("products", product.id);
+        toast("Producto eliminado.");
+      }
+      await loadAndRenderCatalog();
+    } catch (error) {
+      toast(error.message, "error");
+    }
   }
 
-  function showStatus(message) {
-    els.adminStatus.textContent = message;
-    window.clearTimeout(showStatus.timeout);
-    showStatus.timeout = window.setTimeout(() => {
-      els.adminStatus.textContent = "";
-    }, 3600);
+  async function handleCategoryTableAction(event) {
+    const button = event.target.closest("[data-category-action]");
+    if (!button) return;
+    const category = state.catalog.categories.find((item) => item.id === button.dataset.id);
+    if (!category) return;
+
+    if (button.dataset.categoryAction === "edit") {
+      openCategoryEditor(category);
+      return;
+    }
+
+    try {
+      if (button.dataset.categoryAction === "toggle") {
+        await updateRow("categories", category.id, { active: !category.active });
+        toast(category.active ? "Categoria ocultada." : "Categoria activada.");
+      }
+      if (button.dataset.categoryAction === "delete") {
+        if (!confirm(`Seguro que quieres eliminar la categoria ${category.name}?`)) return;
+        await deleteRow("categories", category.id);
+        toast("Categoria eliminada.");
+      }
+      await loadAndRenderCatalog();
+    } catch (error) {
+      toast(readableDatabaseError(error), "error");
+    }
+  }
+
+  async function handleSellerTableAction(event) {
+    const button = event.target.closest("[data-seller-action]");
+    if (!button) return;
+    const seller = state.catalog.sellers.find((item) => item.id === button.dataset.id);
+    if (!seller) return;
+
+    if (button.dataset.sellerAction === "edit") {
+      openSellerEditor(seller);
+      return;
+    }
+
+    try {
+      if (button.dataset.sellerAction === "toggle") {
+        await updateRow("sellers", seller.id, { active: !seller.active });
+        toast(seller.active ? "Vendedor ocultado." : "Vendedor activado.");
+      }
+      if (button.dataset.sellerAction === "delete") {
+        if (!confirm(`Seguro que quieres eliminar a ${seller.name}?`)) return;
+        await deleteRow("sellers", seller.id);
+        toast("Vendedor eliminado.");
+      }
+      await loadAndRenderCatalog();
+    } catch (error) {
+      toast(error.message, "error");
+    }
+  }
+
+  async function handleEditorClick(event) {
+    const button = event.target.closest("[data-editor-action]");
+    if (!button) return;
+    if (button.dataset.editorAction === "cancel") {
+      closeEditors();
+    }
+    if (button.dataset.editorAction === "remove-product-image") {
+      try {
+        await window.SmartShopSupabase.requireClient()
+          .from("product_images")
+          .delete()
+          .eq("product_id", button.dataset.id)
+          .eq("is_primary", true);
+        await loadAndRenderCatalog();
+        openProductEditor(state.catalog.products.find((item) => item.id === button.dataset.id));
+        toast("Imagen quitada del producto.");
+      } catch (error) {
+        toast(error.message, "error");
+      }
+    }
+  }
+
+  function handleImagePreview(event) {
+    const input = event.target.closest("[data-preview-target]");
+    if (!input?.files?.[0]) return;
+    const preview = document.querySelector(`#${input.dataset.previewTarget}`);
+    if (preview) {
+      preview.src = URL.createObjectURL(input.files[0]);
+      preview.onload = () => URL.revokeObjectURL(preview.src);
+    }
+  }
+
+  async function insertRow(table, payload) {
+    const { data, error } = await window.SmartShopSupabase.requireClient()
+      .from(table)
+      .insert(payload)
+      .select()
+      .single();
+    if (error) throw new Error(readableDatabaseError(error));
+    return data;
+  }
+
+  async function updateRow(table, id, payload) {
+    const { data, error } = await window.SmartShopSupabase.requireClient()
+      .from(table)
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
+    if (error) throw new Error(readableDatabaseError(error));
+    return data;
+  }
+
+  async function deleteRow(table, id) {
+    const { error } = await window.SmartShopSupabase.requireClient().from(table).delete().eq("id", id);
+    if (error) throw new Error(readableDatabaseError(error));
+  }
+
+  function setTab(tabId) {
+    els.tabs.forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.adminTab === tabId);
+    });
+    els.panels.forEach((panel) => {
+      panel.hidden = panel.id !== tabId;
+    });
+    closeEditors();
+  }
+
+  function closeEditors() {
+    els.productEditor.hidden = true;
+    els.categoryEditor.hidden = true;
+    els.sellerEditor.hidden = true;
+    els.productEditor.innerHTML = "";
+    els.categoryEditor.innerHTML = "";
+    els.sellerEditor.innerHTML = "";
+  }
+
+  function renderCategoryOptions(selectedId) {
+    return state.catalog.categories
+      .map(
+        (category) => `
+          <option value="${category.id}" ${category.id === selectedId ? "selected" : ""}>
+            ${escapeHtml(category.name)}${category.active ? "" : " (oculta)"}
+          </option>
+        `
+      )
+      .join("");
+  }
+
+  function getProductImage(product) {
+    if (!product) return "assets/logo-smartshop.png";
+    const images = [...(product.images || [])].sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+    return images.find((image) => image.is_primary)?.url || images[0]?.url || "assets/logo-smartshop.png";
+  }
+
+  function getProductStock(product) {
+    return (product.variants || [])
+      .filter((variant) => variant.active !== false)
+      .reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
+  }
+
+  function getProductPrice(product) {
+    const prices = (product.variants || [])
+      .filter((variant) => variant.active !== false)
+      .map((variant) => Number(variant.price || 0));
+    return prices.length ? Math.min(...prices) : 0;
+  }
+
+  function getVariantLabel(product) {
+    const variant = product.variants?.find((item) => item.active !== false) || product.variants?.[0];
+    return variant?.name === "Default" ? "" : variant?.name || "";
+  }
+
+  function setLoading(isLoading, message = "") {
+    state.loading = isLoading;
+    if (message) els.adminSyncStatus.textContent = message;
+    document.querySelectorAll(".admin-button").forEach((button) => {
+      if (button.id !== "logoutButton") button.disabled = isLoading;
+    });
+  }
+
+  function setButtonLoading(button, isLoading) {
+    if (!button) return;
+    button.disabled = isLoading;
+    button.dataset.originalText = button.dataset.originalText || button.textContent;
+    button.textContent = isLoading ? "Guardando..." : button.dataset.originalText;
+  }
+
+  function setLoginDisabled(disabled) {
+    els.emailInput.disabled = disabled;
+    els.passwordInput.disabled = disabled;
+    els.loginButton.disabled = disabled;
+  }
+
+  function setLoginError(message) {
+    els.loginError.textContent = message;
+  }
+
+  function nullableString(value) {
+    const text = String(value || "").trim();
+    return text || null;
+  }
+
+  function formatPrice(value) {
+    const amount = new Intl.NumberFormat("es-PY", { maximumFractionDigits: 0 }).format(Number(value) || 0);
+    return `Gs. ${amount}`;
+  }
+
+  function readableDatabaseError(error) {
+    const message = String(error?.message || error || "");
+    if (message.includes("duplicate key") || message.includes("already exists")) {
+      return "Ya existe un registro con ese codigo o slug.";
+    }
+    if (message.includes("violates foreign key")) {
+      return "No se puede eliminar porque todavia esta relacionado con otros datos.";
+    }
+    if (message.includes("row-level security")) {
+      return "No tienes permisos para realizar esta accion.";
+    }
+    return message || "No se pudo completar la accion.";
+  }
+
+  function toast(message, type = "success") {
+    const node = document.createElement("div");
+    node.className = `toast is-${type}`;
+    node.textContent = message;
+    els.toastRegion.appendChild(node);
+    window.setTimeout(() => node.remove(), 4200);
   }
 
   function escapeHtml(value) {
-    return String(value || "")
+    return String(value ?? "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")

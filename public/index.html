@@ -26,6 +26,9 @@
     <link rel="icon" href="assets/favicon.png" type="image/png">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
     <link rel="stylesheet" href="assets/styles.css">
+    <script defer src="assets/supabase-env.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="assets/supabase-client.js"></script>
     <script defer src="assets/api-config.js"></script>
     <script defer src="assets/store-data.js"></script>
     <script defer src="assets/app.js"></script>
@@ -73,7 +76,7 @@
         <a class="icon-button" href="#catalogo" aria-label="Favoritos">
           <span data-icon="heart" aria-hidden="true"></span>
         </a>
-        <a class="icon-button login-link" href="admin.html" aria-label="Iniciar sesion en el panel privado">
+        <a class="icon-button login-link" href="/admin" aria-label="Iniciar sesion en el panel privado">
           <span data-icon="user" aria-hidden="true"></span>
           <span>Iniciar Sesion</span>
         </a>

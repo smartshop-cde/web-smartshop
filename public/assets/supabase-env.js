@@ -1,0 +1,4 @@
+(function () {
+  window.SMARTSHOP_SUPABASE_URL = window.SMARTSHOP_SUPABASE_URL || "";
+  window.SMARTSHOP_SUPABASE_ANON_KEY = window.SMARTSHOP_SUPABASE_ANON_KEY || "";
+})();
