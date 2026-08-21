@@ -18,6 +18,8 @@ DATA_DIR = ROOT / "data"
 DB_PATH = DATA_DIR / "smartshop.sqlite3"
 SEED_PATH = DATA_DIR / "seed.json"
 DEFAULT_PRODUCT_IMAGE = "assets/logo-smartshop.png"
+CANONICAL_DOMAIN = "smartshop.com.py"
+WWW_DOMAIN = f"www.{CANONICAL_DOMAIN}"
 
 
 def connect() -> sqlite3.Connection:
@@ -282,6 +284,16 @@ def import_products_excel(body: bytes) -> dict:
 class SmartShopHandler(SimpleHTTPRequestHandler):
     server_version = "SmartShopHTTP/1.0"
 
+    def redirect_www_to_canonical(self) -> bool:
+        host = (self.headers.get("Host") or "").split(":", 1)[0].lower()
+        if host != WWW_DOMAIN:
+            return False
+        self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+        self.send_header("Location", f"https://{CANONICAL_DOMAIN}{self.path}")
+        self.send_header("Cache-Control", "public, max-age=3600")
+        self.end_headers()
+        return True
+
     def translate_path(self, path: str) -> str:
         path = unquote(path.split("?", 1)[0].split("#", 1)[0]).lstrip("/")
         resolved = (ROOT / path).resolve()
@@ -290,6 +302,8 @@ class SmartShopHandler(SimpleHTTPRequestHandler):
         return str(resolved)
 
     def do_GET(self) -> None:
+        if self.redirect_www_to_canonical():
+            return
         if self.path == "/api/catalog":
             return self.send_json(get_catalog())
         if self.path == "/api/products/export-excel":
@@ -306,6 +320,8 @@ class SmartShopHandler(SimpleHTTPRequestHandler):
         return super().do_GET()
 
     def do_POST(self) -> None:
+        if self.redirect_www_to_canonical():
+            return
         if self.path == "/api/login":
             body = self.read_json()
             pin = str((body or {}).get("pin") or "")
@@ -325,6 +341,8 @@ class SmartShopHandler(SimpleHTTPRequestHandler):
         return self.send_json({"error": "Ruta no encontrada"}, HTTPStatus.NOT_FOUND)
 
     def do_PUT(self) -> None:
+        if self.redirect_www_to_canonical():
+            return
         if self.path != "/api/catalog":
             return self.send_json({"error": "Ruta no encontrada"}, HTTPStatus.NOT_FOUND)
         if not verify_pin(self.headers):

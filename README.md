@@ -75,6 +75,27 @@ Pasos generales:
 4. Activa HTTPS en el hosting.
 5. Cambia `store.domain` para que coincida con el dominio final.
 
+## Redireccion de www
+
+El servidor incluido redirige automaticamente:
+
+```text
+https://www.smartshop.com.py
+```
+
+hacia:
+
+```text
+https://smartshop.com.py
+```
+
+Para que funcione en produccion tambien debes configurar el hosting/DNS:
+
+1. Crea el registro DNS `www` apuntando al mismo hosting que `smartshop.com.py`.
+2. En el hosting, agrega `www.smartshop.com.py` como dominio alternativo.
+3. Activa redireccion permanente `301` de `www.smartshop.com.py` a `smartshop.com.py`.
+4. Activa HTTPS para ambos dominios.
+
 ## Probar localmente
 
 Puedes abrir [index.html](index.html) directamente en el navegador. No requiere instalacion de dependencias.
