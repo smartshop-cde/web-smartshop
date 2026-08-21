@@ -3,6 +3,9 @@
   const AUTH_STORAGE_KEY = "smartshop-admin-authenticated";
   const AUTH_PIN_KEY = "smartshop-admin-pin";
   const PRODUCT_CODE_RE = /^\d{5}$/;
+  const API_BASE_URL = String(
+    window.SMARTSHOP_API_BASE_URL || localStorage.getItem("smartshop-api-base-url") || ""
+  ).replace(/\/$/, "");
 
   const baseData = structuredCloneSafe(window.STORE_DATA || {});
   let data = readLocalCatalog(baseData);
@@ -69,12 +72,8 @@
       collectFormData();
       ensureProductCodes();
       try {
-        if (apiAvailable) {
-          await saveCatalogToApi();
-        } else {
-          localStorage.setItem(CATALOG_STORAGE_KEY, JSON.stringify(data));
-          showStatus("Cambios guardados localmente. Inicia el servidor para usar la base de datos.");
-        }
+        await ensureApiAvailable();
+        await saveCatalogToApi();
       } catch (error) {
         showStatus(error.message);
       }
@@ -84,13 +83,16 @@
     els.resetButton.addEventListener("click", async () => {
       if (!confirm("Restaurar datos base?")) return;
       data = structuredCloneSafe(baseData);
-      if (apiAvailable) {
+      try {
+        await ensureApiAvailable();
         await saveCatalogToApi();
-      } else {
         localStorage.removeItem(CATALOG_STORAGE_KEY);
+        renderAll();
+        showStatus("Datos base restaurados en la base de datos.");
+      } catch (error) {
+        renderAll();
+        showStatus(error.message);
       }
-      renderAll();
-      showStatus("Datos base restaurados.");
     });
 
     els.exportExcelButton.addEventListener("click", () => {
@@ -98,7 +100,7 @@
         showStatus("La exportacion Excel requiere iniciar el servidor con base de datos.");
         return;
       }
-      fetch("/api/products/export-excel", { headers: authHeaders() })
+      fetch(apiUrl("/api/products/export-excel"), { headers: authHeaders() })
         .then((response) => {
           if (!response.ok) throw new Error("No se pudo exportar.");
           return response.blob();
@@ -116,7 +118,7 @@
         return;
       }
       try {
-        const response = await fetch("/api/products/import-excel", {
+        const response = await fetch(apiUrl("/api/products/import-excel"), {
           method: "POST",
           headers: { ...authHeaders(), "Content-Type": "application/octet-stream" },
           body: file,
@@ -176,7 +178,7 @@
 
   async function loadCatalog() {
     try {
-      const response = await fetch("/api/catalog", { cache: "no-store" });
+      const response = await fetch(apiUrl("/api/catalog"), { cache: "no-store" });
       if (!response.ok) throw new Error("API no disponible");
       data = normalizeCatalog(await response.json());
       apiAvailable = true;
@@ -189,7 +191,7 @@
   async function validatePin(pin) {
     if (apiAvailable) {
       try {
-        const response = await fetch("/api/login", {
+      const response = await fetch(apiUrl("/api/login"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ pin }),
@@ -203,7 +205,7 @@
   }
 
   async function saveCatalogToApi() {
-    const response = await fetch("/api/catalog", {
+    const response = await fetch(apiUrl("/api/catalog"), {
       method: "PUT",
       headers: { ...authHeaders(), "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -213,6 +215,22 @@
       throw new Error(result.error || "No se pudo guardar en la base de datos.");
     }
     showStatus("Cambios guardados en la base de datos.");
+  }
+
+  async function ensureApiAvailable() {
+    if (!apiAvailable) {
+      try {
+        const response = await fetch(apiUrl("/api/health"), { cache: "no-store" });
+        apiAvailable = response.ok;
+      } catch {
+        apiAvailable = false;
+      }
+    }
+    if (!apiAvailable) {
+      throw new Error(
+        "No hay conexion con la API/base de datos. Abre el panel desde el servidor Node o configura SMARTSHOP_API_BASE_URL."
+      );
+    }
   }
 
   function showLogin() {
@@ -226,6 +244,9 @@
     els.loginView.hidden = true;
     els.adminView.hidden = false;
     renderAll();
+    if (!apiAvailable) {
+      showStatus("Modo sin API: puedes revisar datos, pero para guardar necesitas conectar la base de datos.");
+    }
   }
 
   function renderAll() {
@@ -457,6 +478,10 @@
 
   function authHeaders() {
     return { "X-Admin-Pin": getPin() };
+  }
+
+  function apiUrl(path) {
+    return `${API_BASE_URL}${path}`;
   }
 
   function getPin() {

@@ -2,6 +2,9 @@
   const PLACE_ID_PLACEHOLDER = "TU_PLACE_ID_AQUI";
   const DEFAULT_ADDRESS =
     "Avda. Adrian Jara esquina Avda. Carlos Antonio Lopez, Galeria Jebai 4to piso, Ciudad del Este, Paraguay";
+  const API_BASE_URL = String(
+    window.SMARTSHOP_API_BASE_URL || localStorage.getItem("smartshop-api-base-url") || ""
+  ).replace(/\/$/, "");
 
   const baseData = window.STORE_DATA || {};
   let data = normalizeCatalog(baseData);
@@ -193,8 +196,8 @@
     renderProducts();
     try {
       const [catalogResult, productsResult] = await Promise.allSettled([
-        fetch("/api/catalog", { cache: "no-store" }),
-        fetch("/api/products?limit=100", { cache: "no-store" }),
+        fetch(apiUrl("/api/catalog"), { cache: "no-store" }),
+        fetch(apiUrl("/api/products?limit=100"), { cache: "no-store" }),
       ]);
       const catalogResponse = catalogResult.status === "fulfilled" ? catalogResult.value : null;
       if (!catalogResponse?.ok) throw new Error("API no disponible");
@@ -704,6 +707,10 @@
     const cleanPhone = String(phone || "").replace(/\D/g, "");
     if (!cleanPhone) return "#";
     return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+  }
+
+  function apiUrl(path) {
+    return `${API_BASE_URL}${path}`;
   }
 
   function getMapsUrl(address = store.address || DEFAULT_ADDRESS) {

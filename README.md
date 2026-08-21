@@ -132,6 +132,23 @@ Configura en el hosting:
 - `ADMIN_PIN`
 - `CORS_ORIGIN` si aplica
 
+### Cloudflare Pages y panel administrador
+
+Cloudflare Pages sirve archivos estaticos. Si se publica solo `public/`, el panel puede abrir, pero no puede guardar cambios permanentes porque no existe `/api` ni conexion a PostgreSQL en ese despliegue.
+
+Para que el panel administrador guarde productos, stock, vendedores y tienda en base de datos, la API Node/Express debe estar desplegada como servicio backend con PostgreSQL. Hay dos opciones:
+
+- servir la web desde el mismo backend Node, donde `/api/catalog` existe en el mismo dominio;
+- servir la web estatica en Cloudflare Pages y apuntarla a una API externa configurando `window.SMARTSHOP_API_BASE_URL` en `public/assets/api-config.js`.
+
+Ejemplo:
+
+```js
+window.SMARTSHOP_API_BASE_URL = "https://api.smartshop.com.py";
+```
+
+En ese caso, configura `CORS_ORIGIN` en el backend con el dominio publico de la web, por ejemplo `https://smartshop.com.py`.
+
 ## API principal
 
 Productos:
