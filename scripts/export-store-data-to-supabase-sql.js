@@ -56,10 +56,10 @@ with category_row as (
   )
   select
     ${sql(publicCode)},
-    ${sql(product.name || "Producto")},
-    ${sql(productSlug)},
-    ${sql(product.description || "")},
-    ${sql(product.brand || "")},
+    ${sqlText(product.name || "Producto")},
+    ${sqlText(productSlug)},
+    ${sqlText(product.description || "")},
+    ${sqlText(product.brand || "")},
     category_row.id,
     true,
     ${Boolean(product.featured)},
@@ -77,7 +77,7 @@ with category_row as (
   returning id
 ), variant_row as (
   insert into public.product_variants (product_id, name, sku, price, stock, active, sort_order)
-  select id, ${sql(variantName)}, ${sql(sku)}, ${Number(product.price || 0)}, ${Number(product.stock || 0)}, true, 0
+  select id, ${sqlText(variantName)}, ${sql(sku)}, ${Number(product.price || 0)}, ${Number(product.stock || 0)}, true, 0
   from product_row
   on conflict (sku) do update
   set
@@ -98,9 +98,9 @@ function sellerStatement(seller, index) {
   return `
 insert into public.sellers (name, whatsapp, role, image_url, active, sort_order)
 select
-  ${sql(seller.name || "Vendedor")},
-  ${sql(String(seller.phone || "").replace(/\D/g, ""))},
-  ${sql(seller.role || "")},
+  ${sqlText(seller.name || "Vendedor")},
+  ${sqlText(String(seller.phone || "").replace(/\D/g, ""))},
+  ${sqlText(seller.role || "")},
   ${sql(String(seller.image || "").startsWith("http") ? seller.image : null)},
   true,
   ${index}
@@ -124,5 +124,10 @@ function slugify(value) {
 function sql(value) {
   if (value === null || value === undefined || value === "") return "null";
   if (typeof value === "boolean") return value ? "true" : "false";
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+function sqlText(value) {
+  if (value === null || value === undefined) return "''";
   return `'${String(value).replace(/'/g, "''")}'`;
 }
