@@ -5,7 +5,7 @@ SmartShop esta evolucionando desde catalogo estatico con SQLite hacia una arquit
 La plataforma activa para el catalogo publicado queda preparada asi:
 
 ```text
-Cloudflare Pages
+Cloudflare Workers Static Assets
         ↓
 HTML/CSS/JS
         ↓
@@ -33,7 +33,7 @@ El frontend actual se conserva en `public/` y mantiene las mejoras visuales: her
 - Node.js 22.5 o superior.
 - PostgreSQL 14 o superior.
 - SQLite actual solo para migracion/respaldo.
-- Proyecto Supabase para el despliegue estatico en Cloudflare Pages.
+- Proyecto Supabase para el despliegue estatico en Cloudflare Workers.
 
 ## Instalacion
 
@@ -167,27 +167,30 @@ set role = 'admin';
 Generar SQL para importar los datos actuales de `public/assets/store-data.js`:
 
 ```bash
-pnpm run supabase:export-seed
+npm run supabase:export-seed
 ```
 
 El archivo generado queda en `supabase/generated/import-store-data.sql` y no se sube a Git.
 
-## Cloudflare Pages
+## Cloudflare Workers Static Assets
 
 Configuracion recomendada:
 
 ```text
-Framework preset: None
-Build command: pnpm run build
-Build output directory: dist
+Build command: npm run build
+Deploy command: npx wrangler deploy
+Version command: npx wrangler versions upload
+Root directory: /
 Environment variables:
   SUPABASE_URL
   SUPABASE_ANON_KEY
 ```
 
-El script de build copia `public/` a `dist/` y genera `assets/supabase-env.js` con las variables publicas de Supabase.
+`wrangler.jsonc` publica el Worker `smartshop` con `assets.directory = "./dist"`. No hay Worker dinamico en esta etapa.
 
-`/admin` funciona mediante `public/_redirects`, que apunta a `admin.html`.
+El script de build copia `public/` a `dist/`, crea `dist/admin/index.html` para que `/admin` funcione como ruta estatica y genera `assets/supabase-env.js` con las variables publicas de Supabase.
+
+No configurar `SUPABASE_SERVICE_ROLE_KEY` en Cloudflare ni en el frontend.
 
 Guia detallada: `docs/supabase-cloudflare.md`.
 

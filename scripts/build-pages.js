@@ -9,9 +9,10 @@ const distDir = path.join(rootDir, "dist");
 
 fs.rmSync(distDir, { recursive: true, force: true });
 copyDirectory(publicDir, distDir);
+createAdminRoute();
 writeSupabaseEnv();
 
-console.log("Cloudflare Pages build listo en dist/");
+console.log("Cloudflare Workers Static Assets build listo en dist/");
 
 function copyDirectory(from, to) {
   fs.mkdirSync(to, { recursive: true });
@@ -34,4 +35,10 @@ function writeSupabaseEnv() {
   window.SMARTSHOP_SUPABASE_ANON_KEY = ${JSON.stringify(anonKey)};
 })();\n`;
   fs.writeFileSync(path.join(distDir, "assets", "supabase-env.js"), content);
+}
+
+function createAdminRoute() {
+  const adminDir = path.join(distDir, "admin");
+  fs.mkdirSync(adminDir, { recursive: true });
+  fs.copyFileSync(path.join(distDir, "admin.html"), path.join(adminDir, "index.html"));
 }

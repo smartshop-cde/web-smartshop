@@ -1,12 +1,12 @@
-# SmartShop en Cloudflare Pages + Supabase
+# SmartShop en Cloudflare Workers Static Assets + Supabase
 
-Esta etapa deja el catalogo publico y el panel `/admin` funcionando como sitio estatico en Cloudflare Pages, con datos dinamicos en Supabase.
+Esta etapa deja el catalogo publico y el panel `/admin` funcionando como sitio estatico en Cloudflare Workers Static Assets, con datos dinamicos en Supabase.
 
 ## Arquitectura activa
 
 ```text
 GitHub
-  -> Cloudflare Pages
+  -> Cloudflare Workers Static Assets
   -> HTML/CSS/JavaScript
   -> Supabase Auth + PostgreSQL + Storage
 ```
@@ -33,7 +33,7 @@ No guardes claves `service_role` en el repositorio ni en el navegador.
 
 ## Variables publicas
 
-Cloudflare Pages debe tener estas variables:
+Cloudflare debe tener estas variables disponibles durante el build:
 
 ```env
 SUPABASE_URL=
@@ -42,25 +42,39 @@ SUPABASE_ANON_KEY=
 
 La clave anon es publica y trabaja con RLS. La seguridad real esta en las politicas de Supabase.
 
-## Cloudflare Pages
+## Cloudflare Workers
 
 Configuracion recomendada:
 
 ```text
-Framework preset: None
-Build command: pnpm run build
-Build output directory: dist
+Build command: npm run build
+Deploy command: npx wrangler deploy
+Version command: npx wrangler versions upload
 Root directory: /
 ```
 
-El build copia `public/` a `dist/` y genera `dist/assets/supabase-env.js` con las variables publicas de Supabase.
+`wrangler.jsonc` usa:
+
+```json
+{
+  "name": "smartshop",
+  "compatibility_date": "2026-08-22",
+  "assets": {
+    "directory": "./dist"
+  }
+}
+```
+
+No se configura `main` ni `assets.binding`, porque SmartShop no necesita Worker dinamico en esta etapa.
+
+El build copia `public/` a `dist/`, genera `dist/admin/index.html` para la ruta `/admin` y escribe `dist/assets/supabase-env.js` con las variables publicas de Supabase.
 
 ## Migrar datos actuales
 
 Para generar un SQL desde `public/assets/store-data.js`:
 
 ```bash
-pnpm run supabase:export-seed
+npm run supabase:export-seed
 ```
 
 Esto crea:
@@ -69,7 +83,7 @@ Esto crea:
 supabase/generated/import-store-data.sql
 ```
 
-Revisa el archivo y ejecútalo en Supabase SQL Editor despues de la migracion principal.
+Revisa el archivo y ejecutalo en Supabase SQL Editor despues de la migracion principal.
 
 ## RLS
 
@@ -103,7 +117,7 @@ Limites:
 
 ## Dominio
 
-En Cloudflare, configura `smartshop.com.py` como dominio del proyecto Pages. Para redirigir `www.smartshop.com.py` al dominio principal, crea una Redirect Rule:
+En Cloudflare, configura `smartshop.com.py` como custom domain del Worker `smartshop`. Para redirigir `www.smartshop.com.py` al dominio principal, crea una Redirect Rule:
 
 ```text
 if hostname equals www.smartshop.com.py
