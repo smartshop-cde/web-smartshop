@@ -1980,6 +1980,51 @@ h3 {
   padding: 8px;
 }
 
+.import-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.import-summary article {
+  display: grid;
+  gap: 4px;
+  min-height: 96px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.import-summary strong {
+  color: var(--brand-blue);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.import-summary span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.import-summary .is-danger strong {
+  color: var(--danger);
+}
+
+.import-errors {
+  padding: 12px;
+  color: var(--danger);
+  background: var(--danger-soft);
+  border: 1px solid rgba(180, 35, 24, 0.22);
+  border-radius: var(--radius-md);
+}
+
+.import-errors ul {
+  padding-left: 18px;
+  margin: 8px 0 0;
+}
+
 .admin-table-wrap {
   width: 100%;
   overflow-x: auto;
@@ -2351,6 +2396,7 @@ h3 {
 
   .benefits-band,
   .admin-form-grid,
+  .import-summary,
   .dashboard-cards {
     grid-template-columns: 1fr;
   }

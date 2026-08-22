@@ -45,7 +45,6 @@ function productStatement(product, index) {
   const publicCode = /^\d{5}$/.test(String(product.code || "")) ? product.code : null;
   const productSlug = slugify(product.name || `producto-${index + 1}`);
   const variantName = product.variant || "Default";
-  const sku = product.sku || null;
   const image = String(product.image || "").startsWith("http") ? product.image : null;
   return `
 with category_row as (
@@ -74,10 +73,10 @@ with category_row as (
     active = excluded.active,
     featured = excluded.featured,
     sort_order = excluded.sort_order
-  returning id
+  returning id, public_code
 ), variant_row as (
   insert into public.product_variants (product_id, name, sku, price, stock, active, sort_order)
-  select id, ${sqlText(variantName)}, ${sql(sku)}, ${Number(product.price || 0)}, ${Number(product.stock || 0)}, true, 0
+  select id, ${sqlText(variantName)}, public_code, ${Number(product.price || 0)}, ${Number(product.stock || 0)}, true, 0
   from product_row
   on conflict (sku) do update
   set

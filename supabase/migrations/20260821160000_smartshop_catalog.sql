@@ -134,6 +134,20 @@ begin
 end;
 $$;
 
+create or replace function public.set_variant_sku_from_public_code()
+returns trigger
+language plpgsql
+as $$
+begin
+  select public_code
+  into new.sku
+  from public.products
+  where id = new.product_id;
+
+  return new;
+end;
+$$;
+
 create or replace function public.ensure_category_slug()
 returns trigger
 language plpgsql
@@ -223,6 +237,11 @@ drop trigger if exists products_set_public_code on public.products;
 create trigger products_set_public_code
 before insert on public.products
 for each row execute function public.set_product_public_code();
+
+drop trigger if exists product_variants_set_public_sku on public.product_variants;
+create trigger product_variants_set_public_sku
+before insert or update on public.product_variants
+for each row execute function public.set_variant_sku_from_public_code();
 
 create or replace function public.handle_new_user_profile()
 returns trigger

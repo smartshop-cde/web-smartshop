@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="assets/styles.css">
     <script defer src="assets/supabase-env.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script defer src="assets/supabase-client.js"></script>
     <script defer src="assets/store-data.js"></script>
     <script defer src="assets/admin.js"></script>
@@ -103,8 +104,16 @@
                   <p class="panel-kicker">Inventario</p>
                   <h2 id="productsTitle">Productos</h2>
                 </div>
-                <button id="newProductButton" class="admin-button is-primary" type="button">+ Nuevo producto</button>
+                <div class="admin-actions">
+                  <button id="downloadTemplateButton" class="admin-button" type="button">Descargar formato</button>
+                  <label class="admin-button file-button">
+                    Importar Excel
+                    <input id="importProductsInput" type="file" accept=".xlsx,.xls" hidden>
+                  </label>
+                  <button id="newProductButton" class="admin-button is-primary" type="button">+ Nuevo producto</button>
+                </div>
               </div>
+              <div id="importPreview" class="admin-editor" hidden></div>
               <div id="productEditor" class="admin-editor" hidden></div>
               <div id="productsTable" class="admin-table-wrap"></div>
             </section>

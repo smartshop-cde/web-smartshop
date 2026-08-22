@@ -85,6 +85,14 @@ supabase/generated/import-store-data.sql
 
 Revisa el archivo y ejecutalo en Supabase SQL Editor despues de la migracion principal.
 
+## Importacion Excel desde admin
+
+En `/admin -> Productos` se puede descargar una plantilla y cargar productos por Excel.
+
+La plantilla no pide codigo ni SKU. Supabase genera `products.public_code` automaticamente y `product_variants.sku` queda sincronizado con ese codigo.
+
+Antes de guardar, el panel muestra vista previa con nuevos productos, actualizaciones, categorias nuevas y errores por fila.
+
 ## RLS
 
 Todas las tablas relevantes tienen Row Level Security activo.

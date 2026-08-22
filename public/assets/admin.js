@@ -1,8 +1,44 @@
 (function () {
   const IMAGE_ACCEPT = "image/png,image/jpeg,image/webp,image/gif";
+  const IMPORT_COLUMNS = [
+    ["nombre", "Nombre del producto"],
+    ["marca", "Marca"],
+    ["categoria", "Categoria"],
+    ["variante", "Variante o capacidad"],
+    ["precio", "Precio Gs."],
+    ["stock", "Stock"],
+    ["descripcion", "Descripcion"],
+    ["destacado", "Destacado: si/no"],
+    ["activo", "Activo: si/no"],
+  ];
+  const TEMPLATE_ROWS = [
+    {
+      nombre: "iPhone 15 128 GB",
+      marca: "Apple",
+      categoria: "Celulares",
+      variante: "128 GB",
+      precio: 6200000,
+      stock: 5,
+      descripcion: "Equipo sellado con garantia de tienda",
+      destacado: "si",
+      activo: "si",
+    },
+    {
+      nombre: "AirPods Pro 2",
+      marca: "Apple",
+      categoria: "Audio",
+      variante: "Default",
+      precio: 1850000,
+      stock: 3,
+      descripcion: "Cancelacion activa de ruido",
+      destacado: "no",
+      activo: "si",
+    },
+  ];
   const els = {};
   const state = {
     catalog: { products: [], categories: [], sellers: [] },
+    pendingImport: null,
     loading: false,
   };
 
@@ -56,6 +92,9 @@
     els.productEditor = document.querySelector("#productEditor");
     els.categoryEditor = document.querySelector("#categoryEditor");
     els.sellerEditor = document.querySelector("#sellerEditor");
+    els.importPreview = document.querySelector("#importPreview");
+    els.downloadTemplateButton = document.querySelector("#downloadTemplateButton");
+    els.importProductsInput = document.querySelector("#importProductsInput");
     els.newProductButton = document.querySelector("#newProductButton");
     els.newCategoryButton = document.querySelector("#newCategoryButton");
     els.newSellerButton = document.querySelector("#newSellerButton");
@@ -68,6 +107,8 @@
     els.loginForm.addEventListener("submit", handleLogin);
     els.logoutButton.addEventListener("click", handleLogout);
     els.reloadButton.addEventListener("click", () => loadAndRenderCatalog(true));
+    els.downloadTemplateButton.addEventListener("click", downloadImportTemplate);
+    els.importProductsInput.addEventListener("change", handleImportFile);
     els.newProductButton.addEventListener("click", () => openProductEditor());
     els.newCategoryButton.addEventListener("click", () => openCategoryEditor());
     els.newSellerButton.addEventListener("click", () => openSellerEditor());
@@ -83,6 +124,7 @@
     els.categoryEditor.addEventListener("submit", handleCategorySubmit);
     els.sellerEditor.addEventListener("submit", handleSellerSubmit);
     els.productEditor.addEventListener("click", handleEditorClick);
+    els.importPreview.addEventListener("click", handleImportPreviewClick);
     els.categoryEditor.addEventListener("click", handleEditorClick);
     els.sellerEditor.addEventListener("click", handleEditorClick);
     els.productEditor.addEventListener("change", handleImagePreview);
@@ -331,10 +373,6 @@
           <input name="variant_name" class="admin-input" value="${escapeHtml(variant.name || "Default")}" required>
         </label>
         <label class="admin-field">
-          <span>SKU operativo</span>
-          <input name="sku" class="admin-input" value="${escapeHtml(variant.sku || "")}">
-        </label>
-        <label class="admin-field">
           <span>Precio Gs.</span>
           <input name="price" class="admin-input" type="number" min="0" step="1" value="${Number(variant.price || 0)}" required>
         </label>
@@ -474,7 +512,7 @@
       const variantPayload = {
         product_id: savedProduct.id,
         name: String(formData.get("variant_name") || "Default").trim() || "Default",
-        sku: nullableString(formData.get("sku")),
+        sku: savedProduct.public_code,
         price,
         stock,
         active: true,
@@ -693,6 +731,256 @@
     }
   }
 
+  function downloadImportTemplate() {
+    try {
+      ensureXlsxAvailable();
+      const worksheet = window.XLSX.utils.json_to_sheet(TEMPLATE_ROWS, {
+        header: IMPORT_COLUMNS.map(([key]) => key),
+      });
+      window.XLSX.utils.sheet_add_aoa(worksheet, [IMPORT_COLUMNS.map(([, label]) => label)], { origin: "A1" });
+      worksheet["!cols"] = IMPORT_COLUMNS.map(() => ({ wch: 24 }));
+      const workbook = window.XLSX.utils.book_new();
+      window.XLSX.utils.book_append_sheet(workbook, worksheet, "Productos");
+      window.XLSX.writeFile(workbook, "formato-carga-productos-smartshop.xlsx");
+      toast("Formato de carga descargado.");
+    } catch (error) {
+      toast(error.message, "error");
+    }
+  }
+
+  async function handleImportFile(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    try {
+      ensureXlsxAvailable();
+      const rows = await readWorkbookRows(file);
+      const preview = buildImportPreview(rows);
+      state.pendingImport = preview;
+      renderImportPreview(preview);
+      setTab("productsPanel");
+      closeEditors();
+      els.importPreview.hidden = false;
+      els.importPreview.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (error) {
+      state.pendingImport = null;
+      els.importPreview.hidden = true;
+      els.importPreview.innerHTML = "";
+      toast(error.message, "error");
+    }
+  }
+
+  async function readWorkbookRows(file) {
+    const buffer = await file.arrayBuffer();
+    const workbook = window.XLSX.read(buffer, { type: "array" });
+    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+    if (!firstSheet) throw new Error("El archivo no tiene hojas.");
+    const rows = window.XLSX.utils.sheet_to_json(firstSheet, { defval: "", raw: false });
+    if (!rows.length) throw new Error("El Excel no tiene productos para importar.");
+    return rows.map(normalizeImportRow).filter((row) => Object.values(row.raw).some(Boolean));
+  }
+
+  function buildImportPreview(rows) {
+    const productIndex = buildProductIndex();
+    const categoryIndex = buildCategoryIndex();
+    const entries = rows.map((row, index) => {
+      const errors = validateImportRow(row);
+      const categoryKey = normalizeKey(row.category);
+      const variantName = row.variant || "Default";
+      const lookupKey = makeProductLookupKey(row.name, row.category, variantName);
+      const existingProduct = productIndex.get(lookupKey);
+      const existingCategory = categoryIndex.get(categoryKey);
+      return {
+        ...row,
+        rowNumber: index + 2,
+        variant: variantName,
+        existingProduct,
+        existingCategory,
+        action: existingProduct ? "update" : "create",
+        categoryAction: existingCategory ? "use" : "create",
+        errors,
+      };
+    });
+
+    return {
+      entries,
+      validEntries: entries.filter((entry) => entry.errors.length === 0),
+      errorEntries: entries.filter((entry) => entry.errors.length > 0),
+      createCount: entries.filter((entry) => entry.errors.length === 0 && entry.action === "create").length,
+      updateCount: entries.filter((entry) => entry.errors.length === 0 && entry.action === "update").length,
+      newCategoryCount: new Set(
+        entries
+          .filter((entry) => entry.errors.length === 0 && entry.categoryAction === "create")
+          .map((entry) => normalizeKey(entry.category))
+      ).size,
+    };
+  }
+
+  function renderImportPreview(preview) {
+    const canImport = preview.validEntries.length > 0 && preview.errorEntries.length === 0;
+    const errorList = preview.errorEntries
+      .slice(0, 8)
+      .map(
+        (entry) => `
+          <li>Fila ${entry.rowNumber}: ${escapeHtml(entry.errors.join(", "))}</li>
+        `
+      )
+      .join("");
+    const sampleRows = preview.entries
+      .slice(0, 6)
+      .map(
+        (entry) => `
+          <tr class="${entry.errors.length ? "is-muted" : ""}">
+            <td>${entry.rowNumber}</td>
+            <td><strong>${escapeHtml(entry.name)}</strong><small>${escapeHtml(entry.brand || "")}</small></td>
+            <td>${escapeHtml(entry.category)}</td>
+            <td>${escapeHtml(entry.variant)}</td>
+            <td>${formatPrice(entry.price)}</td>
+            <td>${entry.stock}</td>
+            <td>${entry.errors.length ? "Error" : entry.action === "update" ? "Actualizar" : "Crear"}</td>
+          </tr>
+        `
+      )
+      .join("");
+
+    els.importPreview.innerHTML = `
+      <div class="section-title-row">
+        <div>
+          <p class="panel-kicker">Importacion Excel</p>
+          <h2>Vista previa</h2>
+        </div>
+        <span>${preview.entries.length} filas detectadas</span>
+      </div>
+      <div class="import-summary">
+        <article><strong>${preview.createCount}</strong><span>Nuevos</span></article>
+        <article><strong>${preview.updateCount}</strong><span>Actualizaciones</span></article>
+        <article><strong>${preview.newCategoryCount}</strong><span>Categorias nuevas</span></article>
+        <article class="${preview.errorEntries.length ? "is-danger" : ""}"><strong>${preview.errorEntries.length}</strong><span>Errores</span></article>
+      </div>
+      ${
+        errorList
+          ? `<div class="import-errors"><strong>Corrige antes de importar:</strong><ul>${errorList}</ul></div>`
+          : `<p class="admin-notice">El codigo publico y el SKU se asignan automaticamente desde Supabase. Las imagenes se cargan luego desde el panel.</p>`
+      }
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Fila</th>
+              <th>Producto</th>
+              <th>Categoria</th>
+              <th>Variante</th>
+              <th>Precio</th>
+              <th>Stock</th>
+              <th>Accion</th>
+            </tr>
+          </thead>
+          <tbody>${sampleRows}</tbody>
+        </table>
+      </div>
+      <div class="admin-form-actions">
+        <button class="admin-button is-primary" type="button" data-import-action="confirm" ${canImport ? "" : "disabled"}>Confirmar importacion</button>
+        <button class="admin-button" type="button" data-import-action="cancel">Cancelar</button>
+      </div>
+    `;
+  }
+
+  async function handleImportPreviewClick(event) {
+    const button = event.target.closest("[data-import-action]");
+    if (!button) return;
+    if (button.dataset.importAction === "cancel") {
+      state.pendingImport = null;
+      els.importPreview.hidden = true;
+      els.importPreview.innerHTML = "";
+      return;
+    }
+    if (button.dataset.importAction === "confirm") {
+      await confirmImport(button);
+    }
+  }
+
+  async function confirmImport(button) {
+    if (!state.pendingImport?.validEntries?.length) return;
+    setButtonLoading(button, true);
+    try {
+      const result = await importProducts(state.pendingImport.validEntries);
+      state.pendingImport = null;
+      els.importPreview.hidden = true;
+      els.importPreview.innerHTML = "";
+      await loadAndRenderCatalog();
+      toast(`Importacion lista: ${result.created} creados, ${result.updated} actualizados.`);
+    } catch (error) {
+      toast(error.message, "error");
+    } finally {
+      setButtonLoading(button, false);
+    }
+  }
+
+  async function importProducts(entries) {
+    const categoryMap = buildCategoryIndex();
+    const productMap = buildProductIndex();
+    const result = { created: 0, updated: 0 };
+
+    for (const entry of entries) {
+      const categoryKey = normalizeKey(entry.category);
+      let category = categoryMap.get(categoryKey);
+      if (!category) {
+        category = await insertRow("categories", {
+          name: entry.category,
+          slug: window.SmartShopSupabase.toSlug(entry.category),
+          active: true,
+          sort_order: state.catalog.categories.length + categoryMap.size,
+        });
+        categoryMap.set(categoryKey, category);
+      }
+
+      const lookupKey = makeProductLookupKey(entry.name, entry.category, entry.variant);
+      let product = productMap.get(lookupKey);
+      const productPayload = {
+        name: entry.name,
+        slug: window.SmartShopSupabase.toSlug(entry.name),
+        brand: entry.brand,
+        category_id: category.id,
+        description: entry.description,
+        featured: entry.featured,
+        active: entry.active,
+      };
+
+      if (product) {
+        product = await updateRow("products", product.id, productPayload);
+        await upsertImportedVariant(product, entry, productMap.get(lookupKey)?.variants?.[0]);
+        result.updated += 1;
+      } else {
+        product = await insertRow("products", productPayload);
+        await upsertImportedVariant(product, entry);
+        productMap.set(lookupKey, {
+          ...product,
+          category,
+          variants: [{ name: entry.variant }],
+        });
+        result.created += 1;
+      }
+    }
+
+    return result;
+  }
+
+  async function upsertImportedVariant(product, entry, variant = null) {
+    const payload = {
+      product_id: product.id,
+      name: entry.variant || "Default",
+      sku: product.public_code,
+      price: entry.price,
+      stock: entry.stock,
+      active: entry.active,
+    };
+    if (variant?.id) {
+      await updateRow("product_variants", variant.id, payload);
+    } else {
+      await insertRow("product_variants", payload);
+    }
+  }
+
   function handleImagePreview(event) {
     const input = event.target.closest("[data-preview-target]");
     if (!input?.files?.[0]) return;
@@ -782,6 +1070,107 @@
   function getVariantLabel(product) {
     const variant = product.variants?.find((item) => item.active !== false) || product.variants?.[0];
     return variant?.name === "Default" ? "" : variant?.name || "";
+  }
+
+  function normalizeImportRow(row) {
+    const normalized = { raw: row };
+    Object.entries(row).forEach(([key, value]) => {
+      const normalizedKey = normalizeHeader(key);
+      if (["nombre", "nombreDelProducto", "producto", "name"].includes(normalizedKey)) normalized.name = cleanText(value);
+      if (["marca", "brand"].includes(normalizedKey)) normalized.brand = cleanText(value);
+      if (["categoria", "category"].includes(normalizedKey)) normalized.category = cleanText(value);
+      if (["variante", "varianteOCapacidad", "capacidad", "variant"].includes(normalizedKey)) {
+        normalized.variant = cleanText(value);
+      }
+      if (["precio", "precioGs", "price"].includes(normalizedKey)) normalized.price = parseImportNumber(value);
+      if (["stock", "cantidad", "unidades"].includes(normalizedKey)) normalized.stock = parseImportNumber(value);
+      if (["descripcion", "description"].includes(normalizedKey)) normalized.description = cleanText(value);
+      if (["destacado", "destacadoSiNo", "featured"].includes(normalizedKey)) {
+        normalized.featured = parseImportBoolean(value, false);
+      }
+      if (["activo", "activoSiNo", "active"].includes(normalizedKey)) normalized.active = parseImportBoolean(value, true);
+    });
+
+    return {
+      raw: normalized.raw,
+      name: normalized.name || "",
+      brand: normalized.brand || "",
+      category: normalized.category || "",
+      variant: normalized.variant || "Default",
+      price: Number.isFinite(normalized.price) ? normalized.price : NaN,
+      stock: Number.isFinite(normalized.stock) ? normalized.stock : NaN,
+      description: normalized.description || "",
+      featured: Boolean(normalized.featured),
+      active: normalized.active !== false,
+    };
+  }
+
+  function validateImportRow(row) {
+    const errors = [];
+    if (!row.name) errors.push("nombre requerido");
+    if (!row.category) errors.push("categoria requerida");
+    if (!Number.isFinite(row.price) || row.price < 0) errors.push("precio invalido");
+    if (!Number.isFinite(row.stock) || row.stock < 0 || !Number.isInteger(row.stock)) errors.push("stock invalido");
+    return errors;
+  }
+
+  function buildProductIndex() {
+    return new Map(
+      state.catalog.products.map((product) => [
+        makeProductLookupKey(product.name, product.category?.name || "", getVariantLabel(product) || "Default"),
+        product,
+      ])
+    );
+  }
+
+  function buildCategoryIndex() {
+    return new Map(state.catalog.categories.map((category) => [normalizeKey(category.name), category]));
+  }
+
+  function makeProductLookupKey(name, category, variant) {
+    return [name, category, variant || "Default"].map(normalizeKey).join("|");
+  }
+
+  function normalizeHeader(value) {
+    return normalizeKey(value).replace(/-([a-z0-9])/g, (_, letter) => letter.toUpperCase());
+  }
+
+  function normalizeKey(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+  }
+
+  function cleanText(value) {
+    return String(value ?? "").trim();
+  }
+
+  function parseImportNumber(value) {
+    if (typeof value === "number") return value;
+    const text = String(value ?? "")
+      .replace(/gs\.?/gi, "")
+      .replace(/[^\d,.-]/g, "")
+      .trim();
+    if (!text) return NaN;
+    const normalized = text.includes(",") && text.includes(".")
+      ? text.replace(/\./g, "").replace(",", ".")
+      : text.replace(",", ".");
+    return Number(normalized);
+  }
+
+  function parseImportBoolean(value, fallback) {
+    const text = normalizeKey(value);
+    if (!text) return fallback;
+    return ["si", "s", "yes", "y", "true", "1", "activo", "activa"].includes(text);
+  }
+
+  function ensureXlsxAvailable() {
+    if (!window.XLSX) {
+      throw new Error("No se pudo cargar el lector Excel. Revisa la conexion e intenta de nuevo.");
+    }
   }
 
   function setLoading(isLoading, message = "") {

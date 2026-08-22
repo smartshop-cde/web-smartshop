@@ -256,7 +256,7 @@ ProductVariant
 
 `ProductVariant` contiene:
 
-- `sku`
+- `sku`, sincronizado automaticamente con `Product.publicCode`
 - `price`
 - `stock`
 
@@ -264,15 +264,32 @@ El stock esta en variante y tiene restriccion `stock >= 0`.
 
 ## Excel
 
-El panel administrador mantiene importacion/exportacion Excel.
+El panel administrador permite importar productos desde Excel y descargar una plantilla desde:
 
-Columnas:
+```text
+/admin -> Productos -> Descargar formato
+```
 
-- `accion`: vacio para agregar/actualizar, `eliminar` para quitar.
-- `code`: opcional para productos nuevos.
-- `sku`: opcional, operativo de variante.
-- `name`, `category`, `price`, `stock`.
-- `featured`, `badge`, `brand`, `variant`, `condition`, `warranty`, `delivery`, `description`, `details`.
+Columnas de la plantilla:
+
+- `nombre`
+- `marca`
+- `categoria`
+- `variante`
+- `precio`
+- `stock`
+- `descripcion`
+- `destacado`
+- `activo`
+
+El importador muestra una vista previa antes de guardar:
+
+- nuevos productos;
+- actualizaciones;
+- categorias nuevas;
+- errores por fila.
+
+No se carga `sku` en Excel. El codigo publico de 5 digitos lo genera Supabase y la variante usa ese mismo valor como SKU.
 
 Las fotos no se cargan desde Excel; se editan en el panel.
 
