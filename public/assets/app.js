@@ -94,6 +94,14 @@
     });
 
     els.siteNav.addEventListener("click", (event) => {
+      const mobileDropdownLink = event.target.closest(".nav-menu > a");
+      if (mobileDropdownLink && window.matchMedia("(max-width: 960px)").matches) {
+        event.preventDefault();
+        const menu = mobileDropdownLink.closest(".nav-menu");
+        const isOpen = menu.classList.toggle("is-open");
+        mobileDropdownLink.setAttribute("aria-expanded", String(isOpen));
+        return;
+      }
       if (event.target.closest("a")) closeMobileMenu();
     });
 
@@ -134,7 +142,10 @@
 
     els.navCategoryList.addEventListener("click", (event) => {
       const button = event.target.closest("[data-category]");
-      if (button) setCategory(button.dataset.category, true);
+      if (button) {
+        setCategory(button.dataset.category, true);
+        closeMobileMenu();
+      }
     });
 
     els.brandFilters.addEventListener("click", (event) => {

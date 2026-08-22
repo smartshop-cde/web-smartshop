@@ -2234,8 +2234,13 @@ h3 {
     left: 12px;
     display: none;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+    justify-self: stretch;
     justify-items: stretch;
+    width: auto;
+    max-height: calc(100vh - var(--header-height) - 24px);
     padding: 12px;
+    overflow: auto;
     background: rgba(255, 255, 255, 0.98);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -2252,6 +2257,7 @@ h3 {
   .site-nav .icon-button {
     width: 100%;
     min-width: 0;
+    min-height: 44px;
   }
 
   .nav-menu {
@@ -2273,7 +2279,8 @@ h3 {
   }
 
   .nav-menu:hover .nav-dropdown,
-  .nav-menu:focus-within .nav-dropdown {
+  .nav-menu:focus-within .nav-dropdown,
+  .nav-menu.is-open .nav-dropdown {
     display: grid;
     transform: none;
   }
@@ -2511,17 +2518,17 @@ h3 {
 
   .product-action,
   .product-actions .ghost-button {
-    min-height: 42px;
+    min-height: 44px;
     font-size: 0.82rem;
   }
 
   .wishlist-button {
-    width: 34px;
-    height: 34px;
+    width: 40px;
+    height: 40px;
   }
 
   .product-badge {
-    max-width: calc(100% - 58px);
+    max-width: calc(100% - 64px);
     font-size: 0.65rem;
   }
 
@@ -2562,6 +2569,12 @@ h3 {
 
   .site-footer {
     padding: 24px;
+  }
+
+  .site-footer a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
   }
 
   .footer-brand {
