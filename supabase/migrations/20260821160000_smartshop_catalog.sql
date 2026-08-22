@@ -90,6 +90,13 @@ create table if not exists public.sellers (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.store_settings (
+  key text primary key check (length(trim(key)) > 0),
+  value jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create index if not exists categories_active_sort_idx on public.categories(active, sort_order);
 create index if not exists products_category_id_idx on public.products(category_id);
 create index if not exists products_active_featured_idx on public.products(active, featured, sort_order);
@@ -223,6 +230,11 @@ create trigger profiles_set_updated_at
 before update on public.profiles
 for each row execute function public.set_updated_at();
 
+drop trigger if exists store_settings_set_updated_at on public.store_settings;
+create trigger store_settings_set_updated_at
+before update on public.store_settings
+for each row execute function public.set_updated_at();
+
 drop trigger if exists categories_ensure_slug on public.categories;
 create trigger categories_ensure_slug
 before insert or update of name, slug on public.categories
@@ -283,6 +295,7 @@ alter table public.products enable row level security;
 alter table public.product_variants enable row level security;
 alter table public.product_images enable row level security;
 alter table public.sellers enable row level security;
+alter table public.store_settings enable row level security;
 
 create policy "Users read own profile"
 on public.profiles for select
@@ -367,20 +380,37 @@ to authenticated
 using (public.is_admin())
 with check (public.is_admin());
 
+create policy "Public reads store settings"
+on public.store_settings for select
+to anon, authenticated
+using (key = 'exchange_rates' or public.is_admin());
+
+create policy "Admins manage store settings"
+on public.store_settings for all
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
 grant usage on schema public to anon, authenticated;
 grant select on public.categories to anon, authenticated;
 grant select on public.products to anon, authenticated;
 grant select on public.product_variants to anon, authenticated;
 grant select on public.product_images to anon, authenticated;
 grant select on public.sellers to anon, authenticated;
+grant select on public.store_settings to anon, authenticated;
 grant select on public.profiles to authenticated;
 grant insert, update, delete on public.categories to authenticated;
 grant insert, update, delete on public.products to authenticated;
 grant insert, update, delete on public.product_variants to authenticated;
 grant insert, update, delete on public.product_images to authenticated;
 grant insert, update, delete on public.sellers to authenticated;
+grant insert, update, delete on public.store_settings to authenticated;
 grant insert, update, delete on public.profiles to authenticated;
 grant execute on function public.is_admin() to anon, authenticated;
+
+insert into public.store_settings (key, value)
+values ('exchange_rates', '{"baseCurrency":"USD","usdToBrl":5.27,"usdToPyg":6100}'::jsonb)
+on conflict (key) do nothing;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values

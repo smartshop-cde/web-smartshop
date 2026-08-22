@@ -257,10 +257,21 @@ ProductVariant
 `ProductVariant` contiene:
 
 - `sku`, sincronizado automaticamente con `Product.publicCode`
-- `price`
+- `price`, guardado en USD
 - `stock`
 
 El stock esta en variante y tiene restriccion `stock >= 0`.
+
+## Cotizaciones
+
+La web muestra el precio principal en dolares y debajo calcula guaranies y reales con la cotizacion configurada en Supabase.
+
+El panel `/admin -> Cotizaciones` permite editar:
+
+- reales por 1 USD;
+- guaranies por 1 USD.
+
+La configuracion vive en `public.store_settings` con la clave `exchange_rates`. El publico solo puede leerla; solo usuarios admin pueden modificarla.
 
 ## Excel
 
@@ -276,7 +287,7 @@ Columnas de la plantilla:
 - `marca`
 - `categoria`
 - `variante`
-- `precio`
+- `precio` en USD
 - `stock`
 - `descripcion`
 - `destacado`
@@ -289,7 +300,7 @@ El importador muestra una vista previa antes de guardar:
 - categorias nuevas;
 - errores por fila.
 
-No se carga `sku` en Excel. El codigo publico de 5 digitos lo genera Supabase y la variante usa ese mismo valor como SKU.
+No se carga `sku` en Excel. El codigo publico de 5 digitos lo genera Supabase y la variante usa ese mismo valor como SKU. El precio importado se interpreta como USD.
 
 Las fotos no se cargan desde Excel; se editan en el panel.
 

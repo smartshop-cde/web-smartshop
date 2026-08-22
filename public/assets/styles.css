@@ -125,7 +125,7 @@ img {
   top: 0;
   z-index: 40;
   display: grid;
-  grid-template-columns: auto minmax(240px, 560px) auto;
+  grid-template-columns: auto minmax(240px, 560px) auto auto;
   align-items: center;
   gap: clamp(14px, 2.5vw, 28px);
   min-height: var(--header-height);
@@ -152,6 +152,28 @@ img {
 .header-search {
   justify-self: center;
   width: min(100%, 560px);
+}
+
+.exchange-ticker {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 12px;
+  color: var(--brand-navy);
+  background: rgba(13, 63, 211, 0.08);
+  border: 1px solid rgba(13, 63, 211, 0.14);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.exchange-ticker span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .search-field {
@@ -1209,6 +1231,19 @@ h3 {
   line-height: 1;
 }
 
+.price-stack {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.price-stack small {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
 .product-foot {
   align-items: center;
 }
@@ -1808,6 +1843,10 @@ h3 {
   grid-column: 1 / -1;
 }
 
+.admin-form-grid > .is-wide {
+  grid-column: 1 / -1;
+}
+
 .admin-field span,
 .admin-label {
   color: var(--text-muted);
@@ -1931,6 +1970,7 @@ h3 {
   color: var(--brand-blue);
   font-size: clamp(2rem, 4vw, 3rem);
   line-height: 1;
+  overflow-wrap: anywhere;
 }
 
 .dashboard-card p {
@@ -2145,7 +2185,7 @@ h3 {
 
 @media (max-width: 1120px) {
   .site-header {
-    grid-template-columns: auto minmax(220px, 1fr) auto;
+    grid-template-columns: auto minmax(220px, 1fr) auto auto;
   }
 
   .site-nav > a:not(.icon-button),
@@ -2176,6 +2216,11 @@ h3 {
     grid-column: 1 / -1;
     grid-row: 2;
     width: 100%;
+  }
+
+  .exchange-ticker {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .mobile-menu-toggle {
@@ -2330,6 +2375,13 @@ h3 {
     padding-inline: 12px;
   }
 
+  .exchange-ticker {
+    gap: 6px;
+    min-height: 34px;
+    padding-inline: 9px;
+    font-size: 0.74rem;
+  }
+
   .brand-logo {
     width: 48px;
     height: 48px;
@@ -2441,6 +2493,10 @@ h3 {
 
   .price-row strong {
     font-size: 1.18rem;
+  }
+
+  .price-stack small {
+    font-size: 0.74rem;
   }
 
   .product-foot {

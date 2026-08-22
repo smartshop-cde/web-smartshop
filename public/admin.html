@@ -64,6 +64,7 @@
               <button class="admin-tab" type="button" data-admin-tab="productsPanel">Productos</button>
               <button class="admin-tab" type="button" data-admin-tab="categoriesPanel">Categorias</button>
               <button class="admin-tab" type="button" data-admin-tab="sellersPanel">Vendedores</button>
+              <button class="admin-tab" type="button" data-admin-tab="settingsPanel">Cotizaciones</button>
             </nav>
             <div class="admin-summary">
               <div>
@@ -140,6 +141,30 @@
               </div>
               <div id="sellerEditor" class="admin-editor" hidden></div>
               <div id="sellersTable" class="admin-table-wrap"></div>
+            </section>
+
+            <section id="settingsPanel" class="admin-card admin-tab-panel" aria-labelledby="settingsTitle" hidden>
+              <div class="section-title-row">
+                <div>
+                  <p class="panel-kicker">Monedas</p>
+                  <h2 id="settingsTitle">Cotizaciones</h2>
+                </div>
+                <span>Valores referenciales para convertir desde USD.</span>
+              </div>
+              <form id="exchangeRatesForm" class="admin-form-grid">
+                <label class="admin-field">
+                  <span>Real brasilero por 1 USD</span>
+                  <input id="usdToBrlInput" name="usd_to_brl" class="admin-input" type="number" min="0" step="0.01" required>
+                </label>
+                <label class="admin-field">
+                  <span>Guaranies por 1 USD</span>
+                  <input id="usdToPygInput" name="usd_to_pyg" class="admin-input" type="number" min="0" step="1" required>
+                </label>
+                <p id="exchangePreview" class="admin-notice is-wide"></p>
+                <div class="admin-form-actions is-wide">
+                  <button class="admin-button is-primary" type="submit">Guardar cotizaciones</button>
+                </div>
+              </form>
             </section>
           </div>
         </div>

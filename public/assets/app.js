@@ -55,6 +55,7 @@
     els.brandStrip = document.querySelector("#brandStrip");
     els.navCategoryList = document.querySelector("#navCategoryList");
     els.navSellerList = document.querySelector("#navSellerList");
+    els.exchangeTicker = document.querySelector("#exchangeTicker");
     els.featuredSection = document.querySelector("#featuredSection");
     els.featuredGrid = document.querySelector("#featuredGrid");
     els.heroShowcase = document.querySelector("#heroShowcase");
@@ -277,6 +278,7 @@
       : "#catalogo";
     els.heroWhatsappLink.setAttribute("aria-label", "Hablar por WhatsApp con SmartShop");
     els.floatingWhatsapp.href = els.heroWhatsappLink.href;
+    renderExchangeTicker();
 
     if (!isConfiguredPlaceId(store.googlePlaceId)) {
       els.directionsLink.href = mapsUrl;
@@ -470,7 +472,7 @@
               .join("")}
           </ul>
           <div class="price-row">
-            <strong>${formatPrice(product.price)}</strong>
+            ${renderPriceBlock(product.price)}
           </div>
           <div class="product-foot">
             <span class="product-code">Codigo: ${escapeHtml(code)}</span>
@@ -552,7 +554,7 @@
           <h2 id="dialogTitle">${escapeHtml(product.name)}</h2>
           ${product.description ? `<p>${escapeHtml(product.description)}</p>` : ""}
           <div class="price-row">
-            <strong>${formatPrice(product.price)}</strong>
+            ${renderPriceBlock(product.price)}
             <span class="stock-pill ${stockStatus.className}">${stockStatus.label}: ${stock}</span>
           </div>
           <dl class="detail-list">
@@ -679,6 +681,7 @@
       `Producto: ${product.name}`,
       `Codigo: ${getProductCode(product)}`,
       `Precio: ${formatPrice(product.price)}`,
+      `Aprox: ${formatGuaraniPrice(convertUsdToPyg(product.price))} / ${formatRealPrice(convertUsdToBrl(product.price))}`,
       `Stock web: ${stock}`,
     ];
     if (store.domain) pieces.push(`Web: https://${store.domain}`);
@@ -708,8 +711,73 @@
   }
 
   function formatPrice(value) {
+    return formatUsdPrice(value);
+  }
+
+  function renderPriceBlock(value) {
+    return `
+      <div class="price-stack">
+        <strong>${formatUsdPrice(value)}</strong>
+        <small>${formatGuaraniPrice(convertUsdToPyg(value))} · ${formatRealPrice(convertUsdToBrl(value))}</small>
+      </div>
+    `;
+  }
+
+  function renderExchangeTicker() {
+    if (!els.exchangeTicker) return;
+    const rates = getExchangeRates();
+    els.exchangeTicker.innerHTML = `
+      <span>🇧🇷 ${formatRateBrl(rates.usdToBrl)}rs</span>
+      <span>🇵🇾 ${formatRatePyg(rates.usdToPyg)}gs</span>
+    `;
+    els.exchangeTicker.title = "Cotizacion referencial por 1 USD";
+  }
+
+  function getExchangeRates() {
+    const rates = store.exchangeRates || {};
+    const usdToBrl = Number(rates.usdToBrl ?? rates.usd_to_brl ?? 5.27);
+    const usdToPyg = Number(rates.usdToPyg ?? rates.usd_to_pyg ?? 6100);
+    return {
+      usdToBrl: Number.isFinite(usdToBrl) && usdToBrl > 0 ? usdToBrl : 5.27,
+      usdToPyg: Number.isFinite(usdToPyg) && usdToPyg > 0 ? usdToPyg : 6100,
+    };
+  }
+
+  function convertUsdToBrl(value) {
+    return (Number(value) || 0) * getExchangeRates().usdToBrl;
+  }
+
+  function convertUsdToPyg(value) {
+    return (Number(value) || 0) * getExchangeRates().usdToPyg;
+  }
+
+  function formatUsdPrice(value) {
+    const amount = new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(
+      Number(value) || 0
+    );
+    return `US$ ${amount}`;
+  }
+
+  function formatGuaraniPrice(value) {
     const amount = new Intl.NumberFormat("es-PY", { maximumFractionDigits: 0 }).format(Number(value) || 0);
     return `Gs. ${amount}`;
+  }
+
+  function formatRealPrice(value) {
+    const amount = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+      Number(value) || 0
+    );
+    return `R$ ${amount}`;
+  }
+
+  function formatRateBrl(value) {
+    return new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+      Number(value) || 0
+    );
+  }
+
+  function formatRatePyg(value) {
+    return new Intl.NumberFormat("es-PY", { useGrouping: false, maximumFractionDigits: 0 }).format(Number(value) || 0);
   }
 
   function getWhatsAppUrl(phone, message) {
@@ -825,7 +893,7 @@
           image: product.image,
           description: product.description,
         },
-        priceCurrency: "PYG",
+        priceCurrency: "USD",
         price: Number(product.price) || 0,
         availability: getStock(product) > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       })),

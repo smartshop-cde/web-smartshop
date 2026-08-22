@@ -7,6 +7,11 @@
     imageMaxBytes: 5 * 1024 * 1024,
     imageTypes: new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]),
   };
+  const DEFAULT_EXCHANGE_RATES = {
+    baseCurrency: "USD",
+    usdToBrl: 5.27,
+    usdToPyg: 6100,
+  };
 
   let client;
 
@@ -39,7 +44,7 @@
   async function loadPublicCatalog(options = {}) {
     const supabase = requireClient();
     const limit = Number(options.limit || 120);
-    const [categoriesResult, sellersResult, productsResult] = await Promise.all([
+    const [categoriesResult, sellersResult, productsResult, settings] = await Promise.all([
       supabase
         .from("categories")
         .select("id,name,slug,active,sort_order")
@@ -61,6 +66,7 @@
         .order("featured", { ascending: false })
         .order("name", { ascending: true })
         .limit(limit),
+      loadStoreSettings(),
     ]);
 
     assertSupabaseResult(categoriesResult, "No pudimos cargar categorias.");
@@ -68,7 +74,8 @@
     assertSupabaseResult(productsResult, "No pudimos cargar productos.");
 
     return {
-      store: getStaticStore(),
+      store: getStaticStore(settings),
+      settings,
       categories: categoriesResult.data || [],
       products: (productsResult.data || []).map(mapProductRow),
       sellers: (sellersResult.data || []).map(mapSellerRow),
@@ -77,7 +84,7 @@
 
   async function loadAdminCatalog() {
     const supabase = requireClient();
-    const [categoriesResult, sellersResult, productsResult] = await Promise.all([
+    const [categoriesResult, sellersResult, productsResult, settings] = await Promise.all([
       supabase
         .from("categories")
         .select("id,name,slug,active,sort_order,created_at,updated_at")
@@ -94,6 +101,7 @@
           "id,public_code,name,slug,description,brand,active,featured,category_id,category:categories(id,name,slug),variants:product_variants(id,name,sku,price,stock,active,sort_order),images:product_images(id,url,sort_order,is_primary,created_at),created_at,updated_at"
         )
         .order("name", { ascending: true }),
+      loadStoreSettings(),
     ]);
 
     assertSupabaseResult(categoriesResult, "No pudimos cargar categorias.");
@@ -101,6 +109,7 @@
     assertSupabaseResult(productsResult, "No pudimos cargar productos.");
 
     return {
+      settings,
       categories: categoriesResult.data || [],
       sellers: sellersResult.data || [],
       products: (productsResult.data || []).map((product) => ({
@@ -109,6 +118,20 @@
         images: sortImages(product.images || []),
       })),
     };
+  }
+
+  async function loadStoreSettings() {
+    const supabase = requireClient();
+    const { data, error } = await supabase
+      .from("store_settings")
+      .select("key,value")
+      .in("key", ["exchange_rates"]);
+
+    if (error) {
+      return { exchangeRates: { ...DEFAULT_EXCHANGE_RATES } };
+    }
+
+    return normalizeSettings(data || []);
   }
 
   async function signIn(email, password) {
@@ -213,7 +236,7 @@
     };
   }
 
-  function getStaticStore() {
+  function getStaticStore(settings = {}) {
     const fallback = window.STORE_DATA?.store || {};
     return {
       ...fallback,
@@ -226,6 +249,24 @@
         username: "@smartshopcde",
         ...(fallback.social || {}),
       },
+      exchangeRates: normalizeExchangeRates(settings.exchangeRates || fallback.exchangeRates),
+    };
+  }
+
+  function normalizeSettings(rows) {
+    const map = new Map(rows.map((row) => [row.key, row.value || {}]));
+    return {
+      exchangeRates: normalizeExchangeRates(map.get("exchange_rates")),
+    };
+  }
+
+  function normalizeExchangeRates(value = {}) {
+    const usdToBrl = Number(value.usdToBrl ?? value.usd_to_brl ?? DEFAULT_EXCHANGE_RATES.usdToBrl);
+    const usdToPyg = Number(value.usdToPyg ?? value.usd_to_pyg ?? DEFAULT_EXCHANGE_RATES.usdToPyg);
+    return {
+      baseCurrency: "USD",
+      usdToBrl: Number.isFinite(usdToBrl) && usdToBrl > 0 ? usdToBrl : DEFAULT_EXCHANGE_RATES.usdToBrl,
+      usdToPyg: Number.isFinite(usdToPyg) && usdToPyg > 0 ? usdToPyg : DEFAULT_EXCHANGE_RATES.usdToPyg,
     };
   }
 
@@ -277,6 +318,7 @@
     requireClient,
     loadPublicCatalog,
     loadAdminCatalog,
+    loadStoreSettings,
     signIn,
     signOut,
     getSession,

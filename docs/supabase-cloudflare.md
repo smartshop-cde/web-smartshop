@@ -91,7 +91,32 @@ En `/admin -> Productos` se puede descargar una plantilla y cargar productos por
 
 La plantilla no pide codigo ni SKU. Supabase genera `products.public_code` automaticamente y `product_variants.sku` queda sincronizado con ese codigo.
 
+El campo `precio` de la plantilla se carga en USD. La web publica muestra USD como precio principal y calcula guaranies/reales con la cotizacion configurada.
+
 Antes de guardar, el panel muestra vista previa con nuevos productos, actualizaciones, categorias nuevas y errores por fila.
+
+## Cotizaciones
+
+Las cotizaciones se administran desde `/admin -> Cotizaciones`.
+
+Supabase guarda estos valores en `public.store_settings`:
+
+```json
+{
+  "key": "exchange_rates",
+  "value": {
+    "baseCurrency": "USD",
+    "usdToBrl": 5.27,
+    "usdToPyg": 6100
+  }
+}
+```
+
+El encabezado publico muestra una referencia compacta, por ejemplo:
+
+```text
+🇧🇷 5,27rs 🇵🇾 6100gs
+```
 
 ## RLS
 
@@ -104,12 +129,13 @@ Publico:
 - puede leer variantes activas de productos activos;
 - puede leer imagenes de productos activos;
 - puede leer vendedores activos.
+- puede leer `store_settings.exchange_rates`.
 
 Admin:
 
 - debe iniciar sesion con Supabase Auth;
 - debe tener `profiles.role = 'admin'`;
-- puede crear, editar, ocultar y eliminar productos, categorias, variantes, imagenes y vendedores.
+- puede crear, editar, ocultar y eliminar productos, categorias, variantes, imagenes, vendedores y cotizaciones.
 
 ## Storage
 

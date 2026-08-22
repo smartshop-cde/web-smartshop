@@ -5,19 +5,23 @@
     ["marca", "Marca"],
     ["categoria", "Categoria"],
     ["variante", "Variante o capacidad"],
-    ["precio", "Precio Gs."],
+    ["precio", "Precio USD"],
     ["stock", "Stock"],
     ["descripcion", "Descripcion"],
     ["destacado", "Destacado: si/no"],
     ["activo", "Activo: si/no"],
   ];
+  const DEFAULT_EXCHANGE_RATES = {
+    usdToBrl: 5.27,
+    usdToPyg: 6100,
+  };
   const TEMPLATE_ROWS = [
     {
       nombre: "iPhone 15 128 GB",
       marca: "Apple",
       categoria: "Celulares",
       variante: "128 GB",
-      precio: 6200000,
+      precio: 1016.39,
       stock: 5,
       descripcion: "Equipo sellado con garantia de tienda",
       destacado: "si",
@@ -28,7 +32,7 @@
       marca: "Apple",
       categoria: "Audio",
       variante: "Default",
-      precio: 1850000,
+      precio: 303.28,
       stock: 3,
       descripcion: "Cancelacion activa de ruido",
       destacado: "no",
@@ -37,7 +41,7 @@
   ];
   const els = {};
   const state = {
-    catalog: { products: [], categories: [], sellers: [] },
+    catalog: { products: [], categories: [], sellers: [], settings: { exchangeRates: DEFAULT_EXCHANGE_RATES } },
     pendingImport: null,
     loading: false,
   };
@@ -92,6 +96,10 @@
     els.productEditor = document.querySelector("#productEditor");
     els.categoryEditor = document.querySelector("#categoryEditor");
     els.sellerEditor = document.querySelector("#sellerEditor");
+    els.exchangeRatesForm = document.querySelector("#exchangeRatesForm");
+    els.usdToBrlInput = document.querySelector("#usdToBrlInput");
+    els.usdToPygInput = document.querySelector("#usdToPygInput");
+    els.exchangePreview = document.querySelector("#exchangePreview");
     els.importPreview = document.querySelector("#importPreview");
     els.downloadTemplateButton = document.querySelector("#downloadTemplateButton");
     els.importProductsInput = document.querySelector("#importProductsInput");
@@ -123,6 +131,8 @@
     els.productEditor.addEventListener("submit", handleProductSubmit);
     els.categoryEditor.addEventListener("submit", handleCategorySubmit);
     els.sellerEditor.addEventListener("submit", handleSellerSubmit);
+    els.exchangeRatesForm.addEventListener("submit", handleExchangeRatesSubmit);
+    els.exchangeRatesForm.addEventListener("input", renderExchangePreview);
     els.productEditor.addEventListener("click", handleEditorClick);
     els.importPreview.addEventListener("click", handleImportPreviewClick);
     els.categoryEditor.addEventListener("click", handleEditorClick);
@@ -149,7 +159,7 @@
 
   async function handleLogout() {
     await window.SmartShopSupabase.signOut();
-    state.catalog = { products: [], categories: [], sellers: [] };
+    state.catalog = { products: [], categories: [], sellers: [], settings: { exchangeRates: DEFAULT_EXCHANGE_RATES } };
     showLogin();
     toast("Sesion cerrada.");
   }
@@ -186,6 +196,7 @@
     renderProductsTable();
     renderCategoriesTable();
     renderSellersTable();
+    renderSettings();
   }
 
   function renderDashboard() {
@@ -205,6 +216,7 @@
       ["Productos sin stock", soldOut.length, "Aparecen como agotados si siguen activos."],
       ["Unidades disponibles", totalStock, "Suma de stock en variantes activas."],
       ["Vendedores activos", activeSellers.length, "Disponibles para WhatsApp en la web."],
+      ["Cotizacion", renderExchangeRateText(), "Valor usado para convertir precios desde USD."],
     ]
       .map(
         ([label, value, detail]) => `
@@ -216,6 +228,25 @@
         `
       )
       .join("");
+  }
+
+  function renderSettings() {
+    const rates = getExchangeRates();
+    els.usdToBrlInput.value = rates.usdToBrl;
+    els.usdToPygInput.value = rates.usdToPyg;
+    renderExchangePreview();
+  }
+
+  function renderExchangePreview() {
+    const rates = {
+      usdToBrl: Number(els.usdToBrlInput?.value || DEFAULT_EXCHANGE_RATES.usdToBrl),
+      usdToPyg: Number(els.usdToPygInput?.value || DEFAULT_EXCHANGE_RATES.usdToPyg),
+    };
+    if (!els.exchangePreview) return;
+    els.exchangePreview.textContent =
+      `Asi se vera en el encabezado: 🇧🇷 ${formatRateBrl(rates.usdToBrl)}rs ` +
+      `🇵🇾 ${formatRatePyg(rates.usdToPyg)}gs. Ejemplo US$ 100 = ` +
+      `${formatGuaraniPrice(100 * rates.usdToPyg)} / ${formatRealPrice(100 * rates.usdToBrl)}.`;
   }
 
   function renderProductsTable() {
@@ -373,8 +404,8 @@
           <input name="variant_name" class="admin-input" value="${escapeHtml(variant.name || "Default")}" required>
         </label>
         <label class="admin-field">
-          <span>Precio Gs.</span>
-          <input name="price" class="admin-input" type="number" min="0" step="1" value="${Number(variant.price || 0)}" required>
+          <span>Precio USD</span>
+          <input name="price" class="admin-input" type="number" min="0" step="0.01" value="${Number(variant.price || 0)}" required>
         </label>
         <label class="admin-field">
           <span>Stock</span>
@@ -621,6 +652,31 @@
       closeEditors();
       await loadAndRenderCatalog();
       toast(form.dataset.id ? "Vendedor actualizado." : "Vendedor creado.");
+    } catch (error) {
+      toast(error.message, "error");
+    } finally {
+      setButtonLoading(submitButton, false);
+    }
+  }
+
+  async function handleExchangeRatesSubmit(event) {
+    event.preventDefault();
+    const submitButton = event.target.querySelector("[type='submit']");
+    setButtonLoading(submitButton, true);
+    try {
+      const usdToBrl = Number(els.usdToBrlInput.value || 0);
+      const usdToPyg = Number(els.usdToPygInput.value || 0);
+      if (!Number.isFinite(usdToBrl) || usdToBrl <= 0) throw new Error("La cotizacion en reales debe ser mayor a cero.");
+      if (!Number.isFinite(usdToPyg) || usdToPyg <= 0) throw new Error("La cotizacion en guaranies debe ser mayor a cero.");
+
+      await upsertStoreSetting("exchange_rates", {
+        baseCurrency: "USD",
+        usdToBrl,
+        usdToPyg,
+      });
+      await loadAndRenderCatalog();
+      setTab("settingsPanel");
+      toast("Cotizaciones actualizadas.");
     } catch (error) {
       toast(error.message, "error");
     } finally {
@@ -981,6 +1037,16 @@
     }
   }
 
+  async function upsertStoreSetting(key, value) {
+    const { data, error } = await window.SmartShopSupabase.requireClient()
+      .from("store_settings")
+      .upsert({ key, value }, { onConflict: "key" })
+      .select()
+      .single();
+    if (error) throw new Error(readableDatabaseError(error));
+    return data;
+  }
+
   function handleImagePreview(event) {
     const input = event.target.closest("[data-preview-target]");
     if (!input?.files?.[0]) return;
@@ -1082,7 +1148,7 @@
       if (["variante", "varianteOCapacidad", "capacidad", "variant"].includes(normalizedKey)) {
         normalized.variant = cleanText(value);
       }
-      if (["precio", "precioGs", "price"].includes(normalizedKey)) normalized.price = parseImportNumber(value);
+      if (["precio", "precioUsd", "precioGs", "price"].includes(normalizedKey)) normalized.price = parseImportNumber(value);
       if (["stock", "cantidad", "unidades"].includes(normalizedKey)) normalized.stock = parseImportNumber(value);
       if (["descripcion", "description"].includes(normalizedKey)) normalized.description = cleanText(value);
       if (["destacado", "destacadoSiNo", "featured"].includes(normalizedKey)) {
@@ -1152,6 +1218,8 @@
     if (typeof value === "number") return value;
     const text = String(value ?? "")
       .replace(/gs\.?/gi, "")
+      .replace(/us\$|usd/gi, "")
+      .replace(/r\$|rs\.?/gi, "")
       .replace(/[^\d,.-]/g, "")
       .trim();
     if (!text) return NaN;
@@ -1204,8 +1272,51 @@
   }
 
   function formatPrice(value) {
+    return formatUsdPrice(value);
+  }
+
+  function getExchangeRates() {
+    const rates = state.catalog.settings?.exchangeRates || {};
+    const usdToBrl = Number(rates.usdToBrl ?? rates.usd_to_brl ?? DEFAULT_EXCHANGE_RATES.usdToBrl);
+    const usdToPyg = Number(rates.usdToPyg ?? rates.usd_to_pyg ?? DEFAULT_EXCHANGE_RATES.usdToPyg);
+    return {
+      usdToBrl: Number.isFinite(usdToBrl) && usdToBrl > 0 ? usdToBrl : DEFAULT_EXCHANGE_RATES.usdToBrl,
+      usdToPyg: Number.isFinite(usdToPyg) && usdToPyg > 0 ? usdToPyg : DEFAULT_EXCHANGE_RATES.usdToPyg,
+    };
+  }
+
+  function renderExchangeRateText() {
+    const rates = getExchangeRates();
+    return `🇧🇷 ${formatRateBrl(rates.usdToBrl)}rs 🇵🇾 ${formatRatePyg(rates.usdToPyg)}gs`;
+  }
+
+  function formatUsdPrice(value) {
+    const amount = new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(
+      Number(value) || 0
+    );
+    return `US$ ${amount}`;
+  }
+
+  function formatGuaraniPrice(value) {
     const amount = new Intl.NumberFormat("es-PY", { maximumFractionDigits: 0 }).format(Number(value) || 0);
     return `Gs. ${amount}`;
+  }
+
+  function formatRealPrice(value) {
+    const amount = new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+      Number(value) || 0
+    );
+    return `R$ ${amount}`;
+  }
+
+  function formatRateBrl(value) {
+    return new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+      Number(value) || 0
+    );
+  }
+
+  function formatRatePyg(value) {
+    return new Intl.NumberFormat("es-PY", { useGrouping: false, maximumFractionDigits: 0 }).format(Number(value) || 0);
   }
 
   function readableDatabaseError(error) {
