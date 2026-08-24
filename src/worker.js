@@ -158,6 +158,12 @@ function extractTranslatedText(response) {
   if (response?.translated_text) return String(response.translated_text);
   if (response?.translatedText) return String(response.translatedText);
   if (response?.translation) return String(response.translation);
+  if (response?.response) return String(response.response);
+  if (response?.result) return extractTranslatedText(response.result);
+  if (response?.data) return extractTranslatedText(response.data);
+  if (Array.isArray(response?.translations) && response.translations[0]) {
+    return extractTranslatedText(response.translations[0]);
+  }
   if (response?.text) return String(response.text);
   return "";
 }

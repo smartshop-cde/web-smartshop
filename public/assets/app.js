@@ -116,6 +116,7 @@
       "location.copy": "SmartShop te espera en Galeria Jebai, 4to piso, Ciudad del Este.",
       "location.socialAria": "Redes sociales de SmartShop",
       "location.addressTitle": "Direccion",
+      "location.defaultHours": "Lunes a Sabado: 7:30 a 15:30",
       "location.mapTitle": "Mapa de SmartShop en Ciudad del Este",
       "location.directions": "Como llegar",
       "footer.copy": "Tecnologia y atencion directa en Ciudad del Este.",
@@ -257,6 +258,7 @@
       "location.copy": "A SmartShop espera por você na Galeria Jebai, 4º piso, Ciudad del Este.",
       "location.socialAria": "Redes sociais da SmartShop",
       "location.addressTitle": "Endereço",
+      "location.defaultHours": "Segunda a sábado: 7:30 às 15:30",
       "location.mapTitle": "Mapa da SmartShop em Ciudad del Este",
       "location.directions": "Como chegar",
       "footer.copy": "Tecnologia e atendimento direto em Ciudad del Este.",
@@ -645,7 +647,7 @@
     const social = store.social || {};
     const socialUsername = social.username || "@smartshopcde";
     const address = store.address || DEFAULT_ADDRESS;
-    const hours = store.hours || "Lunes a Sabado: 7:30 a 15:30";
+    const hours = getTranslatedHours(store.hours);
     const mapsUrl = getMapsUrl(address);
     const directionsUrl = getDirectionsUrl(address);
     const heroSeller = sellers.find((seller) => seller.phone) || sellers[0];
@@ -803,8 +805,12 @@
           if (translated) translationCache[translationCacheKey(text)] = translated;
         });
         saveTranslationCache();
+        renderStoreInfo();
+        renderNavigationMenus();
+        renderSellers();
         renderFeaturedProducts();
         renderProducts();
+        injectStructuredData();
         if (state.dialogProductId) {
           const product = products.find((item) => item.id === state.dialogProductId);
           if (product && els.productDialog.open) openProductDialog(product);
@@ -820,6 +826,7 @@
 
   function collectTranslatableProductTexts() {
     const texts = new Set();
+    addTranslatableText(texts, store.hours);
     products.forEach((product) => {
       addTranslatableText(texts, product.description);
       getProductDetails(product).forEach((detail) => addTranslatableText(texts, detail));
@@ -832,6 +839,15 @@
       addTranslatableText(texts, seller.schedule);
     });
     return Array.from(texts);
+  }
+
+  function getTranslatedHours(value) {
+    const defaultHours = TRANSLATIONS.es["location.defaultHours"];
+    const hours = String(value || defaultHours).trim();
+    if (normalizeText(hours) === normalizeText(defaultHours)) {
+      return t("location.defaultHours");
+    }
+    return getTranslatedText(hours);
   }
 
   function addTranslatableText(texts, value) {
@@ -1000,7 +1016,7 @@
             <div>
               ${seller.role ? `<span class="seller-role">${escapeHtml(getTranslatedText(seller.role))}</span>` : ""}
               <h3>${escapeHtml(seller.name)}</h3>
-              ${seller.schedule ? `<p>${escapeHtml(getTranslatedText(seller.schedule))}</p>` : ""}
+              ${seller.schedule ? `<p>${escapeHtml(getTranslatedHours(seller.schedule))}</p>` : ""}
             </div>
             <a class="seller-link" href="${getWhatsAppUrl(seller.phone, buildSellerMessage(seller))}" target="_blank" rel="noopener">
               ${iconSvg("message-circle")}
