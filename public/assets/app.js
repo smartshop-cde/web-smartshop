@@ -6,6 +6,7 @@
     window.SMARTSHOP_API_BASE_URL || localStorage.getItem("smartshop-api-base-url") || ""
   ).replace(/\/$/, "");
   const LANGUAGE_STORAGE_KEY = "smartshop-language";
+  const TRANSLATION_CACHE_STORAGE_KEY = "smartshop-translation-cache-v1";
   const DEFAULT_LANGUAGE = "es";
   const CATEGORY_LABELS = {
     pt: {
@@ -167,18 +168,18 @@
       "store.tagline": "Catalogo con stock actualizado",
     },
     pt: {
-      "meta.title": "SmartShop | Catalogo com estoque em Ciudad del Este",
+      "meta.title": "SmartShop | Catálogo com estoque em Ciudad del Este",
       "meta.description":
-        "SmartShop Ciudad del Este: celulares, tecnologia e acessorios com preco, estoque atualizado, vendedores pelo WhatsApp, redes sociais e localizacao no Google Maps.",
+        "SmartShop Ciudad del Este: celulares, tecnologia e acessórios com preço, estoque atualizado, vendedores pelo WhatsApp, redes sociais e localização no Google Maps.",
       "search.label": "Buscar produto",
-      "search.placeholder": "Buscar produtos, marcas ou codigos...",
+      "search.placeholder": "Buscar produtos, marcas ou códigos...",
       "language.aria": "Idioma",
-      "exchange.aria": "Cotacao referencial",
-      "nav.homeAria": "Ir para o inicio",
+      "exchange.aria": "Cotação referencial",
+      "nav.homeAria": "Ir para o início",
       "nav.menuAria": "Abrir menu",
-      "nav.sectionsAria": "Secoes principais",
-      "nav.categoriesAria": "Categorias disponiveis",
-      "nav.sellersAria": "Vendedores disponiveis",
+      "nav.sectionsAria": "Seções principais",
+      "nav.categoriesAria": "Categorias disponíveis",
+      "nav.sellersAria": "Vendedores disponíveis",
       "nav.favoritesAria": "Favoritos",
       "nav.loginAria": "Entrar no painel privado",
       "nav.cartAria": "Carrinho",
@@ -187,61 +188,61 @@
       "nav.category": "Categoria",
       "nav.offers": "Ofertas",
       "nav.sellers": "Vendedores",
-      "nav.location": "Localizacao",
+      "nav.location": "Localização",
       "nav.login": "Entrar",
-      "hero.title1": "Tecnologia que voce quer.",
-      "hero.title2": "Precos que compensam.",
+      "hero.title1": "Tecnologia que você quer.",
+      "hero.title2": "Preços que compensam.",
       "hero.lead":
-        "Encontre celulares, audio e acessorios com estoque atualizado, preco claro e atendimento direto pelo WhatsApp.",
+        "Encontre celulares, áudio e acessórios com estoque atualizado, preço claro e atendimento direto pelo WhatsApp.",
       "hero.viewProducts": "Ver produtos",
       "hero.whatsapp": "Falar no WhatsApp",
-      "hero.trustAria": "Resumo de beneficios",
+      "hero.trustAria": "Resumo de benefícios",
       "hero.trustStock": "Estoque atualizado",
       "hero.trustPickup": "Retirada em CDE",
-      "hero.trustSupport": "Atendimento rapido",
-      "hero.cardAria": "Produtos destacados da SmartShop",
-      "hero.cardTitle": "Catalogo SmartShop",
-      "benefits.aria": "Beneficios de compra",
+      "hero.trustSupport": "Atendimento rápido",
+      "hero.cardAria": "Produtos em destaque da SmartShop",
+      "hero.cardTitle": "Catálogo SmartShop",
+      "benefits.aria": "Benefícios de compra",
       "benefits.stockTitle": "Estoque atualizado",
-      "benefits.stockText": "Disponibilidade visivel antes de consultar.",
+      "benefits.stockText": "Disponibilidade visível antes de consultar.",
       "benefits.pickupTitle": "Retirada em Ciudad del Este",
       "benefits.pickupText": "Combine a compra e passe pela loja.",
       "benefits.whatsappTitle": "Atendimento pelo WhatsApp",
       "benefits.whatsappText": "Consulte rapidamente com um vendedor.",
-      "benefits.pricesTitle": "Precos transparentes",
-      "benefits.pricesText": "Valores claros em dolares e conversoes.",
+      "benefits.pricesTitle": "Preços transparentes",
+      "benefits.pricesText": "Valores claros em dólares e conversões.",
       "categories.eyebrow": "Explorar",
       "categories.title": "Categorias",
-      "categories.copy": "Escolha uma linha e o catalogo sera filtrado automaticamente",
-      "featured.eyebrow": "Selecao SmartShop",
-      "featured.title": "Produtos destacados",
-      "featured.copy": "Opcoes com prioridade no catalogo",
+      "categories.copy": "Escolha uma linha e o catálogo será filtrado automaticamente",
+      "featured.eyebrow": "Seleção SmartShop",
+      "featured.title": "Produtos em destaque",
+      "featured.copy": "Opções com prioridade no catálogo",
       "brands.eyebrow": "Marcas",
       "brands.title": "Comprar por marca",
-      "brands.copy": "Filtre pelas marcas disponiveis no catalogo.",
-      "catalog.eyebrow": "Catalogo",
+      "brands.copy": "Filtre pelas marcas disponíveis no catálogo.",
+      "catalog.eyebrow": "Catálogo",
       "catalog.title": "Produtos",
       "catalog.filters": "Filtros",
       "catalog.sortLabel": "Ordenar produtos",
       "catalog.sortFeatured": "Destaques primeiro",
       "catalog.sortName": "Nome A-Z",
-      "catalog.sortPriceAsc": "Menor preco",
-      "catalog.sortPriceDesc": "Maior preco",
+      "catalog.sortPriceAsc": "Menor preço",
+      "catalog.sortPriceDesc": "Maior preço",
       "catalog.sortStock": "Mais estoque",
-      "catalog.filtersAria": "Filtros do catalogo",
+      "catalog.filtersAria": "Filtros do catálogo",
       "catalog.closeFiltersAria": "Fechar filtros",
       "catalog.brand": "Marca",
-      "catalog.priceUsd": "Preco USD",
+      "catalog.priceUsd": "Preço USD",
       "catalog.from": "De",
-      "catalog.to": "Ate",
+      "catalog.to": "Até",
       "catalog.noLimit": "Sem limite",
-      "catalog.onlyAvailable": "Mostrar somente disponiveis",
+      "catalog.onlyAvailable": "Mostrar somente disponíveis",
       "catalog.clearFilters": "Limpar filtros",
       "catalog.listTitle": "Lista",
-      "catalog.emptyTitle": "Nao encontramos produtos com estes filtros.",
-      "catalog.emptyText": "Ajuste sua busca ou volte a ver todo o catalogo.",
-      "catalog.errorTitle": "Nao conseguimos carregar o catalogo.",
-      "catalog.errorText": "Verifique a conexao ou tente novamente.",
+      "catalog.emptyTitle": "Não encontramos produtos com estes filtros.",
+      "catalog.emptyText": "Ajuste sua busca ou volte a ver todo o catálogo.",
+      "catalog.errorTitle": "Não conseguimos carregar o catálogo.",
+      "catalog.errorText": "Verifique a conexão ou tente novamente.",
       "catalog.retry": "Tentar novamente",
       "stock.products": "Produtos",
       "stock.units": "Unidades",
@@ -251,31 +252,31 @@
       "sellers.copy": "Fale diretamente com nossa equipe.",
       "sellers.prevAria": "Ver vendedores anteriores",
       "sellers.nextAria": "Ver mais vendedores",
-      "location.eyebrow": "Localizacao e redes",
+      "location.eyebrow": "Localização e redes",
       "location.title": "Visite-nos",
-      "location.copy": "A SmartShop espera por voce na Galeria Jebai, 4to piso, Ciudad del Este.",
+      "location.copy": "A SmartShop espera por você na Galeria Jebai, 4º piso, Ciudad del Este.",
       "location.socialAria": "Redes sociais da SmartShop",
-      "location.addressTitle": "Endereco",
+      "location.addressTitle": "Endereço",
       "location.mapTitle": "Mapa da SmartShop em Ciudad del Este",
       "location.directions": "Como chegar",
       "footer.copy": "Tecnologia e atendimento direto em Ciudad del Este.",
       "footer.products": "Produtos",
-      "footer.catalog": "Catalogo",
+      "footer.catalog": "Catálogo",
       "footer.categories": "Categorias",
       "footer.offers": "Ofertas",
       "footer.help": "Ajuda",
-      "footer.location": "Localizacao",
-      "footer.hours": "Horarios",
+      "footer.location": "Localização",
+      "footer.hours": "Horários",
       "dialog.closeAria": "Fechar detalhe",
-      "status.loadingCatalog": "Carregando catalogo",
-      "status.preparingStock": "Preparando estoque e precos",
-      "status.notAvailable": "Nao disponivel",
-      "status.catalogUnavailable": "Catalogo nao disponivel",
+      "status.loadingCatalog": "Carregando catálogo",
+      "status.preparingStock": "Preparando estoque e preços",
+      "status.notAvailable": "Não disponível",
+      "status.catalogUnavailable": "Catálogo não disponível",
       "status.retryLoad": "Tente carregar novamente",
       "status.stockReady": "Estoque pronto para consultar",
       "status.withoutStock": "sem estoque",
-      "status.availableSingular": "disponivel",
-      "status.availablePlural": "disponiveis",
+      "status.availableSingular": "disponível",
+      "status.availablePlural": "disponíveis",
       "status.soldOut": "Esgotado",
       "status.lowStock": "Poucas unidades",
       "status.inStock": "Em estoque",
@@ -284,9 +285,9 @@
       "product.showing": "Mostrando",
       "product.of": "de",
       "product.consultWhatsapp": "Consultar pelo WhatsApp",
-      "product.consultRestock": "Consultar reposicao",
+      "product.consultRestock": "Consultar reposição",
       "product.addFavorite": "Adicionar {name} aos favoritos",
-      "product.code": "Codigo",
+      "product.code": "Código",
       "product.view": "Ver produto",
       "product.brand": "Marca",
       "product.variant": "Variante",
@@ -298,14 +299,14 @@
       "product.deliveryDefault": "Retirada na loja ou envio combinado",
       "seller.photoAlt": "Foto de {name}",
       "seller.whatsapp": "Falar no WhatsApp",
-      "exchange.title": "Cotacao referencial por 1 USD",
+      "exchange.title": "Cotação referencial por 1 USD",
       "messages.product": "Produto",
-      "messages.code": "Codigo",
-      "messages.price": "Preco",
+      "messages.code": "Código",
+      "messages.price": "Preço",
       "messages.approx": "Aprox",
       "messages.webStatus": "Status no site",
       "messages.web": "Site",
-      "store.tagline": "Catalogo com estoque atualizado",
+      "store.tagline": "Catálogo com estoque atualizado",
     },
   };
 
@@ -314,6 +315,8 @@
   let store = data.store;
   let products = data.products;
   let sellers = data.sellers;
+  const translationCache = loadTranslationCache();
+  let productTranslationPromise = null;
 
   const state = {
     language: getInitialLanguage(),
@@ -326,6 +329,7 @@
     sort: "featured",
     loading: true,
     error: "",
+    dialogProductId: "",
   };
 
   const els = {};
@@ -527,6 +531,7 @@
     localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
     applyTranslations();
     renderAll();
+    queueProductTranslations();
   }
 
   function t(key, replacements = {}) {
@@ -560,6 +565,25 @@
       button.classList.toggle("is-active", button.dataset.languageOption === state.language);
       button.setAttribute("aria-pressed", String(button.dataset.languageOption === state.language));
     });
+  }
+
+  function loadTranslationCache() {
+    try {
+      const raw = localStorage.getItem(TRANSLATION_CACHE_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function saveTranslationCache() {
+    try {
+      const entries = Object.entries(translationCache).slice(-800);
+      localStorage.setItem(TRANSLATION_CACHE_STORAGE_KEY, JSON.stringify(Object.fromEntries(entries)));
+    } catch {
+      // Local storage can be unavailable in private browsing; translation still works for the session.
+    }
   }
 
   async function loadCatalog() {
@@ -599,6 +623,7 @@
       products = data.products;
       sellers = data.sellers;
       state.loading = false;
+      queueProductTranslations();
     }
   }
 
@@ -613,6 +638,7 @@
     renderFeaturedProducts();
     renderProducts();
     injectStructuredData();
+    queueProductTranslations();
   }
 
   function renderStoreInfo() {
@@ -765,6 +791,92 @@
       : `<img class="hero-logo-fallback" src="assets/logo-smartshop.png" width="160" height="160" alt="">`;
   }
 
+  function queueProductTranslations() {
+    if (state.language !== "pt" || state.loading || state.error || productTranslationPromise) return;
+    const texts = collectTranslatableProductTexts().filter((text) => !translationCache[translationCacheKey(text)]);
+    if (!texts.length) return;
+
+    productTranslationPromise = translateTexts(texts, { source: "es", target: "pt" })
+      .then((translations) => {
+        texts.forEach((text, index) => {
+          const translated = translations[index];
+          if (translated) translationCache[translationCacheKey(text)] = translated;
+        });
+        saveTranslationCache();
+        renderFeaturedProducts();
+        renderProducts();
+        if (state.dialogProductId) {
+          const product = products.find((item) => item.id === state.dialogProductId);
+          if (product && els.productDialog.open) openProductDialog(product);
+        }
+      })
+      .catch((error) => {
+        console.warn("No se pudo traducir el catalogo con Google Translate.", error);
+      })
+      .finally(() => {
+        productTranslationPromise = null;
+      });
+  }
+
+  function collectTranslatableProductTexts() {
+    const texts = new Set();
+    products.forEach((product) => {
+      addTranslatableText(texts, product.description);
+      getProductDetails(product).forEach((detail) => addTranslatableText(texts, detail));
+      addTranslatableText(texts, product.condition);
+      addTranslatableText(texts, product.warranty);
+      addTranslatableText(texts, product.delivery);
+    });
+    sellers.forEach((seller) => {
+      addTranslatableText(texts, seller.role);
+      addTranslatableText(texts, seller.schedule);
+    });
+    return Array.from(texts);
+  }
+
+  function addTranslatableText(texts, value) {
+    const text = String(value || "").trim();
+    if (!text || text.length < 4 || /^[\d\s.,/%+-]+$/.test(text)) return;
+    texts.add(text);
+  }
+
+  async function translateTexts(texts, options) {
+    const batches = [];
+    for (let index = 0; index < texts.length; index += 80) {
+      batches.push(texts.slice(index, index + 80));
+    }
+
+    const translated = [];
+    for (const batch of batches) {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source: options.source,
+          target: options.target,
+          texts: batch,
+        }),
+      });
+      if (!response.ok) throw new Error(`Translate API ${response.status}`);
+      const payload = await response.json();
+      if (!payload.success || !Array.isArray(payload.data?.translations)) {
+        throw new Error("Respuesta de traduccion invalida");
+      }
+      translated.push(...payload.data.translations);
+    }
+    return translated;
+  }
+
+  function getTranslatedText(value) {
+    const text = String(value || "");
+    if (state.language !== "pt" || !text.trim()) return text;
+    return translationCache[translationCacheKey(text)] || text;
+  }
+
+  function translationCacheKey(value) {
+    return `pt:${String(value || "").trim()}`;
+  }
+
   function renderProducts() {
     if (!els.productGrid) return;
 
@@ -827,6 +939,7 @@
     const code = getProductCode(product);
     const brand = product.brand || "";
     const variant = product.variant || "";
+    const description = getTranslatedText(product.description);
 
     return `
       <article class="product-card ${stockStatus.className}${options.compact ? " is-compact" : ""}">
@@ -841,11 +954,11 @@
           </div>
           <h3>${escapeHtml(product.name)}</h3>
           ${variant ? `<p class="product-variant">${escapeHtml(variant)}</p>` : ""}
-          ${product.description ? `<p>${escapeHtml(product.description)}</p>` : ""}
+          ${description ? `<p>${escapeHtml(description)}</p>` : ""}
           <ul class="product-specs">
             ${getProductDetails(product)
               .slice(0, 3)
-              .map((detail) => `<li>${escapeHtml(detail)}</li>`)
+              .map((detail) => `<li>${escapeHtml(getTranslatedText(detail))}</li>`)
               .join("")}
           </ul>
           <div class="price-row">
@@ -885,9 +998,9 @@
           <article class="seller-card">
             <img class="seller-photo" src="${escapeHtml(seller.image)}" alt="${escapeHtml(t("seller.photoAlt", { name: seller.name }))}" loading="lazy" decoding="async" onerror="this.src='assets/logo-smartshop.png';">
             <div>
-              ${seller.role ? `<span class="seller-role">${escapeHtml(seller.role)}</span>` : ""}
+              ${seller.role ? `<span class="seller-role">${escapeHtml(getTranslatedText(seller.role))}</span>` : ""}
               <h3>${escapeHtml(seller.name)}</h3>
-              ${seller.schedule ? `<p>${escapeHtml(seller.schedule)}</p>` : ""}
+              ${seller.schedule ? `<p>${escapeHtml(getTranslatedText(seller.schedule))}</p>` : ""}
             </div>
             <a class="seller-link" href="${getWhatsAppUrl(seller.phone, buildSellerMessage(seller))}" target="_blank" rel="noopener">
               ${iconSvg("message-circle")}
@@ -907,9 +1020,11 @@
   }
 
   function openProductDialog(product) {
+    state.dialogProductId = product.id;
     const stock = getStock(product);
     const stockStatus = getStockStatus(stock);
     const details = getProductDetails(product);
+    const description = getTranslatedText(product.description);
     const sellerButtons = sellers
       .map(
         (seller) => `
@@ -928,7 +1043,7 @@
         <div class="dialog-info">
           ${product.badge ? `<span class="product-badge">${escapeHtml(product.badge)}</span>` : ""}
           <h2 id="dialogTitle">${escapeHtml(product.name)}</h2>
-          ${product.description ? `<p>${escapeHtml(product.description)}</p>` : ""}
+          ${description ? `<p>${escapeHtml(description)}</p>` : ""}
           <div class="price-row">
             ${renderPriceBlock(product.price)}
             <span class="stock-pill ${stockStatus.className}">${stockStatus.label}</span>
@@ -937,16 +1052,19 @@
             <div><dt>${t("product.code")}</dt><dd>${escapeHtml(getProductCode(product))}</dd></div>
             ${product.brand ? `<div><dt>${t("product.brand")}</dt><dd>${escapeHtml(product.brand)}</dd></div>` : ""}
             ${product.variant ? `<div><dt>${t("product.variant")}</dt><dd>${escapeHtml(product.variant)}</dd></div>` : ""}
-            <div><dt>${t("product.status")}</dt><dd>${escapeHtml(product.condition || t("product.conditionNew"))}</dd></div>
-            <div><dt>${t("product.warranty")}</dt><dd>${escapeHtml(product.warranty || t("product.warrantyDefault"))}</dd></div>
-            <div><dt>${t("product.delivery")}</dt><dd>${escapeHtml(product.delivery || t("product.deliveryDefault"))}</dd></div>
+            <div><dt>${t("product.status")}</dt><dd>${escapeHtml(product.condition ? getTranslatedText(product.condition) : t("product.conditionNew"))}</dd></div>
+            <div><dt>${t("product.warranty")}</dt><dd>${escapeHtml(product.warranty ? getTranslatedText(product.warranty) : t("product.warrantyDefault"))}</dd></div>
+            <div><dt>${t("product.delivery")}</dt><dd>${escapeHtml(product.delivery ? getTranslatedText(product.delivery) : t("product.deliveryDefault"))}</dd></div>
           </dl>
-          <ul class="product-specs is-large">${details.map((detail) => `<li>${escapeHtml(detail)}</li>`).join("")}</ul>
+          <ul class="product-specs is-large">${details.map((detail) => `<li>${escapeHtml(getTranslatedText(detail))}</li>`).join("")}</ul>
           <div class="dialog-actions">${sellerButtons}</div>
         </div>
       </div>
     `;
 
+    if (els.productDialog.open) {
+      return;
+    }
     if (typeof els.productDialog.showModal === "function") {
       els.productDialog.showModal();
     } else {
@@ -955,6 +1073,7 @@
   }
 
   function closeProductDialog() {
+    state.dialogProductId = "";
     if (typeof els.productDialog.close === "function") {
       els.productDialog.close();
     } else {
@@ -1024,7 +1143,7 @@
         const matchesAvailability = !state.onlyAvailable || stock > 0;
         const matchesPrice = Number(product.price || 0) >= minPrice && Number(product.price || 0) <= maxPrice;
         const haystack = normalizeText(
-          `${product.name} ${product.category} ${product.code} ${product.sku} ${product.brand} ${product.variant} ${product.description}`
+          `${product.name} ${product.category} ${getCategoryLabel(product.category)} ${product.code} ${product.sku} ${product.brand} ${product.variant} ${product.description} ${getTranslatedText(product.description)}`
         );
         return matchesCategory && matchesBrand && matchesAvailability && matchesPrice && haystack.includes(search);
       })

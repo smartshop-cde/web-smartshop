@@ -53,6 +53,7 @@ Variables principales:
 - `CORS_ORIGIN`: origen permitido, opcional.
 - `SUPABASE_URL`: URL publica del proyecto Supabase.
 - `SUPABASE_ANON_KEY`: clave anon/public de Supabase. No usar `service_role` en frontend.
+- `GOOGLE_TRANSLATE_API_KEY`: clave privada de Google Cloud Translation usada solo por el Worker.
 
 ## Base de datos PostgreSQL
 
@@ -184,13 +185,15 @@ Root directory: /
 Environment variables:
   SUPABASE_URL
   SUPABASE_ANON_KEY
+  GOOGLE_TRANSLATE_API_KEY
 ```
 
-`wrangler.jsonc` publica el Worker `smartshop` con `assets.directory = "./dist"`. No hay Worker dinamico en esta etapa.
+`wrangler.jsonc` publica el Worker `smartshop` con `assets.directory = "./dist"`. El Worker solo intercepta `/api/*` para traducir contenido dinamico mediante `/api/translate`; los assets estaticos siguen sirviendose desde `dist/`.
 
 El script de build copia `public/` a `dist/`, crea `dist/admin/index.html` para que `/admin` funcione como ruta estatica y genera `assets/supabase-env.js` con las variables publicas de Supabase.
 
 No configurar `SUPABASE_SERVICE_ROLE_KEY` en Cloudflare ni en el frontend.
+No colocar `GOOGLE_TRANSLATE_API_KEY` en archivos publicos ni en `supabase-env.js`; debe existir solo como variable/secreto del Worker en Cloudflare.
 
 Guia detallada: `docs/supabase-cloudflare.md`.
 
