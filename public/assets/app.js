@@ -455,7 +455,7 @@
   function renderProductCard(product, options = {}) {
     const stock = getStock(product);
     const stockStatus = getStockStatus(stock);
-    const seller = sellers[0];
+    const seller = getRandomSeller();
     const whatsappUrl = seller ? getWhatsAppUrl(seller.phone, buildProductMessage(product, stock, seller)) : "#";
     const actionText = stock > 0 ? "Consultar por WhatsApp" : "Consultar reposicion";
     const code = getProductCode(product);
@@ -487,7 +487,7 @@
           </div>
           <div class="product-foot">
             <span class="product-code">Codigo: ${escapeHtml(code)}</span>
-            <span class="stock-pill ${stockStatus.className}"><span aria-hidden="true"></span>${stockStatus.label}: ${stock}</span>
+            <span class="stock-pill ${stockStatus.className}"><span aria-hidden="true"></span>${stockStatus.label}</span>
           </div>
           <div class="product-actions">
             <button class="ghost-button" type="button" data-product-detail data-id="${escapeHtml(product.id)}">Ver producto</button>
@@ -565,7 +565,7 @@
           ${product.description ? `<p>${escapeHtml(product.description)}</p>` : ""}
           <div class="price-row">
             ${renderPriceBlock(product.price)}
-            <span class="stock-pill ${stockStatus.className}">${stockStatus.label}: ${stock}</span>
+            <span class="stock-pill ${stockStatus.className}">${stockStatus.label}</span>
           </div>
           <dl class="detail-list">
             <div><dt>Codigo</dt><dd>${escapeHtml(getProductCode(product))}</dd></div>
@@ -697,16 +697,24 @@
   }
 
   function buildProductMessage(product, stock, seller) {
+    const stockStatus = getStockStatus(stock);
     const pieces = [
       buildSellerMessage(seller),
       `Producto: ${product.name}`,
       `Codigo: ${getProductCode(product)}`,
       `Precio: ${formatPrice(product.price)}`,
       `Aprox: ${formatGuaraniPrice(convertUsdToPyg(product.price))} / ${formatRealPrice(convertUsdToBrl(product.price))}`,
-      `Stock web: ${stock}`,
+      `Estado web: ${stockStatus.label}`,
     ];
     if (store.domain) pieces.push(`Web: https://${store.domain}`);
     return pieces.join("\n");
+  }
+
+  function getRandomSeller() {
+    const availableSellers = sellers.filter((seller) => seller.phone);
+    if (!availableSellers.length) return null;
+    const index = Math.floor(Math.random() * availableSellers.length);
+    return availableSellers[index];
   }
 
   function getSellerGreetingName(seller) {
