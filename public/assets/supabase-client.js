@@ -230,7 +230,7 @@
       role: row.role || "",
       phone: row.whatsapp || "",
       schedule: "Lunes a viernes, 07:30 a 15:30",
-      message: "Hola, vi el catalogo web de SmartShop y quiero consultar un producto.",
+      message: "",
       image: row.image_url || "assets/logo-smartshop.png",
       active: row.active,
     };

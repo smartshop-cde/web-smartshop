@@ -285,7 +285,7 @@
     els.footerInstagramLink.href = els.instagramLink.href;
     els.footerTiktokLink.href = els.tiktokLink.href;
     els.heroWhatsappLink.href = heroSeller
-      ? getWhatsAppUrl(heroSeller.phone, store.whatsappFallbackMessage || "")
+      ? getWhatsAppUrl(heroSeller.phone, buildSellerMessage(heroSeller))
       : "#catalogo";
     els.heroWhatsappLink.setAttribute("aria-label", "Hablar por WhatsApp con SmartShop");
     els.floatingWhatsapp.href = els.heroWhatsappLink.href;
@@ -369,7 +369,7 @@
     els.navSellerList.innerHTML = sellers
       .map(
         (seller) => `
-          <a href="${getWhatsAppUrl(seller.phone, seller.message || store.whatsappFallbackMessage || "")}" target="_blank" rel="noopener">
+          <a href="${getWhatsAppUrl(seller.phone, buildSellerMessage(seller))}" target="_blank" rel="noopener">
             <img src="${escapeHtml(seller.image)}" alt="" loading="lazy" decoding="async">
             <span>
               <strong>${escapeHtml(seller.name)}</strong>
@@ -456,7 +456,7 @@
     const stock = getStock(product);
     const stockStatus = getStockStatus(stock);
     const seller = sellers[0];
-    const whatsappUrl = seller ? getWhatsAppUrl(seller.phone, buildProductMessage(product, stock)) : "#";
+    const whatsappUrl = seller ? getWhatsAppUrl(seller.phone, buildProductMessage(product, stock, seller)) : "#";
     const actionText = stock > 0 ? "Consultar por WhatsApp" : "Consultar reposicion";
     const code = getProductCode(product);
     const brand = product.brand || "";
@@ -515,7 +515,6 @@
   function renderSellers() {
     els.sellerGrid.innerHTML = sellers
       .map((seller) => {
-        const message = seller.message || store.whatsappFallbackMessage || "";
         return `
           <article class="seller-card">
             <img class="seller-photo" src="${escapeHtml(seller.image)}" alt="Foto de ${escapeHtml(seller.name)}" loading="lazy" decoding="async" onerror="this.src='assets/logo-smartshop.png';">
@@ -524,7 +523,7 @@
               <h3>${escapeHtml(seller.name)}</h3>
               ${seller.schedule ? `<p>${escapeHtml(seller.schedule)}</p>` : ""}
             </div>
-            <a class="seller-link" href="${getWhatsAppUrl(seller.phone, message)}" target="_blank" rel="noopener">
+            <a class="seller-link" href="${getWhatsAppUrl(seller.phone, buildSellerMessage(seller))}" target="_blank" rel="noopener">
               ${iconSvg("message-circle")}
               Hablar por WhatsApp
             </a>
@@ -548,7 +547,7 @@
     const sellerButtons = sellers
       .map(
         (seller) => `
-          <a class="seller-link" href="${getWhatsAppUrl(seller.phone, buildProductMessage(product, stock))}" target="_blank" rel="noopener">
+          <a class="seller-link" href="${getWhatsAppUrl(seller.phone, buildProductMessage(product, stock, seller))}" target="_blank" rel="noopener">
             ${escapeHtml(seller.name)}
           </a>
         `
@@ -686,9 +685,20 @@
       : [product.variant, product.condition, product.warranty, product.delivery].filter(Boolean);
   }
 
-  function buildProductMessage(product, stock) {
+  function buildSellerMessage(seller) {
+    const sellerName = getSellerGreetingName(seller);
+    return [
+      `Olá, ${sellerName}!`,
+      "Gostaria de consultar sobre um produto.",
+      "",
+      `¡Hola, ${sellerName}!`,
+      "Me gustaría consultar sobre un producto.",
+    ].join("\n");
+  }
+
+  function buildProductMessage(product, stock, seller) {
     const pieces = [
-      store.whatsappFallbackMessage || "Hola, quiero consultar un producto.",
+      buildSellerMessage(seller),
       `Producto: ${product.name}`,
       `Codigo: ${getProductCode(product)}`,
       `Precio: ${formatPrice(product.price)}`,
@@ -696,7 +706,11 @@
       `Stock web: ${stock}`,
     ];
     if (store.domain) pieces.push(`Web: https://${store.domain}`);
-    return pieces.join(" | ");
+    return pieces.join("\n");
+  }
+
+  function getSellerGreetingName(seller) {
+    return String(seller?.name || store.name || "SmartShop").trim();
   }
 
   function normalizeCatalog(catalog) {

@@ -149,7 +149,7 @@ window.STORE_DATA = {
       role: "Atencion general",
       phone: "595981000000",
       schedule: "Lunes a Sabado, 07:30 a 15:30",
-      message: "Hola, vi el catalogo web de SmartShop y quiero consultar un producto.",
+      message: "",
       image: "assets/logo-smartshop.png",
     },
     {
@@ -158,7 +158,7 @@ window.STORE_DATA = {
       role: "Consultas de stock y retiro",
       phone: "595982000000",
       schedule: "Lunes a Sabado, 07:30 a 15:30",
-      message: "Hola, quiero confirmar stock y coordinar retiro en tienda.",
+      message: "",
       image: "assets/logo-smartshop.png",
     },
   ],
