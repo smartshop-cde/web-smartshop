@@ -125,7 +125,7 @@ img {
   top: 0;
   z-index: 40;
   display: grid;
-  grid-template-columns: auto minmax(300px, 560px) auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(260px, 560px) auto auto auto;
   align-items: center;
   gap: clamp(12px, 1.7vw, 22px);
   min-height: var(--header-height);
@@ -202,6 +202,37 @@ img {
 
 .exchange-separator {
   color: rgba(255, 255, 255, 0.45);
+}
+
+.language-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  min-height: 38px;
+  padding: 3px;
+  background: rgba(240, 244, 251, 0.92);
+  border: 1px solid rgba(220, 228, 241, 0.95);
+  border-radius: 999px;
+}
+
+.language-switch button {
+  min-width: 38px;
+  min-height: 30px;
+  padding: 0 10px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.language-switch button:hover,
+.language-switch button:focus-visible,
+.language-switch button.is-active {
+  color: #ffffff;
+  background: var(--brand-blue);
+  box-shadow: 0 8px 18px rgba(13, 63, 211, 0.18);
 }
 
 .search-field {
@@ -2250,7 +2281,7 @@ h3 {
 
 @media (max-width: 1120px) {
   .site-header {
-    grid-template-columns: auto minmax(220px, 1fr) auto auto;
+    grid-template-columns: auto minmax(220px, 1fr) auto auto auto;
   }
 
   .site-nav > a:not(.icon-button),
@@ -2273,7 +2304,7 @@ h3 {
   }
 
   .site-header {
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr auto auto;
     gap: 12px;
   }
 
@@ -2288,7 +2319,14 @@ h3 {
     grid-row: 1;
   }
 
+  .language-switch {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
   .mobile-menu-toggle {
+    grid-column: 4;
+    grid-row: 1;
     display: inline-grid;
   }
 
@@ -2435,7 +2473,7 @@ h3 {
 
 @media (max-width: 680px) {
   :root {
-    --header-height: 126px;
+    --header-height: 168px;
   }
 
   main {
@@ -2444,14 +2482,49 @@ h3 {
   }
 
   .site-header {
+    grid-template-columns: auto 1fr auto;
     padding-inline: 12px;
   }
 
+  .brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .language-switch {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .mobile-menu-toggle {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
   .exchange-ticker {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
     gap: 6px;
     min-height: 34px;
     padding-inline: 9px;
     font-size: 0.74rem;
+  }
+
+  .header-search {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .language-switch {
+    min-height: 34px;
+  }
+
+  .language-switch button {
+    min-width: 32px;
+    min-height: 28px;
+    padding-inline: 8px;
+    font-size: 0.72rem;
   }
 
   .exchange-ticker span {

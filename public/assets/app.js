@@ -5,6 +5,309 @@
   const API_BASE_URL = String(
     window.SMARTSHOP_API_BASE_URL || localStorage.getItem("smartshop-api-base-url") || ""
   ).replace(/\/$/, "");
+  const LANGUAGE_STORAGE_KEY = "smartshop-language";
+  const DEFAULT_LANGUAGE = "es";
+  const CATEGORY_LABELS = {
+    pt: {
+      Todos: "Todos",
+      Celulares: "Celulares",
+      Audio: "Audio",
+      Smartwatches: "Smartwatches",
+      Gaming: "Gaming",
+      Informatica: "Informatica",
+      Informática: "Informatica",
+      Accesorios: "Acessorios",
+    },
+  };
+  const BRAND_LABELS = {
+    pt: {
+      Todas: "Todas",
+    },
+  };
+  const TRANSLATIONS = {
+    es: {
+      "meta.title": "SmartShop | Catalogo con stock en Ciudad del Este",
+      "meta.description":
+        "SmartShop Ciudad del Este: celulares, tecnologia y accesorios con precio, stock actualizado, vendedores por WhatsApp, redes sociales y ubicacion en Google Maps.",
+      "search.label": "Buscar producto",
+      "search.placeholder": "Buscar productos, marcas o codigos...",
+      "language.aria": "Idioma",
+      "exchange.aria": "Cotizacion referencial",
+      "nav.homeAria": "Ir al inicio",
+      "nav.menuAria": "Abrir menu",
+      "nav.sectionsAria": "Secciones principales",
+      "nav.categoriesAria": "Categorias disponibles",
+      "nav.sellersAria": "Vendedores disponibles",
+      "nav.favoritesAria": "Favoritos",
+      "nav.loginAria": "Iniciar sesion en el panel privado",
+      "nav.cartAria": "Carrito",
+      "nav.cartCountAria": "0 productos en carrito",
+      "nav.home": "Inicio",
+      "nav.category": "Categoria",
+      "nav.offers": "Ofertas",
+      "nav.sellers": "Vendedores",
+      "nav.location": "Ubicacion",
+      "nav.login": "Iniciar Sesion",
+      "hero.title1": "Tecnologia que quieres.",
+      "hero.title2": "Precios que te convienen.",
+      "hero.lead":
+        "Encuentra celulares, audio y accesorios con stock actualizado, precio claro y atencion directa por WhatsApp.",
+      "hero.viewProducts": "Explorar productos",
+      "hero.whatsapp": "Hablar por WhatsApp",
+      "hero.trustAria": "Resumen de beneficios",
+      "hero.trustStock": "Stock actualizado",
+      "hero.trustPickup": "Retiro en CDE",
+      "hero.trustSupport": "Atencion rapida",
+      "hero.cardAria": "Productos destacados de SmartShop",
+      "hero.cardTitle": "Catalogo SmartShop",
+      "benefits.aria": "Beneficios de compra",
+      "benefits.stockTitle": "Stock actualizado",
+      "benefits.stockText": "Disponibilidad visible antes de consultar.",
+      "benefits.pickupTitle": "Retiro en Ciudad del Este",
+      "benefits.pickupText": "Coordina la compra y pasa por la tienda.",
+      "benefits.whatsappTitle": "Atencion por WhatsApp",
+      "benefits.whatsappText": "Consulta rapido con un vendedor.",
+      "benefits.pricesTitle": "Precios transparentes",
+      "benefits.pricesText": "Importes claros en dolares y conversiones.",
+      "categories.eyebrow": "Explorar",
+      "categories.title": "Categorias",
+      "categories.copy": "Elige una linea y el catalogo se filtra automaticamente",
+      "featured.eyebrow": "Seleccion SmartShop",
+      "featured.title": "Productos destacados",
+      "featured.copy": "Opciones con prioridad en el catalogo",
+      "brands.eyebrow": "Marcas",
+      "brands.title": "Compra por marca",
+      "brands.copy": "Filtra por las marcas disponibles en el catalogo.",
+      "catalog.eyebrow": "Catalogo",
+      "catalog.title": "Productos",
+      "catalog.filters": "Filtros",
+      "catalog.sortLabel": "Ordenar productos",
+      "catalog.sortFeatured": "Destacados primero",
+      "catalog.sortName": "Nombre A-Z",
+      "catalog.sortPriceAsc": "Menor precio",
+      "catalog.sortPriceDesc": "Mayor precio",
+      "catalog.sortStock": "Mas stock",
+      "catalog.filtersAria": "Filtros del catalogo",
+      "catalog.closeFiltersAria": "Cerrar filtros",
+      "catalog.brand": "Marca",
+      "catalog.priceUsd": "Precio USD",
+      "catalog.from": "Desde",
+      "catalog.to": "Hasta",
+      "catalog.noLimit": "Sin limite",
+      "catalog.onlyAvailable": "Mostrar solo disponibles",
+      "catalog.clearFilters": "Limpiar filtros",
+      "catalog.listTitle": "Listado",
+      "catalog.emptyTitle": "No encontramos productos con estos filtros.",
+      "catalog.emptyText": "Ajusta tu busqueda o vuelve a ver todo el catalogo.",
+      "catalog.errorTitle": "No pudimos cargar el catalogo.",
+      "catalog.errorText": "Revisa la conexion o intenta nuevamente.",
+      "catalog.retry": "Reintentar",
+      "stock.products": "Productos",
+      "stock.units": "Unidades",
+      "stock.soldOut": "Agotados",
+      "sellers.eyebrow": "Atencion comercial",
+      "sellers.title": "Necesitas ayuda para elegir?",
+      "sellers.copy": "Habla directamente con nuestro equipo.",
+      "sellers.prevAria": "Ver vendedores anteriores",
+      "sellers.nextAria": "Ver mas vendedores",
+      "location.eyebrow": "Ubicacion y redes",
+      "location.title": "Visitanos",
+      "location.copy": "SmartShop te espera en Galeria Jebai, 4to piso, Ciudad del Este.",
+      "location.socialAria": "Redes sociales de SmartShop",
+      "location.addressTitle": "Direccion",
+      "location.mapTitle": "Mapa de SmartShop en Ciudad del Este",
+      "location.directions": "Como llegar",
+      "footer.copy": "Tecnologia y atencion directa en Ciudad del Este.",
+      "footer.products": "Productos",
+      "footer.catalog": "Catalogo",
+      "footer.categories": "Categorias",
+      "footer.offers": "Ofertas",
+      "footer.help": "Ayuda",
+      "footer.location": "Ubicacion",
+      "footer.hours": "Horarios",
+      "dialog.closeAria": "Cerrar detalle",
+      "status.loadingCatalog": "Cargando catalogo",
+      "status.preparingStock": "Preparando stock y precios",
+      "status.notAvailable": "No disponible",
+      "status.catalogUnavailable": "Catalogo no disponible",
+      "status.retryLoad": "Intenta cargar nuevamente",
+      "status.stockReady": "Stock listo para consultar",
+      "status.withoutStock": "sin stock",
+      "status.availableSingular": "disponible",
+      "status.availablePlural": "disponibles",
+      "status.soldOut": "Agotado",
+      "status.lowStock": "Pocas unidades",
+      "status.inStock": "En stock",
+      "product.productSingular": "producto",
+      "product.productPlural": "productos",
+      "product.showing": "Mostrando",
+      "product.of": "de",
+      "product.consultWhatsapp": "Consultar por WhatsApp",
+      "product.consultRestock": "Consultar reposicion",
+      "product.addFavorite": "Agregar {name} a favoritos",
+      "product.code": "Codigo",
+      "product.view": "Ver producto",
+      "product.brand": "Marca",
+      "product.variant": "Variante",
+      "product.status": "Estado",
+      "product.conditionNew": "Nuevo",
+      "product.warranty": "Garantia",
+      "product.warrantyDefault": "Consultar con tienda",
+      "product.delivery": "Entrega",
+      "product.deliveryDefault": "Retiro en tienda o envio coordinado",
+      "seller.photoAlt": "Foto de {name}",
+      "seller.whatsapp": "Hablar por WhatsApp",
+      "exchange.title": "Cotizacion referencial por 1 USD",
+      "messages.product": "Producto",
+      "messages.code": "Codigo",
+      "messages.price": "Precio",
+      "messages.approx": "Aprox",
+      "messages.webStatus": "Estado web",
+      "messages.web": "Web",
+      "store.tagline": "Catalogo con stock actualizado",
+    },
+    pt: {
+      "meta.title": "SmartShop | Catalogo com estoque em Ciudad del Este",
+      "meta.description":
+        "SmartShop Ciudad del Este: celulares, tecnologia e acessorios com preco, estoque atualizado, vendedores pelo WhatsApp, redes sociais e localizacao no Google Maps.",
+      "search.label": "Buscar produto",
+      "search.placeholder": "Buscar produtos, marcas ou codigos...",
+      "language.aria": "Idioma",
+      "exchange.aria": "Cotacao referencial",
+      "nav.homeAria": "Ir para o inicio",
+      "nav.menuAria": "Abrir menu",
+      "nav.sectionsAria": "Secoes principais",
+      "nav.categoriesAria": "Categorias disponiveis",
+      "nav.sellersAria": "Vendedores disponiveis",
+      "nav.favoritesAria": "Favoritos",
+      "nav.loginAria": "Entrar no painel privado",
+      "nav.cartAria": "Carrinho",
+      "nav.cartCountAria": "0 produtos no carrinho",
+      "nav.home": "Inicio",
+      "nav.category": "Categoria",
+      "nav.offers": "Ofertas",
+      "nav.sellers": "Vendedores",
+      "nav.location": "Localizacao",
+      "nav.login": "Entrar",
+      "hero.title1": "Tecnologia que voce quer.",
+      "hero.title2": "Precos que compensam.",
+      "hero.lead":
+        "Encontre celulares, audio e acessorios com estoque atualizado, preco claro e atendimento direto pelo WhatsApp.",
+      "hero.viewProducts": "Ver produtos",
+      "hero.whatsapp": "Falar no WhatsApp",
+      "hero.trustAria": "Resumo de beneficios",
+      "hero.trustStock": "Estoque atualizado",
+      "hero.trustPickup": "Retirada em CDE",
+      "hero.trustSupport": "Atendimento rapido",
+      "hero.cardAria": "Produtos destacados da SmartShop",
+      "hero.cardTitle": "Catalogo SmartShop",
+      "benefits.aria": "Beneficios de compra",
+      "benefits.stockTitle": "Estoque atualizado",
+      "benefits.stockText": "Disponibilidade visivel antes de consultar.",
+      "benefits.pickupTitle": "Retirada em Ciudad del Este",
+      "benefits.pickupText": "Combine a compra e passe pela loja.",
+      "benefits.whatsappTitle": "Atendimento pelo WhatsApp",
+      "benefits.whatsappText": "Consulte rapidamente com um vendedor.",
+      "benefits.pricesTitle": "Precos transparentes",
+      "benefits.pricesText": "Valores claros em dolares e conversoes.",
+      "categories.eyebrow": "Explorar",
+      "categories.title": "Categorias",
+      "categories.copy": "Escolha uma linha e o catalogo sera filtrado automaticamente",
+      "featured.eyebrow": "Selecao SmartShop",
+      "featured.title": "Produtos destacados",
+      "featured.copy": "Opcoes com prioridade no catalogo",
+      "brands.eyebrow": "Marcas",
+      "brands.title": "Comprar por marca",
+      "brands.copy": "Filtre pelas marcas disponiveis no catalogo.",
+      "catalog.eyebrow": "Catalogo",
+      "catalog.title": "Produtos",
+      "catalog.filters": "Filtros",
+      "catalog.sortLabel": "Ordenar produtos",
+      "catalog.sortFeatured": "Destaques primeiro",
+      "catalog.sortName": "Nome A-Z",
+      "catalog.sortPriceAsc": "Menor preco",
+      "catalog.sortPriceDesc": "Maior preco",
+      "catalog.sortStock": "Mais estoque",
+      "catalog.filtersAria": "Filtros do catalogo",
+      "catalog.closeFiltersAria": "Fechar filtros",
+      "catalog.brand": "Marca",
+      "catalog.priceUsd": "Preco USD",
+      "catalog.from": "De",
+      "catalog.to": "Ate",
+      "catalog.noLimit": "Sem limite",
+      "catalog.onlyAvailable": "Mostrar somente disponiveis",
+      "catalog.clearFilters": "Limpar filtros",
+      "catalog.listTitle": "Lista",
+      "catalog.emptyTitle": "Nao encontramos produtos com estes filtros.",
+      "catalog.emptyText": "Ajuste sua busca ou volte a ver todo o catalogo.",
+      "catalog.errorTitle": "Nao conseguimos carregar o catalogo.",
+      "catalog.errorText": "Verifique a conexao ou tente novamente.",
+      "catalog.retry": "Tentar novamente",
+      "stock.products": "Produtos",
+      "stock.units": "Unidades",
+      "stock.soldOut": "Esgotados",
+      "sellers.eyebrow": "Atendimento comercial",
+      "sellers.title": "Precisa de ajuda para escolher?",
+      "sellers.copy": "Fale diretamente com nossa equipe.",
+      "sellers.prevAria": "Ver vendedores anteriores",
+      "sellers.nextAria": "Ver mais vendedores",
+      "location.eyebrow": "Localizacao e redes",
+      "location.title": "Visite-nos",
+      "location.copy": "A SmartShop espera por voce na Galeria Jebai, 4to piso, Ciudad del Este.",
+      "location.socialAria": "Redes sociais da SmartShop",
+      "location.addressTitle": "Endereco",
+      "location.mapTitle": "Mapa da SmartShop em Ciudad del Este",
+      "location.directions": "Como chegar",
+      "footer.copy": "Tecnologia e atendimento direto em Ciudad del Este.",
+      "footer.products": "Produtos",
+      "footer.catalog": "Catalogo",
+      "footer.categories": "Categorias",
+      "footer.offers": "Ofertas",
+      "footer.help": "Ajuda",
+      "footer.location": "Localizacao",
+      "footer.hours": "Horarios",
+      "dialog.closeAria": "Fechar detalhe",
+      "status.loadingCatalog": "Carregando catalogo",
+      "status.preparingStock": "Preparando estoque e precos",
+      "status.notAvailable": "Nao disponivel",
+      "status.catalogUnavailable": "Catalogo nao disponivel",
+      "status.retryLoad": "Tente carregar novamente",
+      "status.stockReady": "Estoque pronto para consultar",
+      "status.withoutStock": "sem estoque",
+      "status.availableSingular": "disponivel",
+      "status.availablePlural": "disponiveis",
+      "status.soldOut": "Esgotado",
+      "status.lowStock": "Poucas unidades",
+      "status.inStock": "Em estoque",
+      "product.productSingular": "produto",
+      "product.productPlural": "produtos",
+      "product.showing": "Mostrando",
+      "product.of": "de",
+      "product.consultWhatsapp": "Consultar pelo WhatsApp",
+      "product.consultRestock": "Consultar reposicao",
+      "product.addFavorite": "Adicionar {name} aos favoritos",
+      "product.code": "Codigo",
+      "product.view": "Ver produto",
+      "product.brand": "Marca",
+      "product.variant": "Variante",
+      "product.status": "Estado",
+      "product.conditionNew": "Novo",
+      "product.warranty": "Garantia",
+      "product.warrantyDefault": "Consultar com a loja",
+      "product.delivery": "Entrega",
+      "product.deliveryDefault": "Retirada na loja ou envio combinado",
+      "seller.photoAlt": "Foto de {name}",
+      "seller.whatsapp": "Falar no WhatsApp",
+      "exchange.title": "Cotacao referencial por 1 USD",
+      "messages.product": "Produto",
+      "messages.code": "Codigo",
+      "messages.price": "Preco",
+      "messages.approx": "Aprox",
+      "messages.webStatus": "Status no site",
+      "messages.web": "Site",
+      "store.tagline": "Catalogo com estoque atualizado",
+    },
+  };
 
   const baseData = window.STORE_DATA || {};
   let data = normalizeCatalog(baseData);
@@ -13,6 +316,7 @@
   let sellers = data.sellers;
 
   const state = {
+    language: getInitialLanguage(),
     category: "Todos",
     onlyAvailable: false,
     brand: "Todas",
@@ -32,6 +336,7 @@
     cacheElements();
     hydrateStaticIcons();
     bindEvents();
+    applyTranslations();
     renderAll();
     await loadCatalog();
     renderAll();
@@ -40,6 +345,7 @@
   function cacheElements() {
     els.searchInput = document.querySelector("#searchInput");
     els.mobileMenuToggle = document.querySelector("#mobileMenuToggle");
+    els.languageButtons = Array.from(document.querySelectorAll("[data-language-option]"));
     els.siteNav = document.querySelector("#siteNav");
     els.sortSelect = document.querySelector("#sortSelect");
     els.filterToggle = document.querySelector("#filterToggle");
@@ -88,6 +394,12 @@
   }
 
   function bindEvents() {
+    els.languageButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setLanguage(button.dataset.languageOption);
+      });
+    });
+
     els.mobileMenuToggle.addEventListener("click", () => {
       const isOpen = els.siteNav.classList.toggle("is-open");
       els.mobileMenuToggle.setAttribute("aria-expanded", String(isOpen));
@@ -202,6 +514,54 @@
     });
   }
 
+  function getInitialLanguage() {
+    const saved = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (saved === "pt" || saved === "es") return saved;
+    const browserLanguage = String(window.navigator?.language || "").toLowerCase();
+    return browserLanguage.startsWith("pt") ? "pt" : DEFAULT_LANGUAGE;
+  }
+
+  function setLanguage(language) {
+    if (!TRANSLATIONS[language] || state.language === language) return;
+    state.language = language;
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    applyTranslations();
+    renderAll();
+  }
+
+  function t(key, replacements = {}) {
+    const dictionary = TRANSLATIONS[state.language] || TRANSLATIONS[DEFAULT_LANGUAGE];
+    const fallback = TRANSLATIONS[DEFAULT_LANGUAGE][key] || key;
+    return Object.entries(replacements).reduce((text, [name, value]) => {
+      return text.replaceAll(`{${name}}`, String(value));
+    }, dictionary[key] || fallback);
+  }
+
+  function applyTranslations() {
+    document.documentElement.lang = state.language;
+    document.title = t("meta.title");
+    document.querySelector('meta[name="description"]')?.setAttribute("content", t("meta.description"));
+    document.querySelector('meta[property="og:title"]')?.setAttribute("content", t("meta.title"));
+    document.querySelector('meta[property="og:description"]')?.setAttribute("content", t("meta.description"));
+
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      node.textContent = t(node.dataset.i18n);
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+      node.setAttribute("placeholder", t(node.dataset.i18nPlaceholder));
+    });
+    document.querySelectorAll("[data-i18n-aria]").forEach((node) => {
+      node.setAttribute("aria-label", t(node.dataset.i18nAria));
+    });
+    document.querySelectorAll("[data-i18n-title]").forEach((node) => {
+      node.setAttribute("title", t(node.dataset.i18nTitle));
+    });
+    els.languageButtons.forEach((button) => {
+      button.classList.toggle("is-active", button.dataset.languageOption === state.language);
+      button.setAttribute("aria-pressed", String(button.dataset.languageOption === state.language));
+    });
+  }
+
   async function loadCatalog() {
     state.loading = true;
     state.error = "";
@@ -227,11 +587,11 @@
     } catch {
       if (window.SmartShopSupabase?.isConfigured()) {
         data = normalizeCatalog({ store: baseData.store, products: [], sellers: [] });
-        state.error = "No pudimos cargar el catalogo.";
+        state.error = t("catalog.errorTitle");
       } else {
         data = normalizeCatalog(baseData);
         if (!data.products.length) {
-          state.error = "No pudimos cargar el catalogo.";
+          state.error = t("catalog.errorTitle");
         }
       }
     } finally {
@@ -243,6 +603,7 @@
   }
 
   function renderAll() {
+    applyTranslations();
     renderStoreInfo();
     renderCategories();
     renderBrands();
@@ -267,7 +628,7 @@
       node.textContent = store.name || "SmartShop";
     });
     document.querySelectorAll("[data-store-tagline]").forEach((node) => {
-      node.textContent = store.tagline || "Catalogo con stock actualizado";
+      node.textContent = store.tagline || t("store.tagline");
     });
     document.querySelectorAll("[data-footer-store]").forEach((node) => {
       node.textContent = store.name || "SmartShop";
@@ -287,7 +648,7 @@
     els.heroWhatsappLink.href = heroSeller
       ? getWhatsAppUrl(heroSeller.phone, buildSellerMessage(heroSeller))
       : "#catalogo";
-    els.heroWhatsappLink.setAttribute("aria-label", "Hablar por WhatsApp con SmartShop");
+    els.heroWhatsappLink.setAttribute("aria-label", `${t("hero.whatsapp")} SmartShop`);
     els.floatingWhatsapp.href = els.heroWhatsappLink.href;
     renderExchangeTicker();
 
@@ -303,7 +664,7 @@
         const selected = category === state.category;
         return `
           <button type="button" class="filter-chip${selected ? " is-active" : ""}" data-category="${escapeHtml(category)}" aria-pressed="${selected}">
-            ${escapeHtml(category)}
+            ${escapeHtml(getCategoryLabel(category))}
           </button>
         `;
       })
@@ -317,8 +678,8 @@
         return `
           <button type="button" class="category-card${selected ? " is-active" : ""}" data-category="${escapeHtml(category)}">
             <span class="category-icon" aria-hidden="true">${iconSvg(getCategoryIcon(category))}</span>
-            <strong>${escapeHtml(category)}</strong>
-            <small>${count} ${pluralize(count, "producto", "productos")} <span aria-hidden="true">&rarr;</span></small>
+            <strong>${escapeHtml(getCategoryLabel(category))}</strong>
+            <small>${count} ${pluralize(count, t("product.productSingular"), t("product.productPlural"))} <span aria-hidden="true">&rarr;</span></small>
           </button>
         `;
       })
@@ -333,7 +694,7 @@
         const selected = brand === state.brand;
         return `
           <button type="button" class="filter-chip${selected ? " is-active" : ""}" data-brand="${escapeHtml(brand)}" aria-pressed="${selected}">
-            ${escapeHtml(brand)}
+            ${escapeHtml(getBrandLabel(brand))}
           </button>
         `;
       })
@@ -346,7 +707,7 @@
         const selected = brand === state.brand;
         return `
           <button type="button" class="brand-pill${selected ? " is-active" : ""}" data-brand="${escapeHtml(brand)}">
-            ${escapeHtml(brand)}
+            ${escapeHtml(getBrandLabel(brand))}
             <span>${count}</span>
           </button>
         `;
@@ -359,7 +720,7 @@
       .map(
         (category) => `
           <button type="button" data-category="${escapeHtml(category)}">
-            <span>${escapeHtml(category)}</span>
+            <span>${escapeHtml(getCategoryLabel(category))}</span>
             <small>${category === "Todos" ? products.length : products.filter((product) => product.category === category).length}</small>
           </button>
         `
@@ -413,9 +774,9 @@
       els.catalogError.hidden = true;
       els.emptyState.hidden = true;
       els.stockSummary.hidden = true;
-      els.resultCount.textContent = "Cargando catalogo";
-      els.availableProducts.textContent = "Cargando catalogo";
-      els.stockHealth.textContent = "Preparando stock y precios";
+      els.resultCount.textContent = t("status.loadingCatalog");
+      els.availableProducts.textContent = t("status.loadingCatalog");
+      els.stockHealth.textContent = t("status.preparingStock");
       return;
     }
 
@@ -425,9 +786,9 @@
       els.catalogError.hidden = false;
       els.emptyState.hidden = true;
       els.stockSummary.hidden = true;
-      els.resultCount.textContent = "No disponible";
-      els.availableProducts.textContent = "Catalogo no disponible";
-      els.stockHealth.textContent = "Intenta cargar nuevamente";
+      els.resultCount.textContent = t("status.notAvailable");
+      els.availableProducts.textContent = t("status.catalogUnavailable");
+      els.stockHealth.textContent = t("status.retryLoad");
       return;
     }
 
@@ -443,10 +804,15 @@
     els.stockSummary.hidden = false;
     els.resultCount.textContent =
       filteredProducts.length === products.length
-        ? `${products.length} ${pluralize(products.length, "producto", "productos")}`
-        : `Mostrando ${filteredProducts.length} de ${products.length}`;
-    els.availableProducts.textContent = `${availableCount} ${pluralize(availableCount, "disponible", "disponibles")}`;
-    els.stockHealth.textContent = soldOutCount > 0 ? `${soldOutCount} sin stock` : "Stock listo para consultar";
+        ? `${products.length} ${pluralize(products.length, t("product.productSingular"), t("product.productPlural"))}`
+        : `${t("product.showing")} ${filteredProducts.length} ${t("product.of")} ${products.length}`;
+    els.availableProducts.textContent = `${availableCount} ${pluralize(
+      availableCount,
+      t("status.availableSingular"),
+      t("status.availablePlural")
+    )}`;
+    els.stockHealth.textContent =
+      soldOutCount > 0 ? `${soldOutCount} ${t("status.withoutStock")}` : t("status.stockReady");
     els.totalProducts.textContent = products.length;
     els.totalUnits.textContent = totalUnits;
     els.soldOutProducts.textContent = soldOutCount;
@@ -457,7 +823,7 @@
     const stockStatus = getStockStatus(stock);
     const seller = getRandomSeller();
     const whatsappUrl = seller ? getWhatsAppUrl(seller.phone, buildProductMessage(product, stock, seller)) : "#";
-    const actionText = stock > 0 ? "Consultar por WhatsApp" : "Consultar reposicion";
+    const actionText = stock > 0 ? t("product.consultWhatsapp") : t("product.consultRestock");
     const code = getProductCode(product);
     const brand = product.brand || "";
     const variant = product.variant || "";
@@ -466,12 +832,12 @@
       <article class="product-card ${stockStatus.className}${options.compact ? " is-compact" : ""}">
         <div class="product-image">
           ${product.badge ? `<span class="product-badge">${escapeHtml(product.badge)}</span>` : ""}
-          <button class="wishlist-button" type="button" aria-label="Agregar ${escapeHtml(product.name)} a favoritos">${iconSvg("heart")}</button>
+          <button class="wishlist-button" type="button" aria-label="${escapeHtml(t("product.addFavorite", { name: product.name }))}">${iconSvg("heart")}</button>
           <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy" decoding="async" width="760" height="760" onerror="this.parentElement.classList.add('image-fallback'); this.remove();">
         </div>
         <div class="product-body">
           <div class="product-meta">
-            <span>${escapeHtml(brand || product.category)}</span>
+            <span>${escapeHtml(brand || getCategoryLabel(product.category))}</span>
           </div>
           <h3>${escapeHtml(product.name)}</h3>
           ${variant ? `<p class="product-variant">${escapeHtml(variant)}</p>` : ""}
@@ -486,11 +852,11 @@
             ${renderPriceBlock(product.price)}
           </div>
           <div class="product-foot">
-            <span class="product-code">Codigo: ${escapeHtml(code)}</span>
+            <span class="product-code">${t("product.code")}: ${escapeHtml(code)}</span>
             <span class="stock-pill ${stockStatus.className}"><span aria-hidden="true"></span>${stockStatus.label}</span>
           </div>
           <div class="product-actions">
-            <button class="ghost-button" type="button" data-product-detail data-id="${escapeHtml(product.id)}">Ver producto</button>
+            <button class="ghost-button" type="button" data-product-detail data-id="${escapeHtml(product.id)}">${t("product.view")}</button>
             <a class="product-action" href="${whatsappUrl}" target="_blank" rel="noopener">${actionText}</a>
           </div>
         </div>
@@ -517,7 +883,7 @@
       .map((seller) => {
         return `
           <article class="seller-card">
-            <img class="seller-photo" src="${escapeHtml(seller.image)}" alt="Foto de ${escapeHtml(seller.name)}" loading="lazy" decoding="async" onerror="this.src='assets/logo-smartshop.png';">
+            <img class="seller-photo" src="${escapeHtml(seller.image)}" alt="${escapeHtml(t("seller.photoAlt", { name: seller.name }))}" loading="lazy" decoding="async" onerror="this.src='assets/logo-smartshop.png';">
             <div>
               ${seller.role ? `<span class="seller-role">${escapeHtml(seller.role)}</span>` : ""}
               <h3>${escapeHtml(seller.name)}</h3>
@@ -525,7 +891,7 @@
             </div>
             <a class="seller-link" href="${getWhatsAppUrl(seller.phone, buildSellerMessage(seller))}" target="_blank" rel="noopener">
               ${iconSvg("message-circle")}
-              Hablar por WhatsApp
+              ${t("seller.whatsapp")}
             </a>
           </article>
         `;
@@ -568,12 +934,12 @@
             <span class="stock-pill ${stockStatus.className}">${stockStatus.label}</span>
           </div>
           <dl class="detail-list">
-            <div><dt>Codigo</dt><dd>${escapeHtml(getProductCode(product))}</dd></div>
-            ${product.brand ? `<div><dt>Marca</dt><dd>${escapeHtml(product.brand)}</dd></div>` : ""}
-            ${product.variant ? `<div><dt>Variante</dt><dd>${escapeHtml(product.variant)}</dd></div>` : ""}
-            <div><dt>Estado</dt><dd>${escapeHtml(product.condition || "Nuevo")}</dd></div>
-            <div><dt>Garantia</dt><dd>${escapeHtml(product.warranty || "Consultar con tienda")}</dd></div>
-            <div><dt>Entrega</dt><dd>${escapeHtml(product.delivery || "Retiro en tienda o envio coordinado")}</dd></div>
+            <div><dt>${t("product.code")}</dt><dd>${escapeHtml(getProductCode(product))}</dd></div>
+            ${product.brand ? `<div><dt>${t("product.brand")}</dt><dd>${escapeHtml(product.brand)}</dd></div>` : ""}
+            ${product.variant ? `<div><dt>${t("product.variant")}</dt><dd>${escapeHtml(product.variant)}</dd></div>` : ""}
+            <div><dt>${t("product.status")}</dt><dd>${escapeHtml(product.condition || t("product.conditionNew"))}</dd></div>
+            <div><dt>${t("product.warranty")}</dt><dd>${escapeHtml(product.warranty || t("product.warrantyDefault"))}</dd></div>
+            <div><dt>${t("product.delivery")}</dt><dd>${escapeHtml(product.delivery || t("product.deliveryDefault"))}</dd></div>
           </dl>
           <ul class="product-specs is-large">${details.map((detail) => `<li>${escapeHtml(detail)}</li>`).join("")}</ul>
           <div class="dialog-actions">${sellerButtons}</div>
@@ -634,8 +1000,16 @@
     return ["Todos", ...new Set(products.map((product) => product.category).filter(Boolean))];
   }
 
+  function getCategoryLabel(category) {
+    return CATEGORY_LABELS[state.language]?.[category] || category;
+  }
+
   function getBrands() {
     return ["Todas", ...new Set(products.map((product) => product.brand).filter(Boolean))];
+  }
+
+  function getBrandLabel(brand) {
+    return BRAND_LABELS[state.language]?.[brand] || brand;
   }
 
   function getVisibleProducts() {
@@ -661,7 +1035,7 @@
     if (state.sort === "price-asc") return a.price - b.price;
     if (state.sort === "price-desc") return b.price - a.price;
     if (state.sort === "stock-desc") return getStock(b) - getStock(a);
-    if (state.sort === "name-asc") return a.name.localeCompare(b.name, "es");
+    if (state.sort === "name-asc") return a.name.localeCompare(b.name, state.language);
     return Number(b.featured) - Number(a.featured) || getStock(b) - getStock(a);
   }
 
@@ -670,9 +1044,9 @@
   }
 
   function getStockStatus(stock) {
-    if (stock <= 0) return { label: "Agotado", className: "is-sold-out" };
-    if (stock <= 3) return { label: "Pocas unidades", className: "is-low-stock" };
-    return { label: "En stock", className: "is-available" };
+    if (stock <= 0) return { label: t("status.soldOut"), className: "is-sold-out" };
+    if (stock <= 3) return { label: t("status.lowStock"), className: "is-low-stock" };
+    return { label: t("status.inStock"), className: "is-available" };
   }
 
   function getProductCode(product) {
@@ -700,13 +1074,13 @@
     const stockStatus = getStockStatus(stock);
     const pieces = [
       buildSellerMessage(seller),
-      `Producto: ${product.name}`,
-      `Codigo: ${getProductCode(product)}`,
-      `Precio: ${formatPrice(product.price)}`,
-      `Aprox: ${formatGuaraniPrice(convertUsdToPyg(product.price))} / ${formatRealPrice(convertUsdToBrl(product.price))}`,
-      `Estado web: ${stockStatus.label}`,
+      `${t("messages.product")}: ${product.name}`,
+      `${t("messages.code")}: ${getProductCode(product)}`,
+      `${t("messages.price")}: ${formatPrice(product.price)}`,
+      `${t("messages.approx")}: ${formatGuaraniPrice(convertUsdToPyg(product.price))} / ${formatRealPrice(convertUsdToBrl(product.price))}`,
+      `${t("messages.webStatus")}: ${stockStatus.label}`,
     ];
-    if (store.domain) pieces.push(`Web: https://${store.domain}`);
+    if (store.domain) pieces.push(`${t("messages.web")}: https://${store.domain}`);
     return pieces.join("\n");
   }
 
@@ -770,7 +1144,7 @@
         ${formatRatePyg(rates.usdToPyg)} G$
       </span>
     `;
-    els.exchangeTicker.title = "Cotizacion referencial por 1 USD";
+    els.exchangeTicker.title = t("exchange.title");
   }
 
   function getExchangeRates() {

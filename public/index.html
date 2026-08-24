@@ -35,7 +35,7 @@
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="#inicio" aria-label="Ir al inicio">
+      <a class="brand" href="#inicio" aria-label="Ir al inicio" data-i18n-aria="nav.homeAria">
         <img
           class="brand-logo"
           src="assets/logo-smartshop.png"
@@ -47,44 +47,50 @@
       </a>
 
       <label class="search-field header-search">
-        <span class="sr-only">Buscar producto</span>
+        <span class="sr-only" data-i18n="search.label">Buscar producto</span>
         <span class="search-icon" data-icon="search" aria-hidden="true"></span>
         <input
           id="searchInput"
           type="search"
           placeholder="Buscar productos, marcas o codigos..."
+          data-i18n-placeholder="search.placeholder"
           autocomplete="off"
         >
       </label>
 
-      <div id="exchangeTicker" class="exchange-ticker" aria-label="Cotizacion referencial"></div>
+      <div id="exchangeTicker" class="exchange-ticker" aria-label="Cotizacion referencial" data-i18n-aria="exchange.aria"></div>
 
-      <button id="mobileMenuToggle" class="icon-button mobile-menu-toggle" type="button" aria-label="Abrir menu" aria-controls="siteNav" aria-expanded="false">
+      <div class="language-switch" aria-label="Idioma" data-i18n-aria="language.aria">
+        <button type="button" data-language-option="es" aria-pressed="true">ES</button>
+        <button type="button" data-language-option="pt" aria-pressed="false">PT</button>
+      </div>
+
+      <button id="mobileMenuToggle" class="icon-button mobile-menu-toggle" type="button" aria-label="Abrir menu" data-i18n-aria="nav.menuAria" aria-controls="siteNav" aria-expanded="false">
         <span data-icon="menu" aria-hidden="true"></span>
       </button>
 
-      <nav id="siteNav" class="site-nav" aria-label="Secciones principales">
-        <a href="#inicio">Inicio</a>
+      <nav id="siteNav" class="site-nav" aria-label="Secciones principales" data-i18n-aria="nav.sectionsAria">
+        <a href="#inicio" data-i18n="nav.home">Inicio</a>
         <div class="nav-menu">
-          <a href="#catalogo" aria-haspopup="true" aria-expanded="false">Categoria</a>
-          <div id="navCategoryList" class="nav-dropdown" aria-label="Categorias disponibles"></div>
+          <a href="#catalogo" aria-haspopup="true" aria-expanded="false" data-i18n="nav.category">Categoria</a>
+          <div id="navCategoryList" class="nav-dropdown" aria-label="Categorias disponibles" data-i18n-aria="nav.categoriesAria"></div>
         </div>
-        <a href="#featuredSection">Ofertas</a>
+        <a href="#featuredSection" data-i18n="nav.offers">Ofertas</a>
         <div class="nav-menu">
-          <a href="#vendedores" aria-haspopup="true" aria-expanded="false">Vendedores</a>
-          <div id="navSellerList" class="nav-dropdown" aria-label="Vendedores disponibles"></div>
+          <a href="#vendedores" aria-haspopup="true" aria-expanded="false" data-i18n="nav.sellers">Vendedores</a>
+          <div id="navSellerList" class="nav-dropdown" aria-label="Vendedores disponibles" data-i18n-aria="nav.sellersAria"></div>
         </div>
-        <a href="#ubicacion">Ubicacion</a>
-        <a class="icon-button" href="#catalogo" aria-label="Favoritos">
+        <a href="#ubicacion" data-i18n="nav.location">Ubicacion</a>
+        <a class="icon-button" href="#catalogo" aria-label="Favoritos" data-i18n-aria="nav.favoritesAria">
           <span data-icon="heart" aria-hidden="true"></span>
         </a>
-        <a class="icon-button login-link" href="/admin" aria-label="Iniciar sesion en el panel privado">
+        <a class="icon-button login-link" href="/admin" aria-label="Iniciar sesion en el panel privado" data-i18n-aria="nav.loginAria">
           <span data-icon="user" aria-hidden="true"></span>
-          <span>Iniciar Sesion</span>
+          <span data-i18n="nav.login">Iniciar Sesion</span>
         </a>
-        <a class="icon-button cart-link" href="#catalogo" aria-label="Carrito">
+        <a class="icon-button cart-link" href="#catalogo" aria-label="Carrito" data-i18n-aria="nav.cartAria">
           <span data-icon="shopping-cart" aria-hidden="true"></span>
-          <span class="cart-badge" aria-label="0 productos en carrito">0</span>
+          <span class="cart-badge" aria-label="0 productos en carrito" data-i18n-aria="nav.cartCountAria">0</span>
         </a>
       </nav>
     </header>
@@ -94,67 +100,67 @@
         <div class="hero-copy">
           <p class="eyebrow">SmartShop CDE</p>
           <h1 id="heroTitle">
-            <span>Tecnologia que quieres.</span>
-            <span>Precios que te convienen.</span>
+            <span data-i18n="hero.title1">Tecnologia que quieres.</span>
+            <span data-i18n="hero.title2">Precios que te convienen.</span>
           </h1>
-          <p class="lead">Encuentra celulares, audio y accesorios con stock actualizado, precio claro y atencion directa por WhatsApp.</p>
+          <p class="lead" data-i18n="hero.lead">Encuentra celulares, audio y accesorios con stock actualizado, precio claro y atencion directa por WhatsApp.</p>
           <div class="hero-actions">
             <a class="primary-link" href="#catalogo">
-              Explorar productos
+              <span data-i18n="hero.viewProducts">Explorar productos</span>
               <span data-icon="chevron-right" aria-hidden="true"></span>
             </a>
             <a id="heroWhatsappLink" class="ghost-link" href="#" target="_blank" rel="noopener">
               <span data-icon="message-circle" aria-hidden="true"></span>
-              Hablar por WhatsApp
+              <span data-i18n="hero.whatsapp">Hablar por WhatsApp</span>
             </a>
           </div>
-          <div class="hero-trust" aria-label="Resumen de beneficios">
-            <span><span data-icon="package-check" aria-hidden="true"></span> Stock actualizado</span>
-            <span><span data-icon="map-pin" aria-hidden="true"></span> Retiro en CDE</span>
-            <span><span data-icon="phone" aria-hidden="true"></span> Atencion rapida</span>
+          <div class="hero-trust" aria-label="Resumen de beneficios" data-i18n-aria="hero.trustAria">
+            <span><span data-icon="package-check" aria-hidden="true"></span> <span data-i18n="hero.trustStock">Stock actualizado</span></span>
+            <span><span data-icon="map-pin" aria-hidden="true"></span> <span data-i18n="hero.trustPickup">Retiro en CDE</span></span>
+            <span><span data-icon="phone" aria-hidden="true"></span> <span data-i18n="hero.trustSupport">Atencion rapida</span></span>
           </div>
         </div>
 
-        <div class="hero-card" aria-label="Productos destacados de SmartShop">
+        <div class="hero-card" aria-label="Productos destacados de SmartShop" data-i18n-aria="hero.cardAria">
           <div id="heroShowcase" class="hero-showcase" aria-hidden="true"></div>
           <div class="hero-card-copy">
-            <strong>Catalogo SmartShop</strong>
+            <strong data-i18n="hero.cardTitle">Catalogo SmartShop</strong>
             <span id="availableProducts">Cargando catalogo</span>
             <span id="stockHealth">Preparando stock y precios</span>
           </div>
         </div>
       </section>
 
-      <section class="benefits-band" aria-label="Beneficios de compra">
+      <section class="benefits-band" aria-label="Beneficios de compra" data-i18n-aria="benefits.aria">
         <article>
           <span class="benefit-icon" data-icon="package-check" aria-hidden="true"></span>
-          <strong>Stock actualizado</strong>
-          <span>Disponibilidad visible antes de consultar.</span>
+          <strong data-i18n="benefits.stockTitle">Stock actualizado</strong>
+          <span data-i18n="benefits.stockText">Disponibilidad visible antes de consultar.</span>
         </article>
         <article>
           <span class="benefit-icon" data-icon="map-pin" aria-hidden="true"></span>
-          <strong>Retiro en Ciudad del Este</strong>
-          <span>Coordina la compra y pasa por la tienda.</span>
+          <strong data-i18n="benefits.pickupTitle">Retiro en Ciudad del Este</strong>
+          <span data-i18n="benefits.pickupText">Coordina la compra y pasa por la tienda.</span>
         </article>
         <article>
           <span class="benefit-icon" data-icon="message-circle" aria-hidden="true"></span>
-          <strong>Atencion por WhatsApp</strong>
-          <span>Consulta rapido con un vendedor.</span>
+          <strong data-i18n="benefits.whatsappTitle">Atencion por WhatsApp</strong>
+          <span data-i18n="benefits.whatsappText">Consulta rapido con un vendedor.</span>
         </article>
         <article>
           <span class="benefit-icon" data-icon="badge-dollar-sign" aria-hidden="true"></span>
-          <strong>Precios transparentes</strong>
-          <span>Importes claros en dolares y conversiones.</span>
+          <strong data-i18n="benefits.pricesTitle">Precios transparentes</strong>
+          <span data-i18n="benefits.pricesText">Importes claros en dolares y conversiones.</span>
         </article>
       </section>
 
       <section class="section-band category-section" id="categorias" aria-labelledby="categoryTitle">
         <div class="section-title-row">
           <div>
-            <p class="eyebrow">Explorar</p>
-            <h2 id="categoryTitle">Categorias</h2>
+            <p class="eyebrow" data-i18n="categories.eyebrow">Explorar</p>
+            <h2 id="categoryTitle" data-i18n="categories.title">Categorias</h2>
           </div>
-          <span>Elige una linea y el catalogo se filtra automaticamente</span>
+          <span data-i18n="categories.copy">Elige una linea y el catalogo se filtra automaticamente</span>
         </div>
         <div id="categoryCards" class="category-cards"></div>
       </section>
@@ -162,10 +168,10 @@
       <section id="featuredSection" class="section-band" aria-labelledby="featuredTitle" hidden>
         <div class="section-title-row">
           <div>
-            <p class="eyebrow">Seleccion SmartShop</p>
-            <h2 id="featuredTitle">Productos destacados</h2>
+            <p class="eyebrow" data-i18n="featured.eyebrow">Seleccion SmartShop</p>
+            <h2 id="featuredTitle" data-i18n="featured.title">Productos destacados</h2>
           </div>
-          <span>Opciones con prioridad en el catalogo</span>
+          <span data-i18n="featured.copy">Opciones con prioridad en el catalogo</span>
         </div>
         <div id="featuredGrid" class="product-grid featured-grid"></div>
       </section>
@@ -173,10 +179,10 @@
       <section id="brandsSection" class="section-band brand-section" aria-labelledby="brandsTitle" hidden>
         <div class="section-title-row">
           <div>
-            <p class="eyebrow">Marcas</p>
-            <h2 id="brandsTitle">Compra por marca</h2>
+            <p class="eyebrow" data-i18n="brands.eyebrow">Marcas</p>
+            <h2 id="brandsTitle" data-i18n="brands.title">Compra por marca</h2>
           </div>
-          <span>Filtra por las marcas disponibles en el catalogo.</span>
+          <span data-i18n="brands.copy">Filtra por las marcas disponibles en el catalogo.</span>
         </div>
         <div id="brandStrip" class="brand-strip"></div>
       </section>
@@ -184,76 +190,76 @@
       <section class="workspace" id="catalogo" aria-labelledby="catalogTitle">
         <div class="catalog-head">
           <div>
-            <p class="eyebrow">Catalogo</p>
-            <h2 id="catalogTitle">Productos</h2>
+            <p class="eyebrow" data-i18n="catalog.eyebrow">Catalogo</p>
+            <h2 id="catalogTitle" data-i18n="catalog.title">Productos</h2>
           </div>
           <div class="toolbar">
             <button id="filterToggle" class="ghost-button filter-toggle" type="button" aria-expanded="false" aria-controls="catalogFilters">
               <span data-icon="sliders-horizontal" aria-hidden="true"></span>
-              Filtros
+              <span data-i18n="catalog.filters">Filtros</span>
             </button>
             <label class="select-field">
-              <span class="sr-only">Ordenar productos</span>
+              <span class="sr-only" data-i18n="catalog.sortLabel">Ordenar productos</span>
               <select id="sortSelect">
-                <option value="featured">Destacados primero</option>
-                <option value="name-asc">Nombre A-Z</option>
-                <option value="price-asc">Menor precio</option>
-                <option value="price-desc">Mayor precio</option>
-                <option value="stock-desc">Mas stock</option>
+                <option value="featured" data-i18n="catalog.sortFeatured">Destacados primero</option>
+                <option value="name-asc" data-i18n="catalog.sortName">Nombre A-Z</option>
+                <option value="price-asc" data-i18n="catalog.sortPriceAsc">Menor precio</option>
+                <option value="price-desc" data-i18n="catalog.sortPriceDesc">Mayor precio</option>
+                <option value="stock-desc" data-i18n="catalog.sortStock">Mas stock</option>
               </select>
             </label>
           </div>
         </div>
 
         <div class="content-grid">
-          <aside id="catalogFilters" class="control-panel" aria-label="Filtros del catalogo">
-            <button id="filterClose" class="icon-button filter-close" type="button" aria-label="Cerrar filtros">
+          <aside id="catalogFilters" class="control-panel" aria-label="Filtros del catalogo" data-i18n-aria="catalog.filtersAria">
+            <button id="filterClose" class="icon-button filter-close" type="button" aria-label="Cerrar filtros" data-i18n-aria="catalog.closeFiltersAria">
               <span data-icon="x" aria-hidden="true"></span>
             </button>
             <div>
-              <p class="panel-kicker">Filtros</p>
-              <h2>Categorias</h2>
+              <p class="panel-kicker" data-i18n="catalog.filters">Filtros</p>
+              <h2 data-i18n="categories.title">Categorias</h2>
             </div>
 
             <div id="categoryFilters" class="filter-group"></div>
 
             <div class="filter-section">
-              <h3>Marca</h3>
+              <h3 data-i18n="catalog.brand">Marca</h3>
               <div id="brandFilters" class="filter-group"></div>
             </div>
 
             <div class="filter-section">
-              <h3>Precio USD</h3>
+              <h3 data-i18n="catalog.priceUsd">Precio USD</h3>
               <div class="price-filter-grid">
                 <label>
-                  <span>Desde</span>
+                  <span data-i18n="catalog.from">Desde</span>
                   <input id="minPriceInput" class="filter-input" type="number" min="0" inputmode="numeric" placeholder="0">
                 </label>
                 <label>
-                  <span>Hasta</span>
-                  <input id="maxPriceInput" class="filter-input" type="number" min="0" inputmode="numeric" placeholder="Sin limite">
+                  <span data-i18n="catalog.to">Hasta</span>
+                  <input id="maxPriceInput" class="filter-input" type="number" min="0" inputmode="numeric" placeholder="Sin limite" data-i18n-placeholder="catalog.noLimit">
                 </label>
               </div>
             </div>
 
             <label class="switch-row">
               <input id="onlyAvailable" type="checkbox">
-              <span>Mostrar solo disponibles</span>
+              <span data-i18n="catalog.onlyAvailable">Mostrar solo disponibles</span>
             </label>
 
-            <button id="clearFiltersPanel" class="ghost-button" type="button">Limpiar filtros</button>
+            <button id="clearFiltersPanel" class="ghost-button" type="button" data-i18n="catalog.clearFilters">Limpiar filtros</button>
 
             <dl id="stockSummary" class="stock-summary" hidden>
               <div>
-                <dt>Productos</dt>
+                <dt data-i18n="stock.products">Productos</dt>
                 <dd id="totalProducts">0</dd>
               </div>
               <div>
-                <dt>Unidades</dt>
+                <dt data-i18n="stock.units">Unidades</dt>
                 <dd id="totalUnits">0</dd>
               </div>
               <div>
-                <dt>Agotados</dt>
+                <dt data-i18n="stock.soldOut">Agotados</dt>
                 <dd id="soldOutProducts">0</dd>
               </div>
             </dl>
@@ -261,22 +267,22 @@
 
           <section class="product-area" aria-labelledby="productListTitle">
             <div class="section-title-row">
-              <h2 id="productListTitle">Listado</h2>
+              <h2 id="productListTitle" data-i18n="catalog.listTitle">Listado</h2>
               <span id="resultCount">Cargando</span>
             </div>
 
             <div id="productGrid" class="product-grid" aria-live="polite" aria-busy="true"></div>
 
             <div id="emptyState" class="empty-state" hidden>
-              <strong>No encontramos productos con estos filtros.</strong>
-              <p>Ajusta tu busqueda o vuelve a ver todo el catalogo.</p>
-              <button id="clearFilters" class="ghost-button" type="button">Limpiar filtros</button>
+              <strong data-i18n="catalog.emptyTitle">No encontramos productos con estos filtros.</strong>
+              <p data-i18n="catalog.emptyText">Ajusta tu busqueda o vuelve a ver todo el catalogo.</p>
+              <button id="clearFilters" class="ghost-button" type="button" data-i18n="catalog.clearFilters">Limpiar filtros</button>
             </div>
 
             <div id="catalogError" class="empty-state is-error" hidden>
-              <strong>No pudimos cargar el catalogo.</strong>
-              <p>Revisa la conexion o intenta nuevamente.</p>
-              <button id="retryCatalog" class="primary-link" type="button">Reintentar</button>
+              <strong data-i18n="catalog.errorTitle">No pudimos cargar el catalogo.</strong>
+              <p data-i18n="catalog.errorText">Revisa la conexion o intenta nuevamente.</p>
+              <button id="retryCatalog" class="primary-link" type="button" data-i18n="catalog.retry">Reintentar</button>
             </div>
           </section>
         </div>
@@ -285,18 +291,18 @@
       <section class="section-band" id="vendedores" aria-labelledby="sellerTitle">
         <div class="section-title-row">
           <div>
-            <p class="eyebrow">Atencion comercial</p>
-            <h2 id="sellerTitle">Necesitas ayuda para elegir?</h2>
+            <p class="eyebrow" data-i18n="sellers.eyebrow">Atencion comercial</p>
+            <h2 id="sellerTitle" data-i18n="sellers.title">Necesitas ayuda para elegir?</h2>
           </div>
-          <span>Habla directamente con nuestro equipo.</span>
+          <span data-i18n="sellers.copy">Habla directamente con nuestro equipo.</span>
         </div>
 
         <div class="seller-carousel-shell">
-          <button class="carousel-button" type="button" data-seller-scroll="-1" aria-label="Ver vendedores anteriores">
+          <button class="carousel-button" type="button" data-seller-scroll="-1" aria-label="Ver vendedores anteriores" data-i18n-aria="sellers.prevAria">
             ‹
           </button>
           <div id="sellerGrid" class="seller-grid" tabindex="0"></div>
-          <button class="carousel-button" type="button" data-seller-scroll="1" aria-label="Ver mas vendedores">
+          <button class="carousel-button" type="button" data-seller-scroll="1" aria-label="Ver mas vendedores" data-i18n-aria="sellers.nextAria">
             ›
           </button>
         </div>
@@ -305,10 +311,10 @@
       <section class="section-band section-band-alt" id="ubicacion" aria-labelledby="locationTitle">
         <div class="google-layout">
           <div>
-            <p class="eyebrow">Ubicacion y redes</p>
-            <h2 id="locationTitle">Visitanos</h2>
-            <p class="section-copy">SmartShop te espera en Galeria Jebai, 4to piso, Ciudad del Este.</p>
-            <div class="social-row" aria-label="Redes sociales de SmartShop">
+            <p class="eyebrow" data-i18n="location.eyebrow">Ubicacion y redes</p>
+            <h2 id="locationTitle" data-i18n="location.title">Visitanos</h2>
+            <p class="section-copy" data-i18n="location.copy">SmartShop te espera en Galeria Jebai, 4to piso, Ciudad del Este.</p>
+            <div class="social-row" aria-label="Redes sociales de SmartShop" data-i18n-aria="location.socialAria">
               <a id="instagramLink" class="social-link" href="#" target="_blank" rel="noopener">
                 <img class="social-logo" src="assets/logo-instagram.svg" width="24" height="24" alt="" loading="lazy">
                 Instagram <span data-social-username>@smartshopcde</span>
@@ -321,15 +327,15 @@
           </div>
 
           <div class="google-panel">
-            <span class="panel-kicker">Direccion</span>
+            <span class="panel-kicker" data-i18n="location.addressTitle">Direccion</span>
             <strong id="addressText">Avda. Adrian Jara esquina Avda. Carlos Antonio Lopez, Galeria Jebai 4to piso</strong>
             <p id="hoursText">Lunes a Sabado: 7:30 a 15:30</p>
             <div class="map-shell">
-              <iframe id="mapsEmbed" title="Mapa de SmartShop en Ciudad del Este" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+              <iframe id="mapsEmbed" title="Mapa de SmartShop en Ciudad del Este" data-i18n-title="location.mapTitle" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
             <a id="directionsLink" class="primary-link" href="#" target="_blank" rel="noopener">
               <span data-icon="navigation" aria-hidden="true"></span>
-              Como llegar
+              <span data-i18n="location.directions">Como llegar</span>
             </a>
           </div>
         </div>
@@ -341,20 +347,20 @@
         <img src="assets/logo-smartshop.png" width="54" height="54" alt="">
         <div>
           <strong data-footer-store>SmartShop</strong>
-          <span>Tecnologia y atencion directa en Ciudad del Este.</span>
+          <span data-i18n="footer.copy">Tecnologia y atencion directa en Ciudad del Este.</span>
         </div>
       </div>
       <div class="footer-column">
-        <strong>Productos</strong>
-        <a href="#catalogo">Catalogo</a>
-        <a href="#categorias">Categorias</a>
-        <a href="#featuredSection">Ofertas</a>
+        <strong data-i18n="footer.products">Productos</strong>
+        <a href="#catalogo" data-i18n="footer.catalog">Catalogo</a>
+        <a href="#categorias" data-i18n="footer.categories">Categorias</a>
+        <a href="#featuredSection" data-i18n="footer.offers">Ofertas</a>
       </div>
       <div class="footer-column">
-        <strong>Ayuda</strong>
+        <strong data-i18n="footer.help">Ayuda</strong>
         <a href="#vendedores">WhatsApp</a>
-        <a href="#ubicacion">Ubicacion</a>
-        <a href="#ubicacion">Horarios</a>
+        <a href="#ubicacion" data-i18n="footer.location">Ubicacion</a>
+        <a href="#ubicacion" data-i18n="footer.hours">Horarios</a>
       </div>
       <div class="footer-column">
         <strong>SmartShop</strong>
@@ -370,13 +376,13 @@
       </div>
     </footer>
 
-    <a id="floatingWhatsapp" class="floating-whatsapp" href="#" target="_blank" rel="noopener" aria-label="Hablar por WhatsApp">
+    <a id="floatingWhatsapp" class="floating-whatsapp" href="#" target="_blank" rel="noopener" aria-label="Hablar por WhatsApp" data-i18n-aria="hero.whatsapp">
       <span data-icon="message-circle" aria-hidden="true"></span>
     </a>
 
     <dialog id="productDialog" class="product-dialog" aria-labelledby="dialogTitle">
       <div class="dialog-shell">
-        <button id="dialogClose" class="dialog-close" type="button" aria-label="Cerrar detalle">
+        <button id="dialogClose" class="dialog-close" type="button" aria-label="Cerrar detalle" data-i18n-aria="dialog.closeAria">
           x
         </button>
         <div id="dialogContent"></div>
