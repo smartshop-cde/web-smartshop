@@ -258,7 +258,7 @@
     const social = store.social || {};
     const socialUsername = social.username || "@smartshopcde";
     const address = store.address || DEFAULT_ADDRESS;
-    const hours = store.hours || "Lunes a Sabado\n07:30 a 15:30";
+    const hours = store.hours || "Lunes a Sabado: 7:30 a 15:30";
     const mapsUrl = getMapsUrl(address);
     const directionsUrl = getDirectionsUrl(address);
     const heroSeller = sellers.find((seller) => seller.phone) || sellers[0];

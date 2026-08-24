@@ -229,7 +229,7 @@
       name: row.name,
       role: row.role || "",
       phone: row.whatsapp || "",
-      schedule: "Lunes a viernes, 07:30 a 15:30",
+      schedule: "Lunes a Sabado: 7:30 a 15:30",
       message: "",
       image: row.image_url || "assets/logo-smartshop.png",
       active: row.active,
@@ -240,7 +240,7 @@
     const fallback = window.STORE_DATA?.store || {};
     return {
       ...fallback,
-      hours: "Lunes a viernes\n07:30 a 15:30",
+      hours: "Lunes a Sabado: 7:30 a 15:30",
       address:
         "Avda. Adrian Jara esquina Avda. Carlos Antonio Lopez, Galeria Jebai 4to piso, Ciudad del Este, Paraguay",
       social: {

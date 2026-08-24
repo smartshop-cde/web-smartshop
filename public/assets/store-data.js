@@ -6,7 +6,7 @@ window.STORE_DATA = {
     address:
       "Avda. Adrian Jara esquina Avda. Carlos Antonio Lopez, Galeria Jebai 4to piso, Ciudad del Este, Paraguay",
     googlePlaceId: "ChIJxXxmNJqF9pQRmS5k26rNhvE",
-    hours: "Lunes a Sabado\n07:30 a 15:30",
+    hours: "Lunes a Sabado: 7:30 a 15:30",
     whatsappFallbackMessage: "Hola, vi el catalogo web de SmartShop y quiero consultar disponibilidad.",
     adminPin: "2026",
     exchangeRates: {
@@ -148,7 +148,7 @@ window.STORE_DATA = {
       name: "Ventas SmartShop",
       role: "Atencion general",
       phone: "595981000000",
-      schedule: "Lunes a Sabado, 07:30 a 15:30",
+      schedule: "Lunes a Sabado: 7:30 a 15:30",
       message: "",
       image: "assets/logo-smartshop.png",
     },
@@ -157,7 +157,7 @@ window.STORE_DATA = {
       name: "Soporte de tienda",
       role: "Consultas de stock y retiro",
       phone: "595982000000",
-      schedule: "Lunes a Sabado, 07:30 a 15:30",
+      schedule: "Lunes a Sabado: 7:30 a 15:30",
       message: "",
       image: "assets/logo-smartshop.png",
     },

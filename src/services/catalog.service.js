@@ -16,7 +16,7 @@ export function createCatalogService({ catalogRepository }) {
       name: "SmartShop",
       domain: "smartshop.com.py",
       address: DEFAULT_ADDRESS,
-      hours: "Lunes a Sabado\n07:30 a 15:30",
+      hours: "Lunes a Sabado: 7:30 a 15:30",
       social: {
         instagram: "https://www.instagram.com/smartshopcde",
         tiktok: "https://www.tiktok.com/@smartshopcde",
