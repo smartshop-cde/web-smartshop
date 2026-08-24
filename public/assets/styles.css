@@ -2257,6 +2257,34 @@ h3 {
   }
 }
 
+@media (min-width: 961px) and (max-width: 1480px) {
+  :root {
+    --header-height: 126px;
+  }
+
+  .site-header {
+    grid-template-columns: auto minmax(320px, 720px) auto;
+    row-gap: 10px;
+  }
+
+  .header-search {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .exchange-ticker {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .site-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 960px) {
   :root {
     --header-height: 132px;
