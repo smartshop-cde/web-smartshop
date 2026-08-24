@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="36" height="24" viewBox="0 0 36 24" role="img" aria-labelledby="title">
+  <title id="title">Brasil</title>
+  <rect width="36" height="24" rx="5" fill="#169b62"/>
+  <path fill="#ffdf00" d="M18 3.2 32 12 18 20.8 4 12z"/>
+  <circle cx="18" cy="12" r="5.3" fill="#002776"/>
+  <path fill="none" stroke="#fff" stroke-width="1.4" d="M12.8 10.3c3.9-.8 7.5-.3 10.8 1.5"/>
+</svg>

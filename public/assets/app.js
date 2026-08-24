@@ -738,8 +738,15 @@
     if (!els.exchangeTicker) return;
     const rates = getExchangeRates();
     els.exchangeTicker.innerHTML = `
-      <span>🇧🇷 ${formatRateBrl(rates.usdToBrl)}rs</span>
-      <span>🇵🇾 ${formatRatePyg(rates.usdToPyg)}gs</span>
+      <span>
+        <img class="currency-flag" src="assets/flag-brazil.svg" width="24" height="16" alt="Brasil">
+        ${formatRateBrl(rates.usdToBrl)} R$
+      </span>
+      <span class="exchange-separator" aria-hidden="true">|</span>
+      <span>
+        <img class="currency-flag" src="assets/flag-paraguay.svg" width="24" height="16" alt="Paraguay">
+        ${formatRatePyg(rates.usdToPyg)} G$
+      </span>
     `;
     els.exchangeTicker.title = "Cotizacion referencial por 1 USD";
   }
@@ -788,7 +795,7 @@
   }
 
   function formatRatePyg(value) {
-    return new Intl.NumberFormat("es-PY", { useGrouping: false, maximumFractionDigits: 0 }).format(Number(value) || 0);
+    return new Intl.NumberFormat("es-PY", { maximumFractionDigits: 0 }).format(Number(value) || 0);
   }
 
   function getWhatsAppUrl(phone, message) {

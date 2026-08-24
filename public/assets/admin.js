@@ -244,8 +244,8 @@
     };
     if (!els.exchangePreview) return;
     els.exchangePreview.textContent =
-      `Asi se vera en el encabezado: 🇧🇷 ${formatRateBrl(rates.usdToBrl)}rs ` +
-      `🇵🇾 ${formatRatePyg(rates.usdToPyg)}gs. Ejemplo US$ 100 = ` +
+      `Asi se vera en el encabezado: Brasil ${formatRateBrl(rates.usdToBrl)} R$ | ` +
+      `Paraguay ${formatRatePyg(rates.usdToPyg)} G$. Ejemplo US$ 100 = ` +
       `${formatGuaraniPrice(100 * rates.usdToPyg)} / ${formatRealPrice(100 * rates.usdToBrl)}.`;
   }
 
@@ -1287,7 +1287,7 @@
 
   function renderExchangeRateText() {
     const rates = getExchangeRates();
-    return `🇧🇷 ${formatRateBrl(rates.usdToBrl)}rs 🇵🇾 ${formatRatePyg(rates.usdToPyg)}gs`;
+    return `BR ${formatRateBrl(rates.usdToBrl)} R$ | PY ${formatRatePyg(rates.usdToPyg)} G$`;
   }
 
   function formatUsdPrice(value) {
@@ -1316,7 +1316,7 @@
   }
 
   function formatRatePyg(value) {
-    return new Intl.NumberFormat("es-PY", { useGrouping: false, maximumFractionDigits: 0 }).format(Number(value) || 0);
+    return new Intl.NumberFormat("es-PY", { maximumFractionDigits: 0 }).format(Number(value) || 0);
   }
 
   function readableDatabaseError(error) {

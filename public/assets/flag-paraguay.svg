@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="36" height="24" viewBox="0 0 36 24" role="img" aria-labelledby="title">
+  <title id="title">Paraguay</title>
+  <rect width="36" height="24" rx="5" fill="#fff"/>
+  <path fill="#d52b1e" d="M0 5a5 5 0 0 1 5-5h26a5 5 0 0 1 5 5v3H0z"/>
+  <path fill="#0038a8" d="M0 16h36v3a5 5 0 0 1-5 5H5a5 5 0 0 1-5-5z"/>
+  <circle cx="18" cy="12" r="3.1" fill="#fff" stroke="#f2c94c" stroke-width=".8"/>
+  <circle cx="18" cy="12" r="1.45" fill="#2f7d32"/>
+</svg>
