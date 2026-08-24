@@ -1,6 +1,10 @@
 const MAX_TEXTS_PER_REQUEST = 80;
 const MAX_TOTAL_CHARS = 12000;
-const GOOGLE_TRANSLATE_ENDPOINT = "https://translation.googleapis.com/language/translate/v2";
+const TRANSLATION_MODEL = "@cf/meta/m2m100-1.2b";
+const LANGUAGE_NAMES = {
+  es: "spanish",
+  pt: "portuguese",
+};
 
 export default {
   async fetch(request, env, ctx) {
@@ -45,13 +49,13 @@ async function handleTranslate(request, env, ctx) {
     );
   }
 
-  if (!env.GOOGLE_TRANSLATE_API_KEY) {
+  if (!env.AI) {
     return json(
       {
         success: false,
         error: {
           code: "TRANSLATE_NOT_CONFIGURED",
-          message: "Google Translate no esta configurado.",
+          message: "Cloudflare Workers AI no esta configurado.",
         },
       },
       503
@@ -94,26 +98,15 @@ async function handleTranslate(request, env, ctx) {
     );
   }
 
-  const cacheKey = await getCacheKey({ texts, source, target });
+  const cacheKey = await getCacheKey({ model: TRANSLATION_MODEL, texts, source, target });
   const cache = caches.default;
   const cached = await cache.match(cacheKey);
   if (cached) return cached;
 
-  const googleUrl = new URL(GOOGLE_TRANSLATE_ENDPOINT);
-  googleUrl.searchParams.set("key", env.GOOGLE_TRANSLATE_API_KEY);
-
-  const response = await fetch(googleUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json; charset=utf-8" },
-    body: JSON.stringify({
-      q: texts,
-      source: source || undefined,
-      target,
-      format: "text",
-    }),
-  });
-
-  if (!response.ok) {
+  let translations;
+  try {
+    translations = await translateWithWorkersAi(env, texts, { source, target });
+  } catch {
     return json(
       {
         success: false,
@@ -126,8 +119,6 @@ async function handleTranslate(request, env, ctx) {
     );
   }
 
-  const payload = await response.json();
-  const translations = (payload.data?.translations || []).map((entry) => decodeHtmlEntities(entry.translatedText || ""));
   const result = json({
     success: true,
     data: {
@@ -139,6 +130,36 @@ async function handleTranslate(request, env, ctx) {
 
   ctx.waitUntil(cache.put(cacheKey, result.clone()));
   return result;
+}
+
+async function translateWithWorkersAi(env, texts, options) {
+  const sourceLang = LANGUAGE_NAMES[options.source] || LANGUAGE_NAMES.es;
+  const targetLang = LANGUAGE_NAMES[options.target];
+  const translations = [];
+
+  if (!targetLang) {
+    throw new Error("Unsupported target language");
+  }
+
+  for (const text of texts) {
+    const response = await env.AI.run(TRANSLATION_MODEL, {
+      text,
+      source_lang: sourceLang,
+      target_lang: targetLang,
+    });
+    translations.push(extractTranslatedText(response));
+  }
+
+  return translations;
+}
+
+function extractTranslatedText(response) {
+  if (typeof response === "string") return response;
+  if (response?.translated_text) return String(response.translated_text);
+  if (response?.translatedText) return String(response.translatedText);
+  if (response?.translation) return String(response.translation);
+  if (response?.text) return String(response.text);
+  return "";
 }
 
 function normalizeLanguage(value) {
@@ -171,28 +192,4 @@ function securityHeaders() {
     "Cache-Control": "private, max-age=0",
     "X-Content-Type-Options": "nosniff",
   };
-}
-
-function decodeHtmlEntities(value) {
-  return String(value || "")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&ccedil;/g, "ç")
-    .replace(/&atilde;/g, "ã")
-    .replace(/&otilde;/g, "õ")
-    .replace(/&aacute;/g, "á")
-    .replace(/&eacute;/g, "é")
-    .replace(/&iacute;/g, "í")
-    .replace(/&oacute;/g, "ó")
-    .replace(/&uacute;/g, "ú")
-    .replace(/&acirc;/g, "â")
-    .replace(/&ecirc;/g, "ê")
-    .replace(/&ocirc;/g, "ô")
-    .replace(/&agrave;/g, "à")
-    .replace(/&uuml;/g, "ü")
-    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
-    .replace(/&#x([\da-f]+);/gi, (_, code) => String.fromCodePoint(parseInt(code, 16)));
 }

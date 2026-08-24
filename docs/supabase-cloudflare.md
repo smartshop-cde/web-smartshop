@@ -38,11 +38,9 @@ Cloudflare debe tener estas variables disponibles durante el build:
 ```env
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
-GOOGLE_TRANSLATE_API_KEY=
 ```
 
 La clave anon es publica y trabaja con RLS. La seguridad real esta en las politicas de Supabase.
-La clave de Google Translate es privada y solo debe estar disponible para el Worker, no para el navegador.
 
 ## Cloudflare Workers
 
@@ -66,11 +64,14 @@ Root directory: /
     "directory": "./dist",
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
+  },
+  "ai": {
+    "binding": "AI"
   }
 }
 ```
 
-El Worker solo corre antes para `/api/*`. La ruta `/api/translate` usa Google Cloud Translation y evita exponer la clave en el frontend. El resto del sitio sigue funcionando como assets estaticos.
+El Worker solo corre antes para `/api/*`. La ruta `/api/translate` usa Cloudflare Workers AI con el modelo `@cf/meta/m2m100-1.2b`. El resto del sitio sigue funcionando como assets estaticos.
 
 El build copia `public/` a `dist/`, genera `dist/admin/index.html` para la ruta `/admin` y escribe `dist/assets/supabase-env.js` con las variables publicas de Supabase.
 

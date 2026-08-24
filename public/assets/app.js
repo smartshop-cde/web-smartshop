@@ -6,7 +6,7 @@
     window.SMARTSHOP_API_BASE_URL || localStorage.getItem("smartshop-api-base-url") || ""
   ).replace(/\/$/, "");
   const LANGUAGE_STORAGE_KEY = "smartshop-language";
-  const TRANSLATION_CACHE_STORAGE_KEY = "smartshop-translation-cache-v1";
+  const TRANSLATION_CACHE_STORAGE_KEY = "smartshop-translation-cache-v2";
   const DEFAULT_LANGUAGE = "es";
   const CATEGORY_LABELS = {
     pt: {
@@ -811,7 +811,7 @@
         }
       })
       .catch((error) => {
-        console.warn("No se pudo traducir el catalogo con Google Translate.", error);
+        console.warn("No se pudo traducir el catalogo con Cloudflare Workers AI.", error);
       })
       .finally(() => {
         productTranslationPromise = null;
