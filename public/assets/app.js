@@ -401,7 +401,7 @@
             `
           )
           .join("")
-      : `<img class="hero-logo-fallback" src="assets/logo-smartshop.webp" width="160" height="160" alt="">`;
+      : `<img class="hero-logo-fallback" src="assets/logo-smartshop.png" width="160" height="160" alt="">`;
   }
 
   function renderProducts() {
