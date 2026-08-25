@@ -223,6 +223,38 @@
     return data.session;
   }
 
+  async function sendPasswordReset(email) {
+    const redirectTo = `${window.location.origin}/admin`;
+    const { error } = await requireClient().auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw new Error("No pudimos enviar el enlace de contrasena.");
+  }
+
+  async function updatePassword(password) {
+    const { data, error } = await requireClient().auth.updateUser({ password });
+    if (error) throw new Error("No pudimos guardar la contrasena.");
+    return data;
+  }
+
+  async function getAccessToken() {
+    const session = await getSession();
+    return session?.access_token || "";
+  }
+
+  async function listAdminUsers() {
+    return callAdminEndpoint("/api/admin/users", { method: "GET" });
+  }
+
+  async function createAdminUser(payload) {
+    return callAdminEndpoint("/api/admin/users", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async function listAuditLogs() {
+    return callAdminEndpoint("/api/admin/audit-logs", { method: "GET" });
+  }
+
   async function assertAdmin(userId) {
     if (!userId) throw new Error("Sesion no valida.");
     const { data, error } = await requireClient()
@@ -236,6 +268,24 @@
       throw new Error("Tu usuario no tiene permisos de administrador.");
     }
     return data;
+  }
+
+  async function callAdminEndpoint(path, options = {}) {
+    const token = await getAccessToken();
+    if (!token) throw new Error("Inicia sesion nuevamente.");
+    const response = await fetch(path, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        ...(options.headers || {}),
+      },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.success === false) {
+      throw new Error(payload.error?.message || "No pudimos completar la accion.");
+    }
+    return payload.data;
   }
 
   async function uploadImage(file, bucket, scope) {
@@ -413,7 +463,12 @@
     signIn,
     signOut,
     getSession,
+    sendPasswordReset,
+    updatePassword,
     assertAdmin,
+    listAdminUsers,
+    createAdminUser,
+    listAuditLogs,
     uploadImage,
     toSlug,
   };

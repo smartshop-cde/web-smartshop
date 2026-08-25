@@ -337,6 +337,8 @@
   let searchRequestId = 0;
   let heroSliderTimer = 0;
 
+  redirectAuthCallbackToAdmin();
+
   const state = {
     language: getInitialLanguage(),
     category: "Todos",
@@ -355,6 +357,20 @@
   const els = {};
 
   document.addEventListener("DOMContentLoaded", init);
+
+  function redirectAuthCallbackToAdmin() {
+    const params = getAuthCallbackParams();
+    const type = String(params.get("type") || "").toLowerCase();
+    if (!["invite", "recovery"].includes(type) || window.location.pathname.startsWith("/admin")) return;
+    window.location.replace(`/admin${window.location.search || ""}${window.location.hash || ""}`);
+  }
+
+  function getAuthCallbackParams() {
+    const params = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    hash.forEach((value, key) => params.set(key, value));
+    return params;
+  }
 
   async function init() {
     cacheElements();

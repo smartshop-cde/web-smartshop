@@ -35,12 +35,40 @@
             <span>Contrasena</span>
             <span class="password-control">
               <input id="passwordInput" class="admin-input" type="password" autocomplete="current-password" required>
-              <button id="passwordToggle" class="password-toggle" type="button" aria-label="Mostrar contrasena" aria-pressed="false">Mostrar</button>
+              <button id="passwordToggle" class="password-toggle" type="button" data-password-toggle="#passwordInput" aria-label="Mostrar contrasena" aria-pressed="false">Mostrar</button>
             </span>
           </label>
           <button id="loginButton" class="admin-button is-primary" type="submit">Entrar</button>
+          <button id="sendPasswordLinkButton" class="admin-button" type="button">Crear o recuperar contrasena</button>
         </form>
         <p id="loginError" class="admin-status is-error" role="alert"></p>
+      </section>
+
+      <section id="passwordSetupView" class="login-card" aria-labelledby="passwordSetupTitle" hidden>
+        <img src="/assets/logo-smartshop.png" width="86" height="86" alt="">
+        <div>
+          <p class="eyebrow">Acceso privado</p>
+          <h1 id="passwordSetupTitle">Crear contrasena</h1>
+          <p id="passwordSetupHelp" class="admin-notice">Define una contrasena para entrar al panel de SmartShop.</p>
+        </div>
+        <form id="passwordSetupForm" class="admin-actions">
+          <label class="admin-field">
+            <span>Nueva contrasena</span>
+            <span class="password-control">
+              <input id="setupPasswordInput" class="admin-input" type="password" autocomplete="new-password" minlength="8" required>
+              <button class="password-toggle" type="button" data-password-toggle="#setupPasswordInput" aria-label="Mostrar contrasena" aria-pressed="false">Mostrar</button>
+            </span>
+          </label>
+          <label class="admin-field">
+            <span>Confirmar contrasena</span>
+            <span class="password-control">
+              <input id="setupPasswordConfirmInput" class="admin-input" type="password" autocomplete="new-password" minlength="8" required>
+              <button class="password-toggle" type="button" data-password-toggle="#setupPasswordConfirmInput" aria-label="Mostrar contrasena" aria-pressed="false">Mostrar</button>
+            </span>
+          </label>
+          <button id="setupPasswordButton" class="admin-button is-primary" type="submit">Guardar contrasena</button>
+        </form>
+        <p id="passwordSetupError" class="admin-status is-error" role="alert"></p>
       </section>
 
       <section id="adminView" hidden>
@@ -68,6 +96,8 @@
               <button class="admin-tab" type="button" data-admin-tab="categoriesPanel">Categorias</button>
               <button class="admin-tab" type="button" data-admin-tab="sellersPanel">Vendedores</button>
               <button class="admin-tab" type="button" data-admin-tab="settingsPanel">Cotizaciones</button>
+              <button class="admin-tab" type="button" data-admin-tab="usersPanel">Usuarios</button>
+              <button class="admin-tab" type="button" data-admin-tab="auditPanel">Auditoria</button>
             </nav>
             <div class="admin-summary">
               <div>
@@ -168,6 +198,46 @@
                   <button class="admin-button is-primary" type="submit">Guardar cotizaciones</button>
                 </div>
               </form>
+            </section>
+
+            <section id="usersPanel" class="admin-card admin-tab-panel" aria-labelledby="usersTitle" hidden>
+              <div class="section-title-row">
+                <div>
+                  <p class="panel-kicker">Accesos</p>
+                  <h2 id="usersTitle">Usuarios admin</h2>
+                </div>
+                <span>Solo usuarios con rol admin pueden editar la tienda.</span>
+              </div>
+              <form id="createAdminUserForm" class="admin-form-grid">
+                <label class="admin-field">
+                  <span>Email</span>
+                  <input id="newAdminEmailInput" class="admin-input" type="email" autocomplete="off" required>
+                </label>
+                <label class="admin-field">
+                  <span>Contrasena temporal</span>
+                  <span class="password-control">
+                    <input id="newAdminPasswordInput" class="admin-input" type="password" autocomplete="new-password" minlength="8" required>
+                    <button class="password-toggle" type="button" data-password-toggle="#newAdminPasswordInput" aria-label="Mostrar contrasena" aria-pressed="false">Mostrar</button>
+                  </span>
+                </label>
+                <p class="admin-notice is-wide">La contrasena debe tener al menos 8 caracteres. El usuario puede cambiarla luego con "Crear o recuperar contrasena".</p>
+                <div class="admin-form-actions is-wide">
+                  <button id="createAdminUserButton" class="admin-button is-primary" type="submit">Crear usuario admin</button>
+                </div>
+              </form>
+              <div id="adminUsersTable" class="admin-table-wrap"></div>
+            </section>
+
+            <section id="auditPanel" class="admin-card admin-tab-panel" aria-labelledby="auditTitle" hidden>
+              <div class="section-title-row">
+                <div>
+                  <p class="panel-kicker">Historial</p>
+                  <h2 id="auditTitle">Auditoria</h2>
+                </div>
+                <button id="refreshAuditButton" class="admin-button" type="button">Actualizar auditoria</button>
+              </div>
+              <p class="admin-notice">Registra cambios de productos, categorias, vendedores, imagenes, cotizaciones y permisos admin.</p>
+              <div id="auditLogsTable" class="admin-table-wrap"></div>
             </section>
           </div>
         </div>

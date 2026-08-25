@@ -31,6 +31,14 @@ set role = 'admin';
 
 No guardes claves `service_role` en el repositorio ni en el navegador.
 
+Despues de tener al menos un admin funcionando, el panel tambien permite crear otros usuarios desde:
+
+```text
+/admin -> Usuarios
+```
+
+Esa funcion requiere configurar `SUPABASE_SERVICE_ROLE_KEY` como secret del Worker en Cloudflare. La clave se usa solamente del lado servidor para llamar a Supabase Auth Admin API.
+
 ## Variables publicas
 
 Cloudflare debe tener estas variables disponibles durante el build:
@@ -41,6 +49,14 @@ SUPABASE_ANON_KEY=
 ```
 
 La clave anon es publica y trabaja con RLS. La seguridad real esta en las politicas de Supabase.
+
+Cloudflare tambien debe tener este secret disponible en runtime para crear/listar admins y leer auditoria:
+
+```env
+SUPABASE_SERVICE_ROLE_KEY=
+```
+
+Debe configurarse como secret, no como variable publica. Nunca debe aparecer en `public/`, `dist/`, HTML ni JavaScript del navegador.
 
 ## Cloudflare Workers
 
@@ -74,6 +90,28 @@ Root directory: /
 El Worker solo corre antes para `/api/*`. La ruta `/api/translate` usa Cloudflare Workers AI con el modelo `@cf/meta/m2m100-1.2b`. El resto del sitio sigue funcionando como assets estaticos.
 
 El build copia `public/` a `dist/`, genera `dist/admin/index.html` para la ruta `/admin` y escribe `dist/assets/supabase-env.js` con las variables publicas de Supabase.
+
+## Auditoria
+
+Ejecuta tambien:
+
+```text
+supabase/migrations/20260825150000_audit_logs.sql
+```
+
+Esto crea `public.audit_logs` y triggers para registrar cambios en:
+
+```text
+profiles
+categories
+products
+product_variants
+product_images
+sellers
+store_settings
+```
+
+La pestaña `/admin -> Auditoria` muestra los cambios recientes con fecha, usuario, accion, tabla y registro afectado.
 
 ## Migrar datos actuales
 

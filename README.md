@@ -53,6 +53,7 @@ Variables principales:
 - `CORS_ORIGIN`: origen permitido, opcional.
 - `SUPABASE_URL`: URL publica del proyecto Supabase.
 - `SUPABASE_ANON_KEY`: clave anon/public de Supabase. No usar `service_role` en frontend.
+- `SUPABASE_SERVICE_ROLE_KEY`: solo como secret de Cloudflare Worker para crear/listar admins y leer auditoria. Nunca exponer en frontend.
 
 ## Base de datos PostgreSQL
 
@@ -153,6 +154,7 @@ Ejecuta la migracion reproducible:
 
 ```text
 supabase/migrations/20260821160000_smartshop_catalog.sql
+supabase/migrations/20260825150000_audit_logs.sql
 ```
 
 Crea el primer usuario administrador desde Supabase Auth y asigna rol:
@@ -163,6 +165,8 @@ values ('UUID_DEL_USUARIO', 'admin')
 on conflict (id) do update
 set role = 'admin';
 ```
+
+Luego puedes crear otros usuarios desde `/admin -> Usuarios`. Esa funcion necesita `SUPABASE_SERVICE_ROLE_KEY` configurado como secret en Cloudflare.
 
 Generar SQL para importar los datos actuales de `public/assets/store-data.js`:
 
@@ -184,6 +188,7 @@ Root directory: /
 Environment variables:
   SUPABASE_URL
   SUPABASE_ANON_KEY
+  SUPABASE_SERVICE_ROLE_KEY (secret runtime, no publico)
 ```
 
 `wrangler.jsonc` publica el Worker `smartshop` con `assets.directory = "./dist"`. El Worker solo intercepta `/api/*` para traducir contenido dinamico mediante `/api/translate`; los assets estaticos siguen sirviendose desde `dist/`.
@@ -192,7 +197,7 @@ La traduccion dinamica usa Cloudflare Workers AI con el modelo `@cf/meta/m2m100-
 
 El script de build copia `public/` a `dist/`, crea `dist/admin/index.html` para que `/admin` funcione como ruta estatica y genera `assets/supabase-env.js` con las variables publicas de Supabase.
 
-No configurar `SUPABASE_SERVICE_ROLE_KEY` en Cloudflare ni en el frontend.
+Configurar `SUPABASE_SERVICE_ROLE_KEY` solamente como secret runtime de Cloudflare Worker. No debe entrar al build ni aparecer en el frontend.
 
 Guia detallada: `docs/supabase-cloudflare.md`.
 

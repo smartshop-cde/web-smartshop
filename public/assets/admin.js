@@ -43,6 +43,10 @@
   const els = {};
   const state = {
     catalog: { products: [], categories: [], sellers: [], settings: { exchangeRates: DEFAULT_EXCHANGE_RATES } },
+    adminUsers: [],
+    adminUsersError: "",
+    auditLogs: [],
+    auditLogsError: "",
     pendingImport: null,
     loading: false,
   };
@@ -62,7 +66,9 @@
 
     try {
       const session = await window.SmartShopSupabase.getSession();
-      if (session?.user) {
+      if (session?.user && isPasswordSetupFlow()) {
+        showPasswordSetup();
+      } else if (session?.user) {
         await window.SmartShopSupabase.assertAdmin(session.user.id);
         await showAdmin();
       } else {
@@ -77,12 +83,19 @@
 
   function cacheElements() {
     els.loginView = document.querySelector("#loginView");
+    els.passwordSetupView = document.querySelector("#passwordSetupView");
     els.adminView = document.querySelector("#adminView");
     els.loginForm = document.querySelector("#loginForm");
+    els.passwordSetupForm = document.querySelector("#passwordSetupForm");
     els.emailInput = document.querySelector("#emailInput");
     els.passwordInput = document.querySelector("#passwordInput");
-    els.passwordToggle = document.querySelector("#passwordToggle");
+    els.passwordToggles = [...document.querySelectorAll("[data-password-toggle]")];
     els.loginButton = document.querySelector("#loginButton");
+    els.sendPasswordLinkButton = document.querySelector("#sendPasswordLinkButton");
+    els.setupPasswordInput = document.querySelector("#setupPasswordInput");
+    els.setupPasswordConfirmInput = document.querySelector("#setupPasswordConfirmInput");
+    els.setupPasswordButton = document.querySelector("#setupPasswordButton");
+    els.passwordSetupError = document.querySelector("#passwordSetupError");
     els.loginError = document.querySelector("#loginError");
     els.logoutButton = document.querySelector("#logoutButton");
     els.reloadButton = document.querySelector("#reloadButton");
@@ -102,6 +115,13 @@
     els.usdToBrlInput = document.querySelector("#usdToBrlInput");
     els.usdToPygInput = document.querySelector("#usdToPygInput");
     els.exchangePreview = document.querySelector("#exchangePreview");
+    els.createAdminUserForm = document.querySelector("#createAdminUserForm");
+    els.newAdminEmailInput = document.querySelector("#newAdminEmailInput");
+    els.newAdminPasswordInput = document.querySelector("#newAdminPasswordInput");
+    els.createAdminUserButton = document.querySelector("#createAdminUserButton");
+    els.adminUsersTable = document.querySelector("#adminUsersTable");
+    els.refreshAuditButton = document.querySelector("#refreshAuditButton");
+    els.auditLogsTable = document.querySelector("#auditLogsTable");
     els.importPreview = document.querySelector("#importPreview");
     els.downloadTemplateButton = document.querySelector("#downloadTemplateButton");
     els.importProductsInput = document.querySelector("#importProductsInput");
@@ -115,9 +135,13 @@
 
   function bindEvents() {
     els.loginForm.addEventListener("submit", handleLogin);
-    els.passwordToggle.addEventListener("click", togglePasswordVisibility);
+    els.passwordSetupForm.addEventListener("submit", handlePasswordSetup);
+    els.passwordToggles.forEach((button) => button.addEventListener("click", togglePasswordVisibility));
+    els.sendPasswordLinkButton.addEventListener("click", handleSendPasswordLink);
     els.logoutButton.addEventListener("click", handleLogout);
     els.reloadButton.addEventListener("click", () => loadAndRenderCatalog(true));
+    els.createAdminUserForm.addEventListener("submit", handleCreateAdminUser);
+    els.refreshAuditButton.addEventListener("click", () => loadAndRenderAuditLogs(true));
     els.downloadTemplateButton.addEventListener("click", downloadImportTemplate);
     els.importProductsInput.addEventListener("change", handleImportFile);
     els.newProductButton.addEventListener("click", () => openProductEditor());
@@ -163,29 +187,97 @@
   async function handleLogout() {
     await window.SmartShopSupabase.signOut();
     state.catalog = { products: [], categories: [], sellers: [], settings: { exchangeRates: DEFAULT_EXCHANGE_RATES } };
+    state.adminUsers = [];
+    state.adminUsersError = "";
+    state.auditLogs = [];
+    state.auditLogsError = "";
     showLogin();
     toast("Sesion cerrada.");
   }
 
-  function togglePasswordVisibility() {
-    const shouldShow = els.passwordInput.type === "password";
-    els.passwordInput.type = shouldShow ? "text" : "password";
-    els.passwordToggle.textContent = shouldShow ? "Ocultar" : "Mostrar";
-    els.passwordToggle.setAttribute("aria-label", shouldShow ? "Ocultar contrasena" : "Mostrar contrasena");
-    els.passwordToggle.setAttribute("aria-pressed", String(shouldShow));
-    els.passwordInput.focus();
+  async function handleSendPasswordLink() {
+    const email = els.emailInput.value.trim();
+    setLoginError("");
+    if (!email) {
+      setLoginError("Escribe el email para enviar el enlace de contrasena.");
+      els.emailInput.focus();
+      return;
+    }
+    setButtonLoading(els.sendPasswordLinkButton, true);
+    try {
+      await window.SmartShopSupabase.sendPasswordReset(email);
+      toast("Enlace enviado. Revisa el correo para crear o recuperar la contrasena.");
+    } catch (error) {
+      setLoginError(error.message);
+    } finally {
+      setButtonLoading(els.sendPasswordLinkButton, false);
+    }
+  }
+
+  async function handlePasswordSetup(event) {
+    event.preventDefault();
+    setPasswordSetupError("");
+    const password = els.setupPasswordInput.value;
+    const confirmPassword = els.setupPasswordConfirmInput.value;
+    if (password.length < 8) {
+      setPasswordSetupError("La contrasena debe tener al menos 8 caracteres.");
+      return;
+    }
+    if (password !== confirmPassword) {
+      setPasswordSetupError("Las contrasenas no coinciden.");
+      return;
+    }
+
+    setButtonLoading(els.setupPasswordButton, true);
+    try {
+      await window.SmartShopSupabase.updatePassword(password);
+      els.setupPasswordInput.value = "";
+      els.setupPasswordConfirmInput.value = "";
+      window.history.replaceState({}, document.title, "/admin");
+      const session = await window.SmartShopSupabase.getSession();
+      await window.SmartShopSupabase.assertAdmin(session?.user?.id);
+      await showAdmin();
+      toast("Contrasena guardada.");
+    } catch (error) {
+      setPasswordSetupError(error.message);
+    } finally {
+      setButtonLoading(els.setupPasswordButton, false);
+    }
+  }
+
+  function togglePasswordVisibility(event) {
+    const button = event.currentTarget;
+    const input = document.querySelector(button.dataset.passwordToggle);
+    if (!input) return;
+    const shouldShow = input.type === "password";
+    input.type = shouldShow ? "text" : "password";
+    button.textContent = shouldShow ? "Ocultar" : "Mostrar";
+    button.setAttribute("aria-label", shouldShow ? "Ocultar contrasena" : "Mostrar contrasena");
+    button.setAttribute("aria-pressed", String(shouldShow));
+    input.focus();
   }
 
   async function showAdmin() {
     els.loginView.hidden = true;
+    els.passwordSetupView.hidden = true;
     els.adminView.hidden = false;
     await loadAndRenderCatalog();
+    await loadAndRenderAdminUsers();
+    await loadAndRenderAuditLogs();
   }
 
   function showLogin() {
     els.loginView.hidden = false;
+    els.passwordSetupView.hidden = true;
     els.adminView.hidden = true;
     els.emailInput.focus();
+  }
+
+  function showPasswordSetup() {
+    els.loginView.hidden = true;
+    els.passwordSetupView.hidden = false;
+    els.adminView.hidden = true;
+    els.setupPasswordInput.focus();
   }
 
   async function loadAndRenderCatalog(forceNotice = false) {
@@ -209,6 +301,8 @@
     renderCategoriesTable();
     renderSellersTable();
     renderSettings();
+    renderAdminUsersTable();
+    renderAuditLogsTable();
   }
 
   function renderDashboard() {
@@ -247,6 +341,113 @@
     els.usdToBrlInput.value = rates.usdToBrl;
     els.usdToPygInput.value = rates.usdToPyg;
     renderExchangePreview();
+  }
+
+  async function loadAndRenderAdminUsers() {
+    state.adminUsersError = "";
+    try {
+      state.adminUsers = await window.SmartShopSupabase.listAdminUsers();
+    } catch (error) {
+      state.adminUsers = [];
+      state.adminUsersError = error.message;
+    }
+    renderAdminUsersTable();
+  }
+
+  async function loadAndRenderAuditLogs(showNotice = false) {
+    state.auditLogsError = "";
+    try {
+      state.auditLogs = await window.SmartShopSupabase.listAuditLogs();
+      if (showNotice) toast("Auditoria actualizada.");
+    } catch (error) {
+      state.auditLogs = [];
+      state.auditLogsError = error.message;
+      if (showNotice) toast(error.message, "error");
+    }
+    renderAuditLogsTable();
+  }
+
+  function renderAdminUsersTable() {
+    if (!els.adminUsersTable) return;
+    if (state.adminUsersError) {
+      els.adminUsersTable.innerHTML = `
+        <div class="admin-notice">
+          No se pudo cargar usuarios admin. Verifica que el secreto SUPABASE_SERVICE_ROLE_KEY este configurado en Cloudflare.
+        </div>
+      `;
+      return;
+    }
+
+    const rows = state.adminUsers
+      .map(
+        (user) => `
+          <tr>
+            <td><strong>${escapeHtml(user.email || "Sin email")}</strong></td>
+            <td>${escapeHtml(user.role || "admin")}</td>
+            <td>${user.email_confirmed_at ? "Confirmado" : "Pendiente"}</td>
+            <td>${formatDate(user.created_at)}</td>
+          </tr>
+        `
+      )
+      .join("");
+
+    els.adminUsersTable.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Email</th>
+            <th>Creado</th>
+          </tr>
+        </thead>
+        <tbody>${rows || `<tr><td colspan="4">Todavia no se pudo listar usuarios admin.</td></tr>`}</tbody>
+      </table>
+    `;
+  }
+
+  function renderAuditLogsTable() {
+    if (!els.auditLogsTable) return;
+    if (state.auditLogsError) {
+      els.auditLogsTable.innerHTML = `
+        <div class="admin-notice">
+          No se pudo cargar auditoria. Ejecuta la migracion audit_logs y verifica SUPABASE_SERVICE_ROLE_KEY en Cloudflare.
+        </div>
+      `;
+      return;
+    }
+
+    const rows = state.auditLogs
+      .map(
+        (log) => `
+          <tr>
+            <td>${formatDate(log.created_at)}</td>
+            <td><strong>${escapeHtml(log.actor_email || "Sistema")}</strong></td>
+            <td><span class="status-pill">${escapeHtml(formatAuditAction(log.action))}</span></td>
+            <td>${escapeHtml(formatAuditTable(log.table_name))}</td>
+            <td>
+              <strong>${escapeHtml(getAuditRecordLabel(log))}</strong>
+              <small>${escapeHtml(summarizeAuditChange(log))}</small>
+            </td>
+          </tr>
+        `
+      )
+      .join("");
+
+    els.auditLogsTable.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Usuario</th>
+            <th>Accion</th>
+            <th>Tabla</th>
+            <th>Detalle</th>
+          </tr>
+        </thead>
+        <tbody>${rows || `<tr><td colspan="5">Todavia no hay cambios registrados.</td></tr>`}</tbody>
+      </table>
+    `;
   }
 
   function renderExchangePreview() {
@@ -696,6 +897,34 @@
     }
   }
 
+  async function handleCreateAdminUser(event) {
+    event.preventDefault();
+    const email = els.newAdminEmailInput.value.trim();
+    const password = els.newAdminPasswordInput.value;
+    if (!email) {
+      toast("Escribe el email del nuevo usuario.", "error");
+      return;
+    }
+    if (password.length < 8) {
+      toast("La contrasena temporal debe tener al menos 8 caracteres.", "error");
+      return;
+    }
+
+    setButtonLoading(els.createAdminUserButton, true);
+    try {
+      await window.SmartShopSupabase.createAdminUser({ email, password });
+      els.newAdminEmailInput.value = "";
+      els.newAdminPasswordInput.value = "";
+      await loadAndRenderAdminUsers();
+      await loadAndRenderAuditLogs();
+      toast("Usuario admin creado correctamente.");
+    } catch (error) {
+      toast(error.message, "error");
+    } finally {
+      setButtonLoading(els.createAdminUserButton, false);
+    }
+  }
+
   async function handleProductTableAction(event) {
     const button = event.target.closest("[data-product-action]");
     if (!button) return;
@@ -1105,6 +1334,19 @@
     closeEditors();
   }
 
+  function isPasswordSetupFlow() {
+    const params = getAuthParams();
+    const type = String(params.get("type") || "").toLowerCase();
+    return ["invite", "recovery"].includes(type);
+  }
+
+  function getAuthParams() {
+    const params = new URLSearchParams(window.location.search);
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    hash.forEach((value, key) => params.set(key, value));
+    return params;
+  }
+
   function closeEditors() {
     els.productEditor.hidden = true;
     els.categoryEditor.hidden = true;
@@ -1124,6 +1366,66 @@
         `
       )
       .join("");
+  }
+
+  function formatAuditAction(action) {
+    const labels = {
+      INSERT: "Creacion",
+      UPDATE: "Edicion",
+      DELETE: "Eliminacion",
+    };
+    return labels[action] || action || "Cambio";
+  }
+
+  function formatAuditTable(tableName) {
+    const labels = {
+      "auth.users": "Usuarios",
+      profiles: "Permisos",
+      categories: "Categorias",
+      products: "Productos",
+      product_variants: "Variantes",
+      product_images: "Imagenes",
+      sellers: "Vendedores",
+      store_settings: "Cotizaciones",
+    };
+    return labels[tableName] || tableName || "Registro";
+  }
+
+  function getAuditRecordLabel(log) {
+    const data = log.new_data || log.old_data || {};
+    return data.name || data.email || data.key || data.public_code || log.record_id || "Registro";
+  }
+
+  function summarizeAuditChange(log) {
+    const data = log.new_data || log.old_data || {};
+    if (log.table_name === "products") {
+      return [data.public_code ? `Codigo ${data.public_code}` : "", data.brand || ""].filter(Boolean).join(" | ");
+    }
+    if (log.table_name === "product_variants") {
+      return [data.name || "Variante", data.price ? formatPrice(data.price) : "", data.stock != null ? `Stock ${data.stock}` : ""]
+        .filter(Boolean)
+        .join(" | ");
+    }
+    if (log.table_name === "sellers") {
+      return data.whatsapp ? `WhatsApp ${data.whatsapp}` : "";
+    }
+    if (log.table_name === "profiles") {
+      return data.role ? `Rol ${data.role}` : "";
+    }
+    if (log.table_name === "store_settings") {
+      return "Cotizacion actualizada";
+    }
+    return log.record_id || "";
+  }
+
+  function formatDate(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return new Intl.DateTimeFormat("es-PY", {
+      dateStyle: "short",
+      timeStyle: "short",
+    }).format(date);
   }
 
   function getProductImage(product) {
@@ -1271,12 +1573,19 @@
   function setLoginDisabled(disabled) {
     els.emailInput.disabled = disabled;
     els.passwordInput.disabled = disabled;
-    els.passwordToggle.disabled = disabled;
+    els.passwordToggles.forEach((button) => {
+      button.disabled = disabled;
+    });
     els.loginButton.disabled = disabled;
+    els.sendPasswordLinkButton.disabled = disabled;
   }
 
   function setLoginError(message) {
     els.loginError.textContent = message;
+  }
+
+  function setPasswordSetupError(message) {
+    els.passwordSetupError.textContent = message;
   }
 
   function nullableString(value) {
