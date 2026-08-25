@@ -325,6 +325,7 @@
   let productTranslationPromise = null;
   let searchTimer = 0;
   let searchRequestId = 0;
+  let heroSliderTimer = 0;
 
   const state = {
     language: getInitialLanguage(),
@@ -793,18 +794,34 @@
   }
 
   function renderHeroShowcase() {
-    const heroProducts = products.filter((product) => product.image).slice(0, 4);
+    window.clearInterval(heroSliderTimer);
+    const heroProducts = products
+      .filter((product) => product.image && product.image !== "assets/logo-smartshop.png")
+      .slice(0, 8);
     els.heroShowcase.innerHTML = heroProducts.length
       ? heroProducts
           .map(
             (product, index) => `
-              <figure class="hero-product hero-product-${index + 1}">
+              <figure class="hero-product-slide${index === 0 ? " is-active" : ""}">
                 <img src="${escapeHtml(product.image)}" alt="" loading="${index === 0 ? "eager" : "lazy"}" decoding="async">
               </figure>
             `
           )
           .join("")
       : `<img class="hero-logo-fallback" src="assets/logo-smartshop.png" width="160" height="160" alt="">`;
+
+    if (heroProducts.length > 1) {
+      heroSliderTimer = window.setInterval(showNextHeroProduct, 2000);
+    }
+  }
+
+  function showNextHeroProduct() {
+    const slides = Array.from(els.heroShowcase.querySelectorAll(".hero-product-slide"));
+    if (slides.length <= 1) return;
+    const currentIndex = Math.max(0, slides.findIndex((slide) => slide.classList.contains("is-active")));
+    const nextIndex = (currentIndex + 1) % slides.length;
+    slides[currentIndex].classList.remove("is-active");
+    slides[nextIndex].classList.add("is-active");
   }
 
   function queueProductTranslations() {

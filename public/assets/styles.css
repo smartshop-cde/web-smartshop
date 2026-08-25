@@ -728,71 +728,70 @@ h3 {
 
 .hero-card {
   position: relative;
-  display: grid;
-  align-content: end;
+  display: block;
   min-height: 420px;
   min-width: 0;
   max-width: 100%;
-  padding: 18px;
+  padding: 0;
   overflow: hidden;
   background:
-    linear-gradient(145deg, rgba(7, 27, 88, 0.96), rgba(2, 10, 32, 0.96)),
+    linear-gradient(145deg, rgba(7, 27, 88, 0.15), rgba(2, 10, 32, 0.22)),
+    url("hero-product-background.jfif") center / cover no-repeat,
     var(--brand-navy);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lg);
 }
 
+.hero-card::after {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 48% 42%, rgba(255, 255, 255, 0.16), transparent 16rem),
+    linear-gradient(180deg, rgba(1, 9, 32, 0.02), rgba(1, 9, 32, 0.24));
+  content: "";
+  pointer-events: none;
+}
+
 .hero-showcase {
   position: absolute;
   inset: 0;
+  z-index: 1;
 }
 
-.hero-product {
+.hero-product-slide {
   position: absolute;
+  top: 50%;
+  left: 50%;
   display: grid;
   place-items: center;
+  width: min(72%, 330px);
+  aspect-ratio: 1 / 1;
   margin: 0;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.38);
-  border-radius: 24px;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 30px;
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.92);
+  transition:
+    opacity 520ms ease,
+    transform 520ms ease;
 }
 
-.hero-product img {
+.hero-product-slide.is-active {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.hero-product-slide img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  padding: 14px;
-}
-
-.hero-product-1 {
-  top: 34px;
-  right: 30px;
-  width: 52%;
-  height: 48%;
-}
-
-.hero-product-2 {
-  top: 96px;
-  left: 28px;
-  width: 38%;
-  height: 34%;
-}
-
-.hero-product-3 {
-  right: 46px;
-  bottom: 126px;
-  width: 42%;
-  height: 32%;
-}
-
-.hero-product-4 {
-  left: 52px;
-  bottom: 112px;
-  width: 30%;
-  height: 26%;
+  padding: clamp(18px, 5vw, 34px);
 }
 
 .hero-logo-fallback {
@@ -823,6 +822,18 @@ h3 {
 .hero-card-copy span {
   color: #d9e5ff;
   font-size: 0.9rem;
+}
+
+.hero-card-copy.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .benefits-band {
@@ -2593,34 +2604,6 @@ h3 {
 
   .hero-card {
     min-height: 320px;
-  }
-
-  .hero-product-1 {
-    top: 24px;
-    right: 18px;
-    width: 56%;
-    height: 44%;
-  }
-
-  .hero-product-2 {
-    top: 92px;
-    left: 18px;
-    width: 42%;
-    height: 30%;
-  }
-
-  .hero-product-3 {
-    right: 28px;
-    bottom: 108px;
-    width: 42%;
-    height: 28%;
-  }
-
-  .hero-product-4 {
-    left: 34px;
-    bottom: 100px;
-    width: 32%;
-    height: 24%;
   }
 
   .benefits-band,
