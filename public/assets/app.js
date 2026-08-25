@@ -100,6 +100,8 @@
       "catalog.listTitle": "Listado",
       "catalog.emptyTitle": "No encontramos productos con estos filtros.",
       "catalog.emptyText": "Ajusta tu busqueda o vuelve a ver todo el catalogo.",
+      "catalog.searchEmptyTitle": "No hay productos para esa busqueda.",
+      "catalog.searchEmptyText": "Prueba con otro nombre, marca o codigo.",
       "catalog.errorTitle": "No pudimos cargar el catalogo.",
       "catalog.errorText": "Revisa la conexion o intenta nuevamente.",
       "catalog.retry": "Reintentar",
@@ -242,6 +244,8 @@
       "catalog.listTitle": "Lista",
       "catalog.emptyTitle": "Não encontramos produtos com estes filtros.",
       "catalog.emptyText": "Ajuste sua busca ou volte a ver todo o catálogo.",
+      "catalog.searchEmptyTitle": "Não há produtos para essa busca.",
+      "catalog.searchEmptyText": "Tente outro nome, marca ou código.",
       "catalog.errorTitle": "Não conseguimos carregar o catálogo.",
       "catalog.errorText": "Verifique a conexão ou tente novamente.",
       "catalog.retry": "Tentar novamente",
@@ -377,6 +381,8 @@
     els.productGrid = document.querySelector("#productGrid");
     els.resultCount = document.querySelector("#resultCount");
     els.emptyState = document.querySelector("#emptyState");
+    els.emptyStateTitle = document.querySelector("#emptyState strong");
+    els.emptyStateText = document.querySelector("#emptyState p");
     els.catalogError = document.querySelector("#catalogError");
     els.retryCatalog = document.querySelector("#retryCatalog");
     els.clearFilters = document.querySelector("#clearFilters");
@@ -429,6 +435,7 @@
     els.searchInput.addEventListener("input", (event) => {
       state.search = event.target.value.trim();
       resetFiltersForSearch();
+      updateSearchMode();
       renderProducts();
       scrollToCatalogOnSearch();
       queueRemoteSearch();
@@ -637,6 +644,7 @@
 
   function renderAll() {
     applyTranslations();
+    updateSearchMode();
     renderStoreInfo();
     renderCategories();
     renderBrands();
@@ -935,6 +943,7 @@
     els.productGrid.innerHTML = filteredProducts.map((product) => renderProductCard(product)).join("");
     els.catalogError.hidden = true;
     els.emptyState.hidden = filteredProducts.length > 0;
+    renderEmptyStateCopy();
     els.stockSummary.hidden = false;
     els.resultCount.textContent =
       filteredProducts.length === products.length
@@ -997,6 +1006,13 @@
         </div>
       </article>
     `;
+  }
+
+  function renderEmptyStateCopy() {
+    const titleKey = state.search ? "catalog.searchEmptyTitle" : "catalog.emptyTitle";
+    const textKey = state.search ? "catalog.searchEmptyText" : "catalog.emptyText";
+    els.emptyStateTitle.textContent = t(titleKey);
+    els.emptyStateText.textContent = t(textKey);
   }
 
   function renderSkeletonCards(count) {
@@ -1130,6 +1146,7 @@
     state.search = "";
     state.searchScrolled = false;
     els.searchInput.value = "";
+    updateSearchMode();
     els.onlyAvailable.checked = false;
     els.minPriceInput.value = "";
     els.maxPriceInput.value = "";
@@ -1164,6 +1181,10 @@
       renderCategories();
       renderBrands();
     }
+  }
+
+  function updateSearchMode() {
+    document.body.classList.toggle("is-searching", Boolean(state.search.trim()));
   }
 
   function scrollToCatalogOnSearch() {

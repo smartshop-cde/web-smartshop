@@ -499,6 +499,28 @@ main {
   margin: 0 auto;
 }
 
+body.is-searching .hero-section,
+body.is-searching .benefits-band,
+body.is-searching .category-section,
+body.is-searching #featuredSection,
+body.is-searching #brandsSection,
+body.is-searching .workspace .control-panel,
+body.is-searching .workspace .toolbar {
+  display: none !important;
+}
+
+body.is-searching main {
+  gap: clamp(22px, 4vw, 42px);
+}
+
+body.is-searching .workspace {
+  margin-top: clamp(6px, 2vw, 20px);
+}
+
+body.is-searching .content-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .hero-section {
   position: relative;
   isolation: isolate;
