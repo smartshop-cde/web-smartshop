@@ -1657,7 +1657,7 @@ h3 {
 .map-shell {
   overflow: hidden;
   width: 100%;
-  height: clamp(260px, 30vw, 340px);
+  height: clamp(150px, 16vw, 180px);
   background: var(--surface-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -2750,6 +2750,10 @@ h3 {
 
   .google-layout {
     gap: 18px;
+  }
+
+  .map-shell {
+    height: 160px;
   }
 
   .section-band-alt {
