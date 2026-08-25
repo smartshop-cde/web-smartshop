@@ -1155,33 +1155,6 @@ h3 {
   accent-color: var(--brand-blue);
 }
 
-.stock-summary {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding-top: 4px;
-}
-
-.stock-summary div {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
-  border-top: 1px solid var(--border);
-}
-
-.stock-summary dt {
-  color: var(--text-muted);
-  font-size: 0.86rem;
-}
-
-.stock-summary dd {
-  margin: 0;
-  color: var(--brand-navy);
-  font-weight: 900;
-}
-
 .product-area {
   min-width: 0;
 }

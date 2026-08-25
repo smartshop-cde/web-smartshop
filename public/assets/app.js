@@ -415,10 +415,6 @@
     els.clearFilters = document.querySelector("#clearFilters");
     els.availableProducts = document.querySelector("#availableProducts");
     els.stockHealth = document.querySelector("#stockHealth");
-    els.stockSummary = document.querySelector("#stockSummary");
-    els.totalProducts = document.querySelector("#totalProducts");
-    els.totalUnits = document.querySelector("#totalUnits");
-    els.soldOutProducts = document.querySelector("#soldOutProducts");
     els.sellerGrid = document.querySelector("#sellerGrid");
     els.addressText = document.querySelector("#addressText");
     els.hoursText = document.querySelector("#hoursText");
@@ -955,7 +951,6 @@
       els.productGrid.innerHTML = renderSkeletonCards(6);
       els.catalogError.hidden = true;
       els.emptyState.hidden = true;
-      els.stockSummary.hidden = true;
       els.resultCount.textContent = t("status.loadingCatalog");
       els.availableProducts.textContent = t("status.loadingCatalog");
       els.stockHealth.textContent = t("status.preparingStock");
@@ -967,7 +962,6 @@
       els.productGrid.innerHTML = "";
       els.catalogError.hidden = false;
       els.emptyState.hidden = true;
-      els.stockSummary.hidden = true;
       els.resultCount.textContent = t("status.notAvailable");
       els.availableProducts.textContent = t("status.catalogUnavailable");
       els.stockHealth.textContent = t("status.retryLoad");
@@ -975,7 +969,6 @@
     }
 
     const filteredProducts = getVisibleProducts();
-    const totalUnits = products.reduce((sum, product) => sum + getStock(product), 0);
     const availableCount = products.filter((product) => getStock(product) > 0).length;
     const soldOutCount = products.length - availableCount;
 
@@ -984,7 +977,6 @@
     els.catalogError.hidden = true;
     els.emptyState.hidden = filteredProducts.length > 0;
     renderEmptyStateCopy();
-    els.stockSummary.hidden = false;
     els.resultCount.textContent =
       filteredProducts.length === products.length
         ? `${products.length} ${pluralize(products.length, t("product.productSingular"), t("product.productPlural"))}`
@@ -996,9 +988,6 @@
     )}`;
     els.stockHealth.textContent =
       soldOutCount > 0 ? `${soldOutCount} ${t("status.withoutStock")}` : t("status.stockReady");
-    els.totalProducts.textContent = products.length;
-    els.totalUnits.textContent = totalUnits;
-    els.soldOutProducts.textContent = soldOutCount;
   }
 
   function renderProductCard(product, options = {}) {
