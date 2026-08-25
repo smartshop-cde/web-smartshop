@@ -101,15 +101,15 @@ async function handleAdminUsers(request, env) {
     }
 
     try {
-      const createdUser = await createSupabaseUser(env, { email, password });
-      await upsertAdminProfile(env, createdUser.id);
+      const savedUser = await createOrUpdateSupabaseUser(env, { email, password });
+      await upsertAdminProfile(env, savedUser.id);
       await recordAuditLog(env, actor, {
         table_name: "auth.users",
-        record_id: createdUser.id,
-        action: "INSERT",
+        record_id: savedUser.id,
+        action: savedUser.existing ? "UPDATE" : "INSERT",
         new_data: {
-          id: createdUser.id,
-          email: createdUser.email,
+          id: savedUser.id,
+          email: savedUser.email,
           role: "admin",
         },
       });
@@ -117,14 +117,15 @@ async function handleAdminUsers(request, env) {
         {
           success: true,
           data: {
-            id: createdUser.id,
-            email: createdUser.email,
+            id: savedUser.id,
+            email: savedUser.email,
             role: "admin",
-            email_confirmed_at: createdUser.email_confirmed_at || null,
-            created_at: createdUser.created_at || null,
+            existing: Boolean(savedUser.existing),
+            email_confirmed_at: savedUser.email_confirmed_at || null,
+            created_at: savedUser.created_at || null,
           },
         },
-        201
+        savedUser.existing ? 200 : 201
       );
     } catch (error) {
       return json(
@@ -352,6 +353,31 @@ async function listAdminUsers(env) {
   });
 }
 
+async function createOrUpdateSupabaseUser(env, { email, password }) {
+  try {
+    return await createSupabaseUser(env, { email, password });
+  } catch (error) {
+    if (!isDuplicateUserError(error)) throw error;
+    const existingUser = await findSupabaseUserByEmail(env, email);
+    if (!existingUser?.id) throw error;
+    const updatedUser = await updateSupabaseUser(env, existingUser.id, {
+      password,
+      email_confirm: true,
+      user_metadata: {
+        ...(existingUser.user_metadata || {}),
+        source: "smartshop-admin",
+      },
+    });
+    return {
+      ...existingUser,
+      ...updatedUser,
+      id: existingUser.id,
+      email: updatedUser.email || existingUser.email,
+      existing: true,
+    };
+  }
+}
+
 async function createSupabaseUser(env, { email, password }) {
   const payload = await supabaseAuthAdmin(env, "/users", {
     method: "POST",
@@ -368,7 +394,30 @@ async function createSupabaseUser(env, { email, password }) {
   if (!user?.id) {
     throw new Error("Invalid Supabase response");
   }
-  return user;
+  return { ...user, existing: false };
+}
+
+async function updateSupabaseUser(env, userId, attributes) {
+  try {
+    return await updateSupabaseUserAtPath(env, `/users/${encodeURIComponent(userId)}`, attributes);
+  } catch (error) {
+    if (!isNotFoundError(error)) throw error;
+    return updateSupabaseUserAtPath(env, `/user/${encodeURIComponent(userId)}`, attributes);
+  }
+}
+
+async function updateSupabaseUserAtPath(env, path, attributes) {
+  const payload = await supabaseAuthAdmin(env, path, {
+    method: "PUT",
+    body: JSON.stringify(attributes),
+  });
+  return payload?.user || payload;
+}
+
+async function findSupabaseUserByEmail(env, email) {
+  const payload = await supabaseAuthAdmin(env, "/users?per_page=1000&page=1", { method: "GET" });
+  const users = Array.isArray(payload?.users) ? payload.users : Array.isArray(payload) ? payload : [];
+  return users.find((user) => String(user.email || "").toLowerCase() === email) || null;
 }
 
 async function upsertAdminProfile(env, userId) {
@@ -427,7 +476,9 @@ async function supabaseFetch(env, path, options = {}) {
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     const message = payload?.msg || payload?.message || payload?.error_description || payload?.error || "Supabase error";
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
   return payload;
 }
@@ -524,6 +575,16 @@ function readableAdminUserError(error) {
     return "La contrasena no cumple los requisitos de Supabase.";
   }
   return "No se pudo crear el usuario admin.";
+}
+
+function isDuplicateUserError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return message.includes("already") || message.includes("registered") || message.includes("exists");
+}
+
+function isNotFoundError(error) {
+  const message = String(error?.message || "").toLowerCase();
+  return error?.status === 404 || message.includes("404") || message.includes("not found");
 }
 
 function getBearerToken(request) {

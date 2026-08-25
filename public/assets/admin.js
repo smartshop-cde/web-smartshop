@@ -912,12 +912,12 @@
 
     setButtonLoading(els.createAdminUserButton, true);
     try {
-      await window.SmartShopSupabase.createAdminUser({ email, password });
+      const user = await window.SmartShopSupabase.createAdminUser({ email, password });
       els.newAdminEmailInput.value = "";
       els.newAdminPasswordInput.value = "";
       await loadAndRenderAdminUsers();
       await loadAndRenderAuditLogs();
-      toast("Usuario admin creado correctamente.");
+      toast(user?.existing ? "Usuario existente actualizado como admin." : "Usuario admin creado correctamente.");
     } catch (error) {
       toast(error.message, "error");
     } finally {
