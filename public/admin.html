@@ -6,21 +6,21 @@
     <title>SmartShop | Administracion</title>
     <meta name="robots" content="noindex, nofollow">
     <meta name="theme-color" content="#0b2f89">
-    <link rel="preload" href="assets/logo-smartshop.png" as="image" type="image/png">
-    <link rel="icon" href="assets/favicon.png" type="image/png">
-    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-    <link rel="stylesheet" href="assets/styles.css">
-    <script defer src="assets/supabase-env.js"></script>
+    <link rel="preload" href="/assets/logo-smartshop.png" as="image" type="image/png">
+    <link rel="icon" href="/assets/favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+    <link rel="stylesheet" href="/assets/styles.css">
+    <script defer src="/assets/supabase-env.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script defer src="assets/supabase-client.js"></script>
-    <script defer src="assets/store-data.js"></script>
-    <script defer src="assets/admin.js"></script>
+    <script defer src="/assets/supabase-client.js"></script>
+    <script defer src="/assets/store-data.js"></script>
+    <script defer src="/assets/admin.js"></script>
   </head>
   <body class="admin-body">
     <main class="admin-shell">
       <section id="loginView" class="login-card" aria-labelledby="loginTitle">
-        <img src="assets/logo-smartshop.png" width="86" height="86" alt="">
+        <img src="/assets/logo-smartshop.png" width="86" height="86" alt="">
         <div>
           <p class="eyebrow">Acceso privado</p>
           <h1 id="loginTitle">Panel SmartShop</h1>
@@ -33,7 +33,10 @@
           </label>
           <label class="admin-field">
             <span>Contrasena</span>
-            <input id="passwordInput" class="admin-input" type="password" autocomplete="current-password" required>
+            <span class="password-control">
+              <input id="passwordInput" class="admin-input" type="password" autocomplete="current-password" required>
+              <button id="passwordToggle" class="password-toggle" type="button" aria-label="Mostrar contrasena" aria-pressed="false">Mostrar</button>
+            </span>
           </label>
           <button id="loginButton" class="admin-button is-primary" type="submit">Entrar</button>
         </form>
@@ -43,7 +46,7 @@
       <section id="adminView" hidden>
         <header class="admin-header">
           <div class="admin-title">
-            <img src="assets/logo-smartshop.png" width="58" height="58" alt="">
+            <img src="/assets/logo-smartshop.png" width="58" height="58" alt="">
             <div>
               <p class="eyebrow">Administracion</p>
               <h1>Catalogo SmartShop</h1>

@@ -15,6 +15,7 @@
     usdToBrl: 5.27,
     usdToPyg: 6100,
   };
+  const FALLBACK_LOGO = "/assets/logo-smartshop.png";
   const TEMPLATE_ROWS = [
     {
       nombre: "iPhone 15 128 GB",
@@ -80,6 +81,7 @@
     els.loginForm = document.querySelector("#loginForm");
     els.emailInput = document.querySelector("#emailInput");
     els.passwordInput = document.querySelector("#passwordInput");
+    els.passwordToggle = document.querySelector("#passwordToggle");
     els.loginButton = document.querySelector("#loginButton");
     els.loginError = document.querySelector("#loginError");
     els.logoutButton = document.querySelector("#logoutButton");
@@ -113,6 +115,7 @@
 
   function bindEvents() {
     els.loginForm.addEventListener("submit", handleLogin);
+    els.passwordToggle.addEventListener("click", togglePasswordVisibility);
     els.logoutButton.addEventListener("click", handleLogout);
     els.reloadButton.addEventListener("click", () => loadAndRenderCatalog(true));
     els.downloadTemplateButton.addEventListener("click", downloadImportTemplate);
@@ -162,6 +165,15 @@
     state.catalog = { products: [], categories: [], sellers: [], settings: { exchangeRates: DEFAULT_EXCHANGE_RATES } };
     showLogin();
     toast("Sesion cerrada.");
+  }
+
+  function togglePasswordVisibility() {
+    const shouldShow = els.passwordInput.type === "password";
+    els.passwordInput.type = shouldShow ? "text" : "password";
+    els.passwordToggle.textContent = shouldShow ? "Ocultar" : "Mostrar";
+    els.passwordToggle.setAttribute("aria-label", shouldShow ? "Ocultar contrasena" : "Mostrar contrasena");
+    els.passwordToggle.setAttribute("aria-pressed", String(shouldShow));
+    els.passwordInput.focus();
   }
 
   async function showAdmin() {
@@ -340,7 +352,7 @@
       .map(
         (seller) => `
           <tr class="${seller.active ? "" : "is-muted"}">
-            <td><img class="admin-thumb" src="${escapeHtml(seller.image_url || "assets/logo-smartshop.png")}" alt="" loading="lazy"></td>
+            <td><img class="admin-thumb" src="${escapeHtml(seller.image_url || FALLBACK_LOGO)}" alt="" loading="lazy"></td>
             <td>
               <strong>${escapeHtml(seller.name)}</strong>
               <small>${escapeHtml(seller.role || "")}</small>
@@ -498,7 +510,7 @@
           <input name="image" class="admin-input" type="file" accept="${IMAGE_ACCEPT}" data-preview-target="sellerImagePreview">
         </label>
         <div class="image-preview is-wide">
-          <img id="sellerImagePreview" src="${escapeHtml(seller?.image_url || "assets/logo-smartshop.png")}" alt="">
+          <img id="sellerImagePreview" src="${escapeHtml(seller?.image_url || FALLBACK_LOGO)}" alt="">
         </div>
         <div class="admin-form-actions is-wide">
           <button class="admin-button is-primary" type="submit">${seller ? "Guardar vendedor" : "Crear vendedor"}</button>
@@ -1115,9 +1127,9 @@
   }
 
   function getProductImage(product) {
-    if (!product) return "assets/logo-smartshop.png";
+    if (!product) return FALLBACK_LOGO;
     const images = [...(product.images || [])].sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
-    return images.find((image) => image.is_primary)?.url || images[0]?.url || "assets/logo-smartshop.png";
+    return images.find((image) => image.is_primary)?.url || images[0]?.url || FALLBACK_LOGO;
   }
 
   function getProductStock(product) {
@@ -1259,6 +1271,7 @@
   function setLoginDisabled(disabled) {
     els.emailInput.disabled = disabled;
     els.passwordInput.disabled = disabled;
+    els.passwordToggle.disabled = disabled;
     els.loginButton.disabled = disabled;
   }
 
