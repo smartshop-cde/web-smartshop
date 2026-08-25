@@ -8,6 +8,16 @@
   const LANGUAGE_STORAGE_KEY = "smartshop-language";
   const TRANSLATION_CACHE_STORAGE_KEY = "smartshop-translation-cache-v2";
   const DEFAULT_LANGUAGE = "es";
+  const HERO_SLIDES = [
+    "assets/hero-slides/slide-01.png",
+    "assets/hero-slides/slide-02.png",
+    "assets/hero-slides/slide-03.png",
+    "assets/hero-slides/slide-04.png",
+    "assets/hero-slides/slide-05.png",
+    "assets/hero-slides/slide-06.png",
+    "assets/hero-slides/slide-07.png",
+    "assets/hero-slides/slide-08.png",
+  ];
   const CATEGORY_LABELS = {
     pt: {
       Todos: "Todos",
@@ -795,22 +805,19 @@
 
   function renderHeroShowcase() {
     window.clearInterval(heroSliderTimer);
-    const heroProducts = products
-      .filter((product) => product.image && product.image !== "assets/logo-smartshop.png")
-      .slice(0, 8);
-    els.heroShowcase.innerHTML = heroProducts.length
-      ? heroProducts
+    els.heroShowcase.innerHTML = HERO_SLIDES.length
+      ? HERO_SLIDES
           .map(
-            (product, index) => `
+            (image, index) => `
               <figure class="hero-product-slide${index === 0 ? " is-active" : ""}">
-                <img src="${escapeHtml(product.image)}" alt="" loading="${index === 0 ? "eager" : "lazy"}" decoding="async">
+                <img src="${escapeHtml(image)}" alt="" loading="${index === 0 ? "eager" : "lazy"}" decoding="async">
               </figure>
             `
           )
           .join("")
       : `<img class="hero-logo-fallback" src="assets/logo-smartshop.png" width="160" height="160" alt="">`;
 
-    if (heroProducts.length > 1) {
+    if (HERO_SLIDES.length > 1) {
       heroSliderTimer = window.setInterval(showNextHeroProduct, 2000);
     }
   }
