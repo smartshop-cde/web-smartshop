@@ -319,6 +319,8 @@
   let sellers = data.sellers;
   const translationCache = loadTranslationCache();
   let productTranslationPromise = null;
+  let searchTimer = 0;
+  let searchRequestId = 0;
 
   const state = {
     language: getInitialLanguage(),
@@ -332,6 +334,7 @@
     loading: true,
     error: "",
     dialogProductId: "",
+    searchScrolled: false,
   };
 
   const els = {};
@@ -425,7 +428,10 @@
 
     els.searchInput.addEventListener("input", (event) => {
       state.search = event.target.value.trim();
+      resetFiltersForSearch();
       renderProducts();
+      scrollToCatalogOnSearch();
+      queueRemoteSearch();
     });
 
     els.sortSelect.addEventListener("change", (event) => {
@@ -1122,6 +1128,7 @@
     state.minPrice = "";
     state.maxPrice = "";
     state.search = "";
+    state.searchScrolled = false;
     els.searchInput.value = "";
     els.onlyAvailable.checked = false;
     els.minPriceInput.value = "";
@@ -1129,6 +1136,98 @@
     renderCategories();
     renderBrands();
     renderProducts();
+  }
+
+  function resetFiltersForSearch() {
+    if (!state.search) {
+      state.searchScrolled = false;
+      return;
+    }
+
+    const hadFilters =
+      state.category !== "Todos" ||
+      state.brand !== "Todas" ||
+      state.onlyAvailable ||
+      state.minPrice ||
+      state.maxPrice;
+
+    state.category = "Todos";
+    state.brand = "Todas";
+    state.onlyAvailable = false;
+    state.minPrice = "";
+    state.maxPrice = "";
+    els.onlyAvailable.checked = false;
+    els.minPriceInput.value = "";
+    els.maxPriceInput.value = "";
+
+    if (hadFilters) {
+      renderCategories();
+      renderBrands();
+    }
+  }
+
+  function scrollToCatalogOnSearch() {
+    if (state.search.length < 2 || state.searchScrolled) return;
+    state.searchScrolled = true;
+    const catalog = document.querySelector("#catalogo");
+    if (!catalog || isElementInViewport(catalog)) return;
+    catalog.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function isElementInViewport(element) {
+    const rect = element.getBoundingClientRect();
+    return rect.top < window.innerHeight * 0.85 && rect.bottom > window.innerHeight * 0.15;
+  }
+
+  function queueRemoteSearch() {
+    window.clearTimeout(searchTimer);
+    const query = state.search.trim();
+    if (!window.SmartShopSupabase?.isConfigured() || query.length < 2) {
+      searchRequestId += 1;
+      return;
+    }
+
+    const requestId = searchRequestId + 1;
+    searchRequestId = requestId;
+    searchTimer = window.setTimeout(() => {
+      loadRemoteSearch(query, requestId);
+    }, 240);
+  }
+
+  async function loadRemoteSearch(query, requestId) {
+    try {
+      const remoteProducts = await window.SmartShopSupabase.searchPublicProducts(query);
+      if (requestId !== searchRequestId || state.search.trim() !== query) return;
+      if (mergeProducts(remoteProducts)) {
+        renderCategories();
+        renderBrands();
+        renderNavigationMenus();
+        renderFeaturedProducts();
+        renderProducts();
+        queueProductTranslations();
+      }
+    } catch (error) {
+      console.warn("No pudimos completar la busqueda remota.", error);
+    }
+  }
+
+  function mergeProducts(nextProducts) {
+    if (!Array.isArray(nextProducts) || !nextProducts.length) return false;
+    const byId = new Map(products.map((product) => [product.id, product]));
+    let changed = false;
+
+    nextProducts.forEach((product) => {
+      const current = byId.get(product.id);
+      if (!current || JSON.stringify(current) !== JSON.stringify(product)) {
+        byId.set(product.id, product);
+        changed = true;
+      }
+    });
+
+    if (!changed) return false;
+    products = Array.from(byId.values());
+    data.products = products;
+    return true;
   }
 
   function getCategories() {
@@ -1158,8 +1257,25 @@
         const stock = getStock(product);
         const matchesAvailability = !state.onlyAvailable || stock > 0;
         const matchesPrice = Number(product.price || 0) >= minPrice && Number(product.price || 0) <= maxPrice;
+        const details = getProductDetails(product);
         const haystack = normalizeText(
-          `${product.name} ${product.category} ${getCategoryLabel(product.category)} ${product.code} ${product.sku} ${product.brand} ${product.variant} ${product.description} ${getTranslatedText(product.description)}`
+          [
+            product.name,
+            product.slug,
+            product.category,
+            product.categorySlug,
+            getCategoryLabel(product.category),
+            product.code,
+            product.public_code,
+            product.publicCode,
+            product.sku,
+            product.brand,
+            product.variant,
+            product.description,
+            getTranslatedText(product.description),
+            ...details,
+            ...details.map(getTranslatedText),
+          ].join(" ")
         );
         return matchesCategory && matchesBrand && matchesAvailability && matchesPrice && haystack.includes(search);
       })
@@ -1238,7 +1354,8 @@
       products: Array.isArray(normalized.products)
         ? normalized.products.map((product) => ({
             ...product,
-            code: product.code || "",
+            code: product.code || product.public_code || product.publicCode || "",
+            sku: product.sku || "",
             brand: product.brand || "",
             variant: product.variant || "",
             image: product.image || "assets/logo-smartshop.png",

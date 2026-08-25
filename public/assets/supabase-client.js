@@ -82,6 +82,78 @@
     };
   }
 
+  async function searchPublicProducts(search, options = {}) {
+    const supabase = requireClient();
+    const term = sanitizeSearchTerm(search);
+    if (term.length < 2) return [];
+
+    const limit = Number(options.limit || 80);
+    const pattern = `*${term}*`;
+    const productSelect =
+      "id,public_code,name,slug,description,brand,active,featured,category:categories(id,name,slug),variants:product_variants(id,name,sku,price,stock,active,sort_order),images:product_images(id,url,sort_order,is_primary)";
+
+    const [productsResult, variantsResult, categoriesResult] = await Promise.all([
+      supabase
+        .from("products")
+        .select(productSelect)
+        .eq("active", true)
+        .or(`name.ilike.${pattern},slug.ilike.${pattern},brand.ilike.${pattern},description.ilike.${pattern},public_code.ilike.${pattern}`)
+        .order("featured", { ascending: false })
+        .order("name", { ascending: true })
+        .limit(limit),
+      supabase
+        .from("product_variants")
+        .select("product_id")
+        .eq("active", true)
+        .or(`name.ilike.${pattern},sku.ilike.${pattern}`)
+        .limit(limit),
+      supabase
+        .from("categories")
+        .select("id")
+        .eq("active", true)
+        .or(`name.ilike.${pattern},slug.ilike.${pattern}`)
+        .limit(limit),
+    ]);
+
+    assertSupabaseResult(productsResult, "No pudimos buscar productos.");
+    assertSupabaseResult(variantsResult, "No pudimos buscar variantes.");
+    assertSupabaseResult(categoriesResult, "No pudimos buscar categorias.");
+
+    const productIds = unique((variantsResult.data || []).map((row) => row.product_id).filter(Boolean));
+    const categoryIds = unique((categoriesResult.data || []).map((row) => row.id).filter(Boolean));
+    const relatedQueries = [];
+
+    if (productIds.length) {
+      relatedQueries.push(
+        supabase
+          .from("products")
+          .select(productSelect)
+          .eq("active", true)
+          .in("id", productIds)
+          .limit(limit)
+      );
+    }
+
+    if (categoryIds.length) {
+      relatedQueries.push(
+        supabase
+          .from("products")
+          .select(productSelect)
+          .eq("active", true)
+          .in("category_id", categoryIds)
+          .limit(limit)
+      );
+    }
+
+    const relatedResults = relatedQueries.length ? await Promise.all(relatedQueries) : [];
+    relatedResults.forEach((result) => assertSupabaseResult(result, "No pudimos completar la busqueda."));
+
+    return uniqueById([
+      ...(productsResult.data || []),
+      ...relatedResults.flatMap((result) => result.data || []),
+    ]).map(mapProductRow);
+  }
+
   async function loadAdminCatalog() {
     const supabase = requireClient();
     const [categoriesResult, sellersResult, productsResult, settings] = await Promise.all([
@@ -301,6 +373,24 @@
     return `${base || "imagen"}.${extension || "webp"}`;
   }
 
+  function sanitizeSearchTerm(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[(),.%*_]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 80);
+  }
+
+  function unique(values) {
+    return [...new Set(values)];
+  }
+
+  function uniqueById(rows) {
+    return [...new Map(rows.map((row) => [row.id, row])).values()];
+  }
+
   function toSlug(value) {
     return String(value || "")
       .normalize("NFD")
@@ -317,6 +407,7 @@
     getClient,
     requireClient,
     loadPublicCatalog,
+    searchPublicProducts,
     loadAdminCatalog,
     loadStoreSettings,
     signIn,

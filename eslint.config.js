@@ -3,7 +3,7 @@ import js from "@eslint/js";
 export default [
   js.configs.recommended,
   {
-    ignores: ["node_modules/**", "public/assets/store-data.js"],
+    ignores: ["node_modules/**", ".wrangler/**", "public/assets/store-data.js"],
   },
   {
     files: ["**/*.js"],
