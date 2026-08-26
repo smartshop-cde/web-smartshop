@@ -1798,6 +1798,9 @@
 
   function readableDatabaseError(error) {
     const message = String(error?.message || error || "");
+    if (message.includes("schema cache") && message.includes("product_variants")) {
+      return "Falta actualizar Supabase para usar variantes con color y almacenamiento. Ejecuta la migracion 20260826103000_variant_public_codes.sql en el SQL Editor y vuelve a intentar.";
+    }
     if (message.includes("duplicate key") || message.includes("already exists")) {
       return "Ya existe un registro con ese codigo o slug.";
     }
