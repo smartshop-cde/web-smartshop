@@ -1854,6 +1854,50 @@ h3 {
   font-weight: 800;
 }
 
+.variant-list {
+  display: grid;
+  gap: 8px;
+}
+
+.variant-list h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.variant-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 10px 12px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.variant-option > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.variant-option small {
+  color: var(--text-muted);
+  font-weight: 800;
+}
+
+.variant-option .price-stack {
+  text-align: right;
+}
+
+.variant-option .price-stack strong {
+  font-size: 1rem;
+}
+
+.variant-option .price-stack small {
+  display: none;
+}
+
 .file-button input {
   display: none;
 }
@@ -2017,6 +2061,51 @@ h3 {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.variant-editor {
+  display: grid;
+  gap: 12px;
+}
+
+.variant-editor-head,
+.variant-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.variant-editor-head div,
+.variant-row-head {
+  min-width: 0;
+}
+
+.variant-editor-head small,
+.variant-row-head span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.variant-editor-list {
+  display: grid;
+  gap: 10px;
+}
+
+.variant-editor-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.variant-row-head {
+  grid-column: 1 / -1;
 }
 
 .admin-check {
@@ -2441,6 +2530,10 @@ h3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .variant-editor-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .hero-section {
     min-height: 0;
   }
@@ -2617,6 +2710,7 @@ h3 {
 
   .benefits-band,
   .admin-form-grid,
+  .variant-editor-row,
   .import-summary,
   .dashboard-cards {
     grid-template-columns: 1fr;
@@ -2624,6 +2718,7 @@ h3 {
 
   .section-title-row,
   .seller-card,
+  .variant-option,
   .site-footer,
   .admin-header,
   .admin-actions,
@@ -2633,6 +2728,10 @@ h3 {
   }
 
   .section-title-row > span {
+    text-align: left;
+  }
+
+  .variant-option .price-stack {
     text-align: left;
   }
 

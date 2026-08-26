@@ -4,7 +4,9 @@
     ["nombre", "Nombre del producto"],
     ["marca", "Marca"],
     ["categoria", "Categoria"],
-    ["variante", "Variante o capacidad"],
+    ["variante", "Variante"],
+    ["color", "Color"],
+    ["almacenamiento", "Almacenamiento"],
     ["precio", "Precio USD"],
     ["stock", "Stock"],
     ["descripcion", "Descripcion"],
@@ -21,7 +23,9 @@
       nombre: "iPhone 15 128 GB",
       marca: "Apple",
       categoria: "Celulares",
-      variante: "128 GB",
+      variante: "128 GB Azul",
+      color: "Azul",
+      almacenamiento: "128 GB",
       precio: 1016.39,
       stock: 5,
       descripcion: "Equipo sellado con garantia de tienda",
@@ -33,6 +37,8 @@
       marca: "Apple",
       categoria: "Audio",
       variante: "Default",
+      color: "Blanco",
+      almacenamiento: "",
       precio: 303.28,
       stock: 3,
       descripcion: "Cancelacion activa de ruido",
@@ -468,13 +474,15 @@
         const primaryImage = getProductImage(product);
         const stock = getProductStock(product);
         const price = getProductPrice(product);
+        const variantCodes = getVariantCodes(product);
+        const variantSummary = getVariantSummary(product);
         return `
           <tr class="${product.active ? "" : "is-muted"}">
-            <td><strong>${escapeHtml(product.public_code || "Auto")}</strong></td>
+            <td><strong>${escapeHtml(variantCodes || product.public_code || "Auto")}</strong></td>
             <td><img class="admin-thumb" src="${escapeHtml(primaryImage)}" alt="" loading="lazy"></td>
             <td>
               <strong>${escapeHtml(product.name)}</strong>
-              <small>${escapeHtml([product.brand, getVariantLabel(product)].filter(Boolean).join(" | "))}</small>
+              <small>${escapeHtml([product.brand, variantSummary].filter(Boolean).join(" | "))}</small>
             </td>
             <td>${escapeHtml(product.category?.name || "Sin categoria")}</td>
             <td>${formatPrice(price)}</td>
@@ -591,13 +599,13 @@
   }
 
   function openProductEditor(product = null) {
-    const variant = product?.variants?.[0] || {};
     const image = getProductImage(product);
+    const variants = product?.variants?.length ? product.variants : [{ name: "Default", active: true, sort_order: 0 }];
     els.productEditor.hidden = false;
     els.productEditor.innerHTML = `
-      <form class="admin-form-grid" data-editor-form="product" data-id="${product?.id || ""}" data-variant-id="${variant.id || ""}">
+      <form class="admin-form-grid" data-editor-form="product" data-id="${product?.id || ""}">
         <label class="admin-field">
-          <span>Codigo automatico</span>
+          <span>Codigo base</span>
           <input class="admin-input" value="${escapeHtml(product?.public_code || "Se asigna al guardar")}" readonly>
         </label>
         <label class="admin-field">
@@ -612,18 +620,6 @@
           <span>Categoria</span>
           <select name="category_id" class="admin-input" required>${renderCategoryOptions(product?.category_id)}</select>
         </label>
-        <label class="admin-field">
-          <span>Variante</span>
-          <input name="variant_name" class="admin-input" value="${escapeHtml(variant.name || "Default")}" required>
-        </label>
-        <label class="admin-field">
-          <span>Precio USD</span>
-          <input name="price" class="admin-input" type="number" min="0" step="0.01" value="${Number(variant.price || 0)}" required>
-        </label>
-        <label class="admin-field">
-          <span>Stock</span>
-          <input name="stock" class="admin-input" type="number" min="0" step="1" value="${Number(variant.stock || 0)}" required>
-        </label>
         <label class="admin-check">
           <input name="featured" type="checkbox" ${product?.featured ? "checked" : ""}>
           Destacado
@@ -636,6 +632,18 @@
           <span>Descripcion</span>
           <textarea name="description" class="admin-textarea">${escapeHtml(product?.description || "")}</textarea>
         </label>
+        <section class="variant-editor is-wide" aria-label="Variantes del producto">
+          <div class="variant-editor-head">
+            <div>
+              <strong>Variantes</strong>
+              <small>Color, almacenamiento, precio y stock por cada opcion.</small>
+            </div>
+            <button class="admin-button" type="button" data-editor-action="add-variant">Agregar variante</button>
+          </div>
+          <div class="variant-editor-list" data-variant-list>
+            ${variants.map((variant, index) => renderVariantEditorRow(variant, index)).join("")}
+          </div>
+        </section>
         <label class="admin-field is-wide">
           <span>Imagen principal</span>
           <input name="image" class="admin-input" type="file" accept="${IMAGE_ACCEPT}" data-preview-target="productImagePreview">
@@ -651,6 +659,43 @@
       </form>
     `;
     els.productEditor.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function renderVariantEditorRow(variant = {}, index = 0) {
+    return `
+      <article class="variant-editor-row" data-variant-row>
+        <input type="hidden" name="variant_id" value="${escapeHtml(variant.id || "")}">
+        <div class="variant-row-head">
+          <strong>Variante ${index + 1}</strong>
+          <span>Codigo: ${escapeHtml(variant.sku || "Automatico")}</span>
+          <button class="admin-button is-danger" type="button" data-editor-action="remove-variant">Quitar</button>
+        </div>
+        <label class="admin-field">
+          <span>Color</span>
+          <input name="variant_color" class="admin-input" value="${escapeHtml(variant.color || "")}" placeholder="Azul, Silver, Negro">
+        </label>
+        <label class="admin-field">
+          <span>Almacenamiento</span>
+          <input name="variant_storage" class="admin-input" value="${escapeHtml(variant.storage || "")}" placeholder="128 GB, 256 GB">
+        </label>
+        <label class="admin-field">
+          <span>Nombre de variante</span>
+          <input name="variant_name" class="admin-input" value="${escapeHtml(variant.name || "")}" placeholder="Se completa automaticamente">
+        </label>
+        <label class="admin-field">
+          <span>Precio USD</span>
+          <input name="variant_price" class="admin-input" type="number" min="0" step="0.01" value="${Number(variant.price || 0)}" required>
+        </label>
+        <label class="admin-field">
+          <span>Stock</span>
+          <input name="variant_stock" class="admin-input" type="number" min="0" step="1" value="${Number(variant.stock || 0)}" required>
+        </label>
+        <label class="admin-check">
+          <input name="variant_active" type="checkbox" ${variant.active === false ? "" : "checked"}>
+          Activa
+        </label>
+      </article>
+    `;
   }
 
   function openCategoryEditor(category = null) {
@@ -732,12 +777,11 @@
       const supabase = window.SmartShopSupabase.requireClient();
       const formData = new FormData(form);
       const productId = form.dataset.id;
-      const variantId = form.dataset.variantId;
       const name = String(formData.get("name") || "").trim();
       const categoryId = String(formData.get("category_id") || "").trim();
-      const price = Math.max(0, Number(formData.get("price") || 0));
-      const stock = Math.max(0, Number(formData.get("stock") || 0));
+      const variants = collectVariantPayloads(form);
       if (!name || !categoryId) throw new Error("Nombre y categoria son obligatorios.");
+      if (!variants.length) throw new Error("Agrega al menos una variante.");
 
       const productPayload = {
         name,
@@ -753,19 +797,28 @@
         ? await updateRow("products", productId, productPayload)
         : await insertRow("products", productPayload);
 
-      const variantPayload = {
-        product_id: savedProduct.id,
-        name: String(formData.get("variant_name") || "Default").trim() || "Default",
-        sku: savedProduct.public_code,
-        price,
-        stock,
-        active: true,
-      };
+      const deletedVariantIds = getDeletedVariantIds(form);
+      for (const variantId of deletedVariantIds) {
+        await deleteRow("product_variants", variantId);
+      }
 
-      if (variantId) {
-        await updateRow("product_variants", variantId, variantPayload);
-      } else {
-        await insertRow("product_variants", variantPayload);
+      for (const [index, variant] of variants.entries()) {
+        const variantPayload = {
+          product_id: savedProduct.id,
+          name: variant.name,
+          color: variant.color,
+          storage: variant.storage,
+          price: variant.price,
+          stock: variant.stock,
+          active: variant.active,
+          sort_order: index,
+        };
+
+        if (variant.id) {
+          await updateRow("product_variants", variant.id, variantPayload);
+        } else {
+          await insertRow("product_variants", variantPayload);
+        }
       }
 
       const imageFile = formData.get("image");
@@ -1012,6 +1065,26 @@
     if (button.dataset.editorAction === "cancel") {
       closeEditors();
     }
+    if (button.dataset.editorAction === "add-variant") {
+      const list = els.productEditor.querySelector("[data-variant-list]");
+      if (list) {
+        list.insertAdjacentHTML("beforeend", renderVariantEditorRow({}, list.querySelectorAll("[data-variant-row]").length));
+      }
+    }
+    if (button.dataset.editorAction === "remove-variant") {
+      const row = button.closest("[data-variant-row]");
+      const list = button.closest("[data-variant-list]");
+      const activeRows = list ? [...list.querySelectorAll("[data-variant-row]:not(.is-deleted)")] : [];
+      if (activeRows.length <= 1) {
+        toast("El producto debe conservar al menos una variante.", "error");
+        return;
+      }
+      const variantId = row?.querySelector("[name='variant_id']")?.value;
+      if (variantId) {
+        row.insertAdjacentHTML("afterend", `<input type="hidden" name="deleted_variant_id" value="${escapeHtml(variantId)}">`);
+      }
+      row?.remove();
+    }
     if (button.dataset.editorAction === "remove-product-image") {
       try {
         await window.SmartShopSupabase.requireClient()
@@ -1084,7 +1157,7 @@
       const errors = validateImportRow(row);
       const categoryKey = normalizeKey(row.category);
       const variantName = row.variant || "Default";
-      const lookupKey = makeProductLookupKey(row.name, row.category, variantName);
+      const lookupKey = makeProductLookupKey(row.name, row.category, row.brand);
       const existingProduct = productIndex.get(lookupKey);
       const existingCategory = categoryIndex.get(categoryKey);
       return {
@@ -1231,8 +1304,9 @@
         categoryMap.set(categoryKey, category);
       }
 
-      const lookupKey = makeProductLookupKey(entry.name, entry.category, entry.variant);
+      const lookupKey = makeProductLookupKey(entry.name, entry.category, entry.brand);
       let product = productMap.get(lookupKey);
+      const existingVariant = findMatchingVariant(product, entry);
       const productPayload = {
         name: entry.name,
         slug: window.SmartShopSupabase.toSlug(entry.name),
@@ -1245,15 +1319,20 @@
 
       if (product) {
         product = await updateRow("products", product.id, productPayload);
-        await upsertImportedVariant(product, entry, productMap.get(lookupKey)?.variants?.[0]);
-        result.updated += 1;
-      } else {
-        product = await insertRow("products", productPayload);
-        await upsertImportedVariant(product, entry);
+        const savedVariant = await upsertImportedVariant(product, entry, existingVariant);
         productMap.set(lookupKey, {
           ...product,
           category,
-          variants: [{ name: entry.variant }],
+          variants: upsertVariantInList(productMap.get(lookupKey)?.variants || [], savedVariant),
+        });
+        result.updated += 1;
+      } else {
+        product = await insertRow("products", productPayload);
+        const savedVariant = await upsertImportedVariant(product, entry);
+        productMap.set(lookupKey, {
+          ...product,
+          category,
+          variants: [savedVariant],
         });
         result.created += 1;
       }
@@ -1265,17 +1344,50 @@
   async function upsertImportedVariant(product, entry, variant = null) {
     const payload = {
       product_id: product.id,
-      name: entry.variant || "Default",
-      sku: product.public_code,
+      name: entry.variant || buildVariantName(entry) || "Default",
+      color: entry.color || null,
+      storage: entry.storage || null,
       price: entry.price,
       stock: entry.stock,
       active: entry.active,
     };
     if (variant?.id) {
-      await updateRow("product_variants", variant.id, payload);
-    } else {
-      await insertRow("product_variants", payload);
+      return updateRow("product_variants", variant.id, payload);
     }
+    return insertRow("product_variants", payload);
+  }
+
+  function collectVariantPayloads(form) {
+    return [...form.querySelectorAll("[data-variant-row]:not(.is-deleted)")]
+      .map((row) => {
+        const color = cleanText(row.querySelector("[name='variant_color']")?.value);
+        const storage = cleanText(row.querySelector("[name='variant_storage']")?.value);
+        const manualName = cleanText(row.querySelector("[name='variant_name']")?.value);
+        const price = Number(row.querySelector("[name='variant_price']")?.value || 0);
+        const stock = Number(row.querySelector("[name='variant_stock']")?.value || 0);
+        if (!Number.isFinite(price) || price < 0) throw new Error("El precio de variante no puede ser negativo.");
+        if (!Number.isInteger(stock) || stock < 0) throw new Error("El stock de variante debe ser un numero entero positivo.");
+        return {
+          id: cleanText(row.querySelector("[name='variant_id']")?.value),
+          name: manualName || buildVariantName({ color, storage }) || "Default",
+          color: color || null,
+          storage: storage || null,
+          price,
+          stock,
+          active: row.querySelector("[name='variant_active']")?.checked !== false,
+        };
+      })
+      .filter((variant) => variant.name || variant.color || variant.storage);
+  }
+
+  function getDeletedVariantIds(form) {
+    return [...form.querySelectorAll("[name='deleted_variant_id']")]
+      .map((input) => cleanText(input.value))
+      .filter(Boolean);
+  }
+
+  function buildVariantName(variant) {
+    return [variant.storage, variant.color].map(cleanText).filter(Boolean).join(" / ");
   }
 
   async function upsertStoreSetting(key, value) {
@@ -1449,7 +1561,28 @@
 
   function getVariantLabel(product) {
     const variant = product.variants?.find((item) => item.active !== false) || product.variants?.[0];
-    return variant?.name === "Default" ? "" : variant?.name || "";
+    const label = formatVariantAdminLabel(variant);
+    return label === "Default" ? "" : label;
+  }
+
+  function getVariantCodes(product) {
+    const codes = (product.variants || [])
+      .filter((variant) => variant.active !== false)
+      .map((variant) => variant.sku)
+      .filter(Boolean);
+    if (!codes.length) return "";
+    return codes.slice(0, 3).join(", ") + (codes.length > 3 ? "..." : "");
+  }
+
+  function getVariantSummary(product) {
+    const activeVariants = (product.variants || []).filter((variant) => variant.active !== false);
+    if (activeVariants.length > 1) return `${activeVariants.length} variantes`;
+    return getVariantLabel(product);
+  }
+
+  function formatVariantAdminLabel(variant) {
+    if (!variant) return "";
+    return [variant.storage, variant.color].map(cleanText).filter(Boolean).join(" / ") || variant.name || "";
   }
 
   function normalizeImportRow(row) {
@@ -1462,6 +1595,8 @@
       if (["variante", "varianteOCapacidad", "capacidad", "variant"].includes(normalizedKey)) {
         normalized.variant = cleanText(value);
       }
+      if (["color", "cor"].includes(normalizedKey)) normalized.color = cleanText(value);
+      if (["almacenamiento", "storage"].includes(normalizedKey)) normalized.storage = cleanText(value);
       if (["precio", "precioUsd", "precioGs", "price"].includes(normalizedKey)) normalized.price = parseImportNumber(value);
       if (["stock", "cantidad", "unidades"].includes(normalizedKey)) normalized.stock = parseImportNumber(value);
       if (["descripcion", "description"].includes(normalizedKey)) normalized.description = cleanText(value);
@@ -1476,7 +1611,9 @@
       name: normalized.name || "",
       brand: normalized.brand || "",
       category: normalized.category || "",
-      variant: normalized.variant || "Default",
+      variant: normalized.variant || buildVariantName(normalized) || "Default",
+      color: normalized.color || "",
+      storage: normalized.storage || "",
       price: Number.isFinite(normalized.price) ? normalized.price : NaN,
       stock: Number.isFinite(normalized.stock) ? normalized.stock : NaN,
       description: normalized.description || "",
@@ -1497,18 +1634,36 @@
   function buildProductIndex() {
     return new Map(
       state.catalog.products.map((product) => [
-        makeProductLookupKey(product.name, product.category?.name || "", getVariantLabel(product) || "Default"),
+        makeProductLookupKey(product.name, product.category?.name || "", product.brand || ""),
         product,
       ])
     );
+  }
+
+  function findMatchingVariant(product, entry) {
+    if (!product?.variants?.length) return null;
+    const wanted = normalizeVariantKey(entry);
+    return product.variants.find((variant) => normalizeVariantKey(variant) === wanted) || null;
+  }
+
+  function normalizeVariantKey(variant) {
+    return [variant.storage || "", variant.color || "", variant.name || variant.variant || "Default"].map(normalizeKey).join("|");
+  }
+
+  function upsertVariantInList(variants, savedVariant) {
+    const exists = variants.some((variant) => variant.id && variant.id === savedVariant.id);
+    if (exists) {
+      return variants.map((variant) => (variant.id === savedVariant.id ? savedVariant : variant));
+    }
+    return [...variants, savedVariant];
   }
 
   function buildCategoryIndex() {
     return new Map(state.catalog.categories.map((category) => [normalizeKey(category.name), category]));
   }
 
-  function makeProductLookupKey(name, category, variant) {
-    return [name, category, variant || "Default"].map(normalizeKey).join("|");
+  function makeProductLookupKey(name, category, brand) {
+    return [name, category, brand || ""].map(normalizeKey).join("|");
   }
 
   function normalizeHeader(value) {

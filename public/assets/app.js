@@ -163,6 +163,7 @@
       "product.view": "Ver producto",
       "product.brand": "Marca",
       "product.variant": "Variante",
+      "product.availableVariants": "Variantes disponibles",
       "product.status": "Estado",
       "product.conditionNew": "Nuevo",
       "product.warranty": "Garantia",
@@ -307,6 +308,7 @@
       "product.view": "Ver produto",
       "product.brand": "Marca",
       "product.variant": "Variante",
+      "product.availableVariants": "Variantes disponíveis",
       "product.status": "Estado",
       "product.conditionNew": "Novo",
       "product.warranty": "Garantia",
@@ -1105,6 +1107,7 @@
     const stockStatus = getStockStatus(stock);
     const details = getProductDetails(product);
     const description = getTranslatedText(product.description);
+    const variantsHtml = renderProductVariants(product);
     const sellerButtons = sellers
       .map(
         (seller) => `
@@ -1136,7 +1139,12 @@
             <div><dt>${t("product.warranty")}</dt><dd>${escapeHtml(product.warranty ? getTranslatedText(product.warranty) : t("product.warrantyDefault"))}</dd></div>
             <div><dt>${t("product.delivery")}</dt><dd>${escapeHtml(product.delivery ? getTranslatedText(product.delivery) : t("product.deliveryDefault"))}</dd></div>
           </dl>
-          <ul class="product-specs is-large">${details.map((detail) => `<li>${escapeHtml(getTranslatedText(detail))}</li>`).join("")}</ul>
+          ${variantsHtml}
+          ${
+            variantsHtml
+              ? ""
+              : `<ul class="product-specs is-large">${details.map((detail) => `<li>${escapeHtml(getTranslatedText(detail))}</li>`).join("")}</ul>`
+          }
           <div class="dialog-actions">${sellerButtons}</div>
         </div>
       </div>
@@ -1150,6 +1158,36 @@
     } else {
       els.productDialog.setAttribute("open", "");
     }
+  }
+
+  function renderProductVariants(product) {
+    const variants = Array.isArray(product.variants)
+      ? product.variants.filter((variant) => variant.active !== false)
+      : [];
+    if (variants.length <= 1) return "";
+    return `
+      <section class="variant-list" aria-label="${escapeHtml(t("product.availableVariants"))}">
+        <h3>${escapeHtml(t("product.availableVariants"))}</h3>
+        ${variants
+          .map((variant) => {
+            const label = getVariantDisplayName(variant);
+            const stockStatus = getStockStatus(Number(variant.stock || 0));
+            return `
+              <div class="variant-option">
+                <div>
+                  <strong>${escapeHtml(label)}</strong>
+                  <small>${escapeHtml(t("product.code"))}: ${escapeHtml(variant.sku || "")}</small>
+                </div>
+                <div>
+                  ${renderPriceBlock(variant.price)}
+                  <span class="stock-pill ${stockStatus.className}">${stockStatus.label}</span>
+                </div>
+              </div>
+            `;
+          })
+          .join("")}
+      </section>
+    `;
   }
 
   function closeProductDialog() {
@@ -1371,6 +1409,10 @@
     return Array.isArray(product.details) && product.details.length
       ? product.details
       : [product.variant, product.condition, product.warranty, product.delivery].filter(Boolean);
+  }
+
+  function getVariantDisplayName(variant) {
+    return variant.label || [variant.storage, variant.color].filter(Boolean).join(" / ") || variant.name || t("product.variant");
   }
 
   function buildSellerMessage(seller) {

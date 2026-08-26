@@ -60,7 +60,7 @@
       supabase
         .from("products")
         .select(
-          "id,public_code,name,slug,description,brand,active,featured,category:categories(id,name,slug),variants:product_variants(id,name,sku,price,stock,active,sort_order),images:product_images(id,url,sort_order,is_primary)"
+          "id,public_code,name,slug,description,brand,active,featured,category:categories(id,name,slug),variants:product_variants(id,name,sku,color,storage,price,stock,active,sort_order),images:product_images(id,url,sort_order,is_primary)"
         )
         .eq("active", true)
         .order("featured", { ascending: false })
@@ -90,7 +90,7 @@
     const limit = Number(options.limit || 80);
     const pattern = `*${term}*`;
     const productSelect =
-      "id,public_code,name,slug,description,brand,active,featured,category:categories(id,name,slug),variants:product_variants(id,name,sku,price,stock,active,sort_order),images:product_images(id,url,sort_order,is_primary)";
+      "id,public_code,name,slug,description,brand,active,featured,category:categories(id,name,slug),variants:product_variants(id,name,sku,color,storage,price,stock,active,sort_order),images:product_images(id,url,sort_order,is_primary)";
 
     const [productsResult, variantsResult, categoriesResult] = await Promise.all([
       supabase
@@ -170,7 +170,7 @@
       supabase
         .from("products")
         .select(
-          "id,public_code,name,slug,description,brand,active,featured,category_id,category:categories(id,name,slug),variants:product_variants(id,name,sku,price,stock,active,sort_order),images:product_images(id,url,sort_order,is_primary,created_at),created_at,updated_at"
+          "id,public_code,name,slug,description,brand,active,featured,category_id,category:categories(id,name,slug),variants:product_variants(id,name,sku,color,storage,price,stock,active,sort_order),images:product_images(id,url,sort_order,is_primary,created_at),created_at,updated_at"
         )
         .order("name", { ascending: true }),
       loadStoreSettings(),
@@ -323,13 +323,13 @@
 
     return {
       id: row.id,
-      code: row.public_code,
+      code: primaryVariant.sku || row.public_code,
       sku: primaryVariant.sku || "",
       name: row.name,
       category: categoryName,
       categorySlug: row.category?.slug || "",
       brand: row.brand || "",
-      variant: primaryVariant.name && primaryVariant.name !== "Default" ? primaryVariant.name : "",
+      variant: formatVariantLabel(primaryVariant) !== "Default" ? formatVariantLabel(primaryVariant) : "",
       price,
       stock: totalStock,
       featured: Boolean(row.featured),
@@ -338,11 +338,19 @@
       warranty: "Garantia de tienda",
       delivery: totalStock > 0 ? "Retiro en tienda o envio coordinado" : "Consultar proxima reposicion",
       description: row.description || "",
-      details: variants.map((variant) => variant.name).filter((name) => name && name !== "Default"),
+      details: variants.map(formatVariantLabel).filter((name) => name && name !== "Default"),
       image: image?.url || "assets/logo-smartshop.png",
       slug: row.slug,
       active: row.active,
+      variants: variants.map((variant) => ({
+        ...variant,
+        label: formatVariantLabel(variant),
+      })),
     };
+  }
+
+  function formatVariantLabel(variant) {
+    return [variant.storage, variant.color].filter(Boolean).join(" / ") || variant.name || "";
   }
 
   function mapSellerRow(row) {
