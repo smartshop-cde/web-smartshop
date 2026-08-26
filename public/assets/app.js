@@ -441,6 +441,7 @@
     els.mobileMenuToggle.addEventListener("click", () => {
       const isOpen = els.siteNav.classList.toggle("is-open");
       els.mobileMenuToggle.setAttribute("aria-expanded", String(isOpen));
+      if (!isOpen) closeNavDropdowns();
     });
 
     els.siteNav.addEventListener("click", (event) => {
@@ -454,6 +455,18 @@
       }
       if (event.target.closest("a")) closeMobileMenu();
     });
+
+    document.addEventListener("pointerdown", (event) => {
+      closeOpenPanelsFromOutside(event.target);
+    });
+
+    window.addEventListener(
+      "scroll",
+      () => {
+        closeOpenPanels();
+      },
+      { passive: true },
+    );
 
     els.searchInput.addEventListener("input", (event) => {
       state.search = event.target.value.trim();
@@ -1535,11 +1548,43 @@
   function closeMobileMenu() {
     els.siteNav.classList.remove("is-open");
     els.mobileMenuToggle.setAttribute("aria-expanded", "false");
+    closeNavDropdowns();
   }
 
   function closeFilters() {
     els.catalogFilters.classList.remove("is-open");
     els.filterToggle.setAttribute("aria-expanded", "false");
+  }
+
+  function closeNavDropdowns() {
+    document.querySelectorAll(".nav-menu.is-open").forEach((menu) => {
+      menu.classList.remove("is-open");
+      const trigger = menu.querySelector(".nav-menu > a");
+      if (trigger) trigger.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  function closeOpenPanels() {
+    if (els.siteNav.classList.contains("is-open")) closeMobileMenu();
+    if (els.catalogFilters.classList.contains("is-open")) closeFilters();
+  }
+
+  function closeOpenPanelsFromOutside(target) {
+    if (
+      els.siteNav.classList.contains("is-open") &&
+      !els.siteNav.contains(target) &&
+      !els.mobileMenuToggle.contains(target)
+    ) {
+      closeMobileMenu();
+    }
+
+    if (
+      els.catalogFilters.classList.contains("is-open") &&
+      !els.catalogFilters.contains(target) &&
+      !els.filterToggle.contains(target)
+    ) {
+      closeFilters();
+    }
   }
 
   function hydrateStaticIcons() {
