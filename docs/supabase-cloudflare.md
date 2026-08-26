@@ -37,7 +37,7 @@ Despues de tener al menos un admin funcionando, el panel tambien permite crear o
 /admin -> Usuarios
 ```
 
-Esa funcion requiere configurar `SUPABASE_SERVICE_ROLE_KEY` como secret del Worker en Cloudflare. La clave se usa solamente del lado servidor para llamar a Supabase Auth Admin API.
+Esa funcion requiere configurar `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` en el runtime del Worker en Cloudflare. La clave `service_role` se usa solamente del lado servidor para llamar a Supabase Auth Admin API.
 
 ## Variables publicas
 
@@ -57,6 +57,8 @@ SUPABASE_SERVICE_ROLE_KEY=
 ```
 
 Debe configurarse como secret, no como variable publica. Nunca debe aparecer en `public/`, `dist/`, HTML ni JavaScript del navegador.
+
+`SUPABASE_URL` tambien debe estar disponible en runtime, no solo durante el build, porque el Worker la usa para validar la sesion y crear usuarios.
 
 ## Cloudflare Workers
 

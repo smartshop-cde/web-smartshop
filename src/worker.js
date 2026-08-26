@@ -297,7 +297,7 @@ async function requireAdmin(request, env) {
 
   const userResponse = await fetch(`${trimTrailingSlash(env.SUPABASE_URL)}/auth/v1/user`, {
     headers: {
-      apikey: env.SUPABASE_ANON_KEY,
+      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
       Authorization: `Bearer ${token}`,
     },
   });
@@ -484,7 +484,7 @@ async function supabaseFetch(env, path, options = {}) {
 }
 
 function ensureSupabaseAdminEnv(env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY || !env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new HttpError(503, "ADMIN_API_NOT_CONFIGURED", "La administracion de usuarios no esta configurada.");
   }
 }

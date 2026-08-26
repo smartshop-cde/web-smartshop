@@ -168,7 +168,7 @@ on conflict (id) do update
 set role = 'admin';
 ```
 
-Luego puedes crear otros usuarios desde `/admin -> Usuarios`. Esa funcion necesita `SUPABASE_SERVICE_ROLE_KEY` configurado como secret en Cloudflare.
+Luego puedes crear otros usuarios desde `/admin -> Usuarios`. Esa funcion necesita `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` configurados en el runtime del Worker de Cloudflare.
 
 Generar SQL para importar los datos actuales de `public/assets/store-data.js`:
 
@@ -188,8 +188,8 @@ Deploy command: npx wrangler deploy
 Version command: npx wrangler versions upload
 Root directory: /
 Environment variables:
-  SUPABASE_URL
-  SUPABASE_ANON_KEY
+  SUPABASE_URL (build y runtime)
+  SUPABASE_ANON_KEY (build/publica)
   SUPABASE_SERVICE_ROLE_KEY (secret runtime, no publico)
 ```
 
@@ -199,7 +199,7 @@ La traduccion dinamica usa Cloudflare Workers AI con el modelo `@cf/meta/m2m100-
 
 El script de build copia `public/` a `dist/`, crea `dist/admin/index.html` para que `/admin` funcione como ruta estatica y genera `assets/supabase-env.js` con las variables publicas de Supabase.
 
-Configurar `SUPABASE_SERVICE_ROLE_KEY` solamente como secret runtime de Cloudflare Worker. No debe entrar al build ni aparecer en el frontend.
+Configurar `SUPABASE_SERVICE_ROLE_KEY` solamente como secret runtime de Cloudflare Worker. No debe entrar al build ni aparecer en el frontend. `SUPABASE_URL` tambien debe existir en runtime para que el Worker pueda llamar a Supabase.
 
 Guia detallada: `docs/supabase-cloudflare.md`.
 
