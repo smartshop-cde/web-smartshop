@@ -154,7 +154,9 @@ Ejecuta la migracion reproducible:
 
 ```text
 supabase/migrations/20260821160000_smartshop_catalog.sql
+supabase/migrations/20260822143000_exchange_rates_settings.sql
 supabase/migrations/20260825150000_audit_logs.sql
+supabase/migrations/20260826103000_variant_public_codes.sql
 ```
 
 Crea el primer usuario administrador desde Supabase Auth y asigna rol:
@@ -253,7 +255,7 @@ Product
 ProductVariant
 ```
 
-`Product.publicCode` es el codigo visible al cliente:
+`Product.publicCode` queda como codigo base del producto:
 
 - Exactamente 5 digitos.
 - Rango `10000` a `99999`.
@@ -263,9 +265,13 @@ ProductVariant
 
 `ProductVariant` contiene:
 
-- `sku`, sincronizado automaticamente con `Product.publicCode`
+- `sku`, usado como codigo visible de cada variante
+- `color`
+- `storage`
 - `price`, guardado en USD
 - `stock`
+
+Al crear varias variantes para un mismo producto, Supabase intenta asignar codigos consecutivos disponibles. Ejemplo: `64432`, `64433`, `64434`.
 
 El stock esta en variante y tiene restriccion `stock >= 0`.
 
@@ -294,6 +300,8 @@ Columnas de la plantilla:
 - `marca`
 - `categoria`
 - `variante`
+- `color`
+- `almacenamiento`
 - `precio` en USD
 - `stock`
 - `descripcion`
@@ -307,7 +315,7 @@ El importador muestra una vista previa antes de guardar:
 - categorias nuevas;
 - errores por fila.
 
-No se carga `sku` en Excel. El codigo publico de 5 digitos lo genera Supabase y la variante usa ese mismo valor como SKU. El precio importado se interpreta como USD.
+No se carga `sku` en Excel. El codigo publico de 5 digitos lo genera Supabase por variante. El precio importado se interpreta como USD.
 
 Las fotos no se cargan desde Excel; se editan en el panel.
 

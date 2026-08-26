@@ -16,7 +16,7 @@ La arquitectura Node/Express + Prisma + PostgreSQL local queda conservada en el 
 ## Configuracion de Supabase
 
 1. Crea un proyecto en Supabase.
-2. En SQL Editor ejecuta `supabase/migrations/20260821160000_smartshop_catalog.sql`.
+2. En SQL Editor ejecuta las migraciones de `supabase/migrations/` en orden de fecha.
 3. Verifica que existan los buckets `product-images` y `seller-images`.
 4. Crea un usuario desde Authentication > Users.
 5. Copia el UUID del usuario creado.
@@ -113,6 +113,16 @@ store_settings
 
 La pestaña `/admin -> Auditoria` muestra los cambios recientes con fecha, usuario, accion, tabla y registro afectado.
 
+## Variantes y codigos
+
+Ejecuta tambien:
+
+```text
+supabase/migrations/20260826103000_variant_public_codes.sql
+```
+
+Esto agrega `color` y `storage` a `product_variants` y cambia el codigo visible para que cada variante tenga su propio `sku` numerico de 5 digitos. Para variantes del mismo producto, Supabase intenta usar codigos consecutivos disponibles.
+
 ## Migrar datos actuales
 
 Para generar un SQL desde `public/assets/store-data.js`:
@@ -133,7 +143,7 @@ Revisa el archivo y ejecutalo en Supabase SQL Editor despues de la migracion pri
 
 En `/admin -> Productos` se puede descargar una plantilla y cargar productos por Excel.
 
-La plantilla no pide codigo ni SKU. Supabase genera `products.public_code` automaticamente y `product_variants.sku` queda sincronizado con ese codigo.
+La plantilla no pide codigo ni SKU. Supabase genera codigos de 5 digitos automaticamente para cada variante.
 
 El campo `precio` de la plantilla se carga en USD. La web publica muestra USD como precio principal y calcula guaranies/reales con la cotizacion configurada.
 
