@@ -157,6 +157,7 @@ supabase/migrations/20260821160000_smartshop_catalog.sql
 supabase/migrations/20260822143000_exchange_rates_settings.sql
 supabase/migrations/20260825150000_audit_logs.sql
 supabase/migrations/20260826103000_variant_public_codes.sql
+supabase/migrations/20260827100000_variant_images.sql
 ```
 
 Crea el primer usuario administrador desde Supabase Auth y asigna rol:
@@ -268,12 +269,15 @@ ProductVariant
 - `sku`, usado como codigo visible de cada variante
 - `color`
 - `storage`
+- `image_url`, foto opcional de la variante
 - `price`, guardado en USD
 - `stock`
 
 Al crear varias variantes para un mismo producto, Supabase intenta asignar codigos consecutivos disponibles. Ejemplo: `64432`, `64433`, `64434`.
 
 El stock esta en variante y tiene restriccion `stock >= 0`.
+
+Cada variante puede tener su propia foto desde el panel admin. Si una variante no tiene foto propia, la web usa la imagen principal del producto.
 
 ## Cotizaciones
 
@@ -318,6 +322,8 @@ El importador muestra una vista previa antes de guardar:
 No se carga `sku` en Excel. El codigo publico de 5 digitos lo genera Supabase por variante. El precio importado se interpreta como USD.
 
 Las fotos no se cargan desde Excel; se editan en el panel.
+
+El catalogo publico permite alternar entre vista de cards y vista de lista. En celular, la vista de cards muestra dos productos por fila cuando el ancho lo permite.
 
 ## Checks
 

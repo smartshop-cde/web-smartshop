@@ -57,15 +57,7 @@
         .eq("active", true)
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true }),
-      supabase
-        .from("products")
-        .select(
-          "id,public_code,name,slug,description,brand,active,featured,category:categories(id,name,slug),variants:product_variants(id,name,sku,color,storage,price,stock,active,sort_order),images:product_images(id,url,sort_order,is_primary)"
-        )
-        .eq("active", true)
-        .order("featured", { ascending: false })
-        .order("name", { ascending: true })
-        .limit(limit),
+      fetchProducts({ activeOnly: true, limit, includeVariantImages: true }),
       loadStoreSettings(),
     ]);
 
@@ -89,23 +81,19 @@
 
     const limit = Number(options.limit || 80);
     const pattern = `*${term}*`;
-    const productSelect =
-      "id,public_code,name,slug,description,brand,active,featured,category:categories(id,name,slug),variants:product_variants(id,name,sku,color,storage,price,stock,active,sort_order),images:product_images(id,url,sort_order,is_primary)";
 
     const [productsResult, variantsResult, categoriesResult] = await Promise.all([
-      supabase
-        .from("products")
-        .select(productSelect)
-        .eq("active", true)
-        .or(`name.ilike.${pattern},slug.ilike.${pattern},brand.ilike.${pattern},description.ilike.${pattern},public_code.ilike.${pattern}`)
-        .order("featured", { ascending: false })
-        .order("name", { ascending: true })
-        .limit(limit),
+      fetchProducts({
+        activeOnly: true,
+        limit,
+        includeVariantImages: true,
+        searchPattern: `name.ilike.${pattern},slug.ilike.${pattern},brand.ilike.${pattern},description.ilike.${pattern},public_code.ilike.${pattern}`,
+      }),
       supabase
         .from("product_variants")
         .select("product_id")
         .eq("active", true)
-        .or(`name.ilike.${pattern},sku.ilike.${pattern}`)
+        .or(`name.ilike.${pattern},sku.ilike.${pattern},color.ilike.${pattern},storage.ilike.${pattern}`)
         .limit(limit),
       supabase
         .from("categories")
@@ -125,23 +113,13 @@
 
     if (productIds.length) {
       relatedQueries.push(
-        supabase
-          .from("products")
-          .select(productSelect)
-          .eq("active", true)
-          .in("id", productIds)
-          .limit(limit)
+        fetchProducts({ activeOnly: true, limit, includeVariantImages: true, ids: productIds })
       );
     }
 
     if (categoryIds.length) {
       relatedQueries.push(
-        supabase
-          .from("products")
-          .select(productSelect)
-          .eq("active", true)
-          .in("category_id", categoryIds)
-          .limit(limit)
+        fetchProducts({ activeOnly: true, limit, includeVariantImages: true, categoryIds })
       );
     }
 
@@ -167,12 +145,7 @@
         .select("id,name,whatsapp,role,image_url,active,sort_order,created_at,updated_at")
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true }),
-      supabase
-        .from("products")
-        .select(
-          "id,public_code,name,slug,description,brand,active,featured,category_id,category:categories(id,name,slug),variants:product_variants(id,name,sku,color,storage,price,stock,active,sort_order),images:product_images(id,url,sort_order,is_primary,created_at),created_at,updated_at"
-        )
-        .order("name", { ascending: true }),
+      fetchProducts({ admin: true, includeVariantImages: true }),
       loadStoreSettings(),
     ]);
 
@@ -302,6 +275,38 @@
     return { path, url: data.publicUrl };
   }
 
+  async function fetchProducts(options = {}) {
+    const supabase = requireClient();
+    const includeVariantImages = options.includeVariantImages !== false;
+    let query = supabase.from("products").select(productSelect(includeVariantImages));
+
+    if (options.activeOnly) query = query.eq("active", true);
+    if (options.searchPattern) query = query.or(options.searchPattern);
+    if (options.ids?.length) query = query.in("id", options.ids);
+    if (options.categoryIds?.length) query = query.in("category_id", options.categoryIds);
+
+    query = query.order("featured", { ascending: false }).order("name", { ascending: true });
+    if (options.limit) query = query.limit(Number(options.limit));
+
+    const result = await query;
+    if (
+      result.error &&
+      includeVariantImages &&
+      String(result.error.message || "").includes("image_url") &&
+      String(result.error.message || "").includes("product_variants")
+    ) {
+      return fetchProducts({ ...options, includeVariantImages: false });
+    }
+    return result;
+  }
+
+  function productSelect(includeVariantImages = true) {
+    const variantFields = ["id", "name", "sku", "color", "storage", includeVariantImages ? "image_url" : "", "price", "stock", "active", "sort_order"]
+      .filter(Boolean)
+      .join(",");
+    return `id,public_code,name,slug,description,brand,active,featured,category_id,category:categories(id,name,slug),variants:product_variants(${variantFields}),images:product_images(id,url,sort_order,is_primary,created_at)`;
+  }
+
   function validateImageFile(file) {
     if (!file) return;
     if (!CONFIG.imageTypes.has(file.type)) {
@@ -314,11 +319,11 @@
 
   function mapProductRow(row) {
     const variants = sortByOrder(row.variants || []).filter((variant) => variant.active !== false);
-    const primaryVariant = variants[0] || {};
     const totalStock = variants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
     const prices = variants.map((variant) => Number(variant.price || 0)).filter((price) => price >= 0);
     const price = prices.length ? Math.min(...prices) : 0;
-    const image = getPrimaryImage(row.images || []);
+    const primaryVariant = getDisplayVariant(variants, price);
+    const image = primaryVariant.image_url ? { url: primaryVariant.image_url } : getPrimaryImage(row.images || []);
     const categoryName = row.category?.name || "General";
 
     return {
@@ -345,8 +350,19 @@
       variants: variants.map((variant) => ({
         ...variant,
         label: formatVariantLabel(variant),
+        image: variant.image_url || image?.url || "assets/logo-smartshop.png",
       })),
     };
+  }
+
+  function getDisplayVariant(variants, price) {
+    if (!variants.length) return {};
+    return (
+      variants.find((variant) => Number(variant.stock || 0) > 0 && Number(variant.price || 0) === price) ||
+      variants.find((variant) => Number(variant.stock || 0) > 0) ||
+      variants.find((variant) => Number(variant.price || 0) === price) ||
+      variants[0]
+    );
   }
 
   function formatVariantLabel(variant) {

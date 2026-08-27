@@ -125,6 +125,14 @@ supabase/migrations/20260826103000_variant_public_codes.sql
 
 Esto agrega `color` y `storage` a `product_variants` y cambia el codigo visible para que cada variante tenga su propio `sku` numerico de 5 digitos. Para variantes del mismo producto, Supabase intenta usar codigos consecutivos disponibles.
 
+Ejecuta tambien:
+
+```text
+supabase/migrations/20260827100000_variant_images.sql
+```
+
+Esto agrega `image_url` a `product_variants` para que cada variante pueda tener su propia foto desde el panel admin. Si una variante no tiene foto, la web usa la imagen principal del producto.
+
 ## Migrar datos actuales
 
 Para generar un SQL desde `public/assets/store-data.js`:
@@ -150,6 +158,8 @@ La plantilla no pide codigo ni SKU. Supabase genera codigos de 5 digitos automat
 El campo `precio` de la plantilla se carga en USD. La web publica muestra USD como precio principal y calcula guaranies/reales con la cotizacion configurada.
 
 Antes de guardar, el panel muestra vista previa con nuevos productos, actualizaciones, categorias nuevas y errores por fila.
+
+Las fotos se cargan despues desde el panel: imagen principal del producto o foto propia por variante.
 
 ## Cotizaciones
 

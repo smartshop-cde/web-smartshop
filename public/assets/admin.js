@@ -476,46 +476,59 @@
         const price = getProductPrice(product);
         const variantCodes = getVariantCodes(product);
         const variantSummary = getVariantSummary(product);
+        const variants = getProductVariants(product);
         return `
-          <tr class="${product.active ? "" : "is-muted"}">
-            <td><strong>${escapeHtml(variantCodes || product.public_code || "Auto")}</strong></td>
-            <td><img class="admin-thumb" src="${escapeHtml(primaryImage)}" alt="" loading="lazy"></td>
-            <td>
-              <strong>${escapeHtml(product.name)}</strong>
-              <small>${escapeHtml([product.brand, variantSummary].filter(Boolean).join(" | "))}</small>
-            </td>
-            <td>${escapeHtml(product.category?.name || "Sin categoria")}</td>
-            <td>${formatPrice(price)}</td>
-            <td>${stock}</td>
-            <td><span class="status-pill ${product.active ? "is-active" : "is-inactive"}">${product.active ? "Activo" : "Oculto"}</span></td>
-            <td>
-              <div class="table-actions">
-                <button class="admin-button" type="button" data-product-action="edit" data-id="${product.id}">Editar</button>
-                <button class="admin-button" type="button" data-product-action="${product.active ? "hide" : "show"}" data-id="${product.id}">${product.active ? "Ocultar" : "Activar"}</button>
-                <button class="admin-button is-danger" type="button" data-product-action="delete" data-id="${product.id}">Eliminar</button>
+          <article class="admin-product-row ${product.active ? "" : "is-muted"}">
+            <img class="admin-product-image" src="${escapeHtml(primaryImage)}" alt="" loading="lazy">
+            <div class="admin-product-main">
+              <div class="admin-product-head">
+                <div>
+                  <strong>${escapeHtml(product.name)}</strong>
+                  <small>${escapeHtml([product.brand, product.category?.name || "Sin categoria", variantSummary].filter(Boolean).join(" | "))}</small>
+                </div>
+                <span class="status-pill ${product.active ? "is-active" : "is-inactive"}">${product.active ? "Activo" : "Oculto"}</span>
               </div>
-            </td>
-          </tr>
+              <div class="admin-product-meta">
+                <span>Codigos: <strong>${escapeHtml(variantCodes || product.public_code || "Auto")}</strong></span>
+                <span>Desde: <strong>${formatPrice(price)}</strong></span>
+                <span>Stock total: <strong>${stock}</strong></span>
+              </div>
+              <div class="admin-variant-pills">
+                ${
+                  variants.length
+                    ? variants.map((variant) => renderAdminVariantPill(variant, primaryImage)).join("")
+                    : `<span class="admin-variant-pill">Sin variantes</span>`
+                }
+              </div>
+            </div>
+            <div class="table-actions admin-product-actions">
+              <button class="admin-button" type="button" data-product-action="edit" data-id="${product.id}">Editar</button>
+              <button class="admin-button" type="button" data-product-action="${product.active ? "hide" : "show"}" data-id="${product.id}">${product.active ? "Ocultar" : "Activar"}</button>
+              <button class="admin-button is-danger" type="button" data-product-action="delete" data-id="${product.id}">Eliminar</button>
+            </div>
+          </article>
         `;
       })
       .join("");
 
     els.productsTable.innerHTML = `
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Codigo</th>
-            <th>Imagen</th>
-            <th>Producto</th>
-            <th>Categoria</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>Estado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>${rows || `<tr><td colspan="8">No hay productos cargados.</td></tr>`}</tbody>
-      </table>
+      <div class="admin-product-list">
+        ${rows || `<div class="admin-empty-row">No hay productos cargados.</div>`}
+      </div>
+    `;
+  }
+
+  function renderAdminVariantPill(variant, fallbackImage) {
+    const label = formatVariantAdminLabel(variant) || "Default";
+    const status = variant.active === false ? "Oculta" : Number(variant.stock || 0) > 0 ? "Activa" : "Sin stock";
+    return `
+      <span class="admin-variant-pill">
+        <img src="${escapeHtml(variant.image_url || fallbackImage || FALLBACK_LOGO)}" alt="" loading="lazy">
+        <span>
+          <strong>${escapeHtml(label)}</strong>
+          <small>${escapeHtml(variant.sku || "Auto")} | ${formatPrice(variant.price)} | ${Number(variant.stock || 0)} stock | ${status}</small>
+        </span>
+      </span>
     `;
   }
 
@@ -694,6 +707,14 @@
           <input name="variant_active" type="checkbox" ${variant.active === false ? "" : "checked"}>
           Activa
         </label>
+        <label class="admin-field variant-image-field">
+          <span>Foto de variante</span>
+          <input name="variant_image" class="admin-input" type="file" accept="${IMAGE_ACCEPT}" data-variant-image>
+        </label>
+        <div class="variant-image-preview">
+          <img data-variant-preview src="${escapeHtml(variant.image_url || FALLBACK_LOGO)}" alt="">
+          ${variant.image_url ? `<button class="admin-button" type="button" data-editor-action="remove-variant-image" data-id="${escapeHtml(variant.id || "")}">Quitar foto</button>` : ""}
+        </div>
       </article>
     `;
   }
@@ -815,9 +836,11 @@
         };
 
         if (variant.id) {
-          await updateRow("product_variants", variant.id, variantPayload);
+          const savedVariant = await updateRow("product_variants", variant.id, variantPayload);
+          await uploadVariantImageIfNeeded(savedProduct, savedVariant, variant.imageFile);
         } else {
-          await insertRow("product_variants", variantPayload);
+          const savedVariant = await insertRow("product_variants", variantPayload);
+          await uploadVariantImageIfNeeded(savedProduct, savedVariant, variant.imageFile);
         }
       }
 
@@ -1084,6 +1107,17 @@
         row.insertAdjacentHTML("afterend", `<input type="hidden" name="deleted_variant_id" value="${escapeHtml(variantId)}">`);
       }
       row?.remove();
+    }
+    if (button.dataset.editorAction === "remove-variant-image") {
+      try {
+        await updateRow("product_variants", button.dataset.id, { image_url: null });
+        await loadAndRenderCatalog();
+        const productId = els.productEditor.querySelector("[data-editor-form='product']")?.dataset.id;
+        openProductEditor(state.catalog.products.find((item) => item.id === productId));
+        toast("Foto quitada de la variante.");
+      } catch (error) {
+        toast(error.message, "error");
+      }
     }
     if (button.dataset.editorAction === "remove-product-image") {
       try {
@@ -1375,9 +1409,20 @@
           price,
           stock,
           active: row.querySelector("[name='variant_active']")?.checked !== false,
+          imageFile: row.querySelector("[name='variant_image']")?.files?.[0] || null,
         };
       })
       .filter((variant) => variant.name || variant.color || variant.storage);
+  }
+
+  async function uploadVariantImageIfNeeded(product, variant, imageFile) {
+    if (!imageFile?.size) return variant;
+    const uploaded = await window.SmartShopSupabase.uploadImage(
+      imageFile,
+      window.SmartShopSupabase.config.productBucket,
+      `products/${product.id}/variants/${variant.id}`
+    );
+    return updateRow("product_variants", variant.id, { image_url: uploaded.url });
   }
 
   function getDeletedVariantIds(form) {
@@ -1402,10 +1447,14 @@
 
   function handleImagePreview(event) {
     const input = event.target.closest("[data-preview-target]");
-    if (!input?.files?.[0]) return;
-    const preview = document.querySelector(`#${input.dataset.previewTarget}`);
+    const variantInput = event.target.closest("[data-variant-image]");
+    if (!input?.files?.[0] && !variantInput?.files?.[0]) return;
+    const preview = input
+      ? document.querySelector(`#${input.dataset.previewTarget}`)
+      : variantInput.closest("[data-variant-row]")?.querySelector("[data-variant-preview]");
+    const file = input?.files?.[0] || variantInput?.files?.[0];
     if (preview) {
-      preview.src = URL.createObjectURL(input.files[0]);
+      preview.src = URL.createObjectURL(file);
       preview.onload = () => URL.revokeObjectURL(preview.src);
     }
   }
@@ -1557,6 +1606,10 @@
       .filter((variant) => variant.active !== false)
       .map((variant) => Number(variant.price || 0));
     return prices.length ? Math.min(...prices) : 0;
+  }
+
+  function getProductVariants(product) {
+    return [...(product.variants || [])].sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
   }
 
   function getVariantLabel(product) {
@@ -1799,7 +1852,7 @@
   function readableDatabaseError(error) {
     const message = String(error?.message || error || "");
     if (message.includes("schema cache") && message.includes("product_variants")) {
-      return "Falta actualizar Supabase para usar variantes con color y almacenamiento. Ejecuta la migracion 20260826103000_variant_public_codes.sql en el SQL Editor y vuelve a intentar.";
+      return "Falta actualizar Supabase para usar variantes completas. Ejecuta las migraciones 20260826103000_variant_public_codes.sql y 20260827100000_variant_images.sql en el SQL Editor y vuelve a intentar.";
     }
     if (message.includes("duplicate key") || message.includes("already exists")) {
       return "Ya existe un registro con ese codigo o slug.";

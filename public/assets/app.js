@@ -107,6 +107,9 @@
       "catalog.noLimit": "Sin limite",
       "catalog.onlyAvailable": "Mostrar solo disponibles",
       "catalog.clearFilters": "Limpiar filtros",
+      "catalog.viewAria": "Vista del catalogo",
+      "catalog.viewCards": "Cards",
+      "catalog.viewList": "Lista",
       "catalog.listTitle": "Listado",
       "catalog.emptyTitle": "No encontramos productos con estos filtros.",
       "catalog.emptyText": "Ajusta tu busqueda o vuelve a ver todo el catalogo.",
@@ -252,6 +255,9 @@
       "catalog.noLimit": "Sem limite",
       "catalog.onlyAvailable": "Mostrar somente disponíveis",
       "catalog.clearFilters": "Limpar filtros",
+      "catalog.viewAria": "Vista do catálogo",
+      "catalog.viewCards": "Cards",
+      "catalog.viewList": "Lista",
       "catalog.listTitle": "Lista",
       "catalog.emptyTitle": "Não encontramos produtos com estes filtros.",
       "catalog.emptyText": "Ajuste sua busca ou volte a ver todo o catálogo.",
@@ -350,6 +356,7 @@
     maxPrice: "",
     search: "",
     sort: "featured",
+    viewMode: "cards",
     loading: true,
     error: "",
     dialogProductId: "",
@@ -390,6 +397,7 @@
     els.languageButtons = Array.from(document.querySelectorAll("[data-language-option]"));
     els.siteNav = document.querySelector("#siteNav");
     els.sortSelect = document.querySelector("#sortSelect");
+    els.viewModeButtons = Array.from(document.querySelectorAll("[data-view-mode]"));
     els.filterToggle = document.querySelector("#filterToggle");
     els.filterClose = document.querySelector("#filterClose");
     els.catalogFilters = document.querySelector("#catalogFilters");
@@ -482,6 +490,12 @@
     els.sortSelect.addEventListener("change", (event) => {
       state.sort = event.target.value;
       renderProducts();
+    });
+
+    els.viewModeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        setViewMode(button.dataset.viewMode);
+      });
     });
 
     els.onlyAvailable.addEventListener("change", (event) => {
@@ -988,6 +1002,7 @@
     const soldOutCount = products.length - availableCount;
 
     els.productGrid.setAttribute("aria-busy", "false");
+    els.productGrid.classList.toggle("is-list-view", state.viewMode === "list");
     els.productGrid.innerHTML = filteredProducts.map((product) => renderProductCard(product)).join("");
     els.catalogError.hidden = true;
     els.emptyState.hidden = filteredProducts.length > 0;
@@ -1003,6 +1018,16 @@
     )}`;
     els.stockHealth.textContent =
       soldOutCount > 0 ? `${soldOutCount} ${t("status.withoutStock")}` : t("status.stockReady");
+  }
+
+  function setViewMode(viewMode) {
+    state.viewMode = viewMode === "list" ? "list" : "cards";
+    els.viewModeButtons.forEach((button) => {
+      const isActive = button.dataset.viewMode === state.viewMode;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
+    });
+    renderProducts();
   }
 
   function renderProductCard(product, options = {}) {
@@ -1174,6 +1199,7 @@
             const stockStatus = getStockStatus(Number(variant.stock || 0));
             return `
               <div class="variant-option">
+                <img src="${escapeHtml(variant.image || product.image)}" alt="${escapeHtml(label)}" loading="lazy" decoding="async">
                 <div>
                   <strong>${escapeHtml(label)}</strong>
                   <small>${escapeHtml(t("product.code"))}: ${escapeHtml(variant.sku || "")}</small>
@@ -1359,6 +1385,15 @@
         const matchesAvailability = !state.onlyAvailable || stock > 0;
         const matchesPrice = Number(product.price || 0) >= minPrice && Number(product.price || 0) <= maxPrice;
         const details = getProductDetails(product);
+        const variantSearchFields = Array.isArray(product.variants)
+          ? product.variants.flatMap((variant) => [
+              variant.name,
+              variant.label,
+              variant.color,
+              variant.storage,
+              variant.sku,
+            ])
+          : [];
         const haystack = normalizeText(
           [
             product.name,
@@ -1376,6 +1411,7 @@
             getTranslatedText(product.description),
             ...details,
             ...details.map(getTranslatedText),
+            ...variantSearchFields,
           ].join(" ")
         );
         return matchesCategory && matchesBrand && matchesAvailability && matchesPrice && haystack.includes(search);
@@ -1655,6 +1691,8 @@
       laptop: '<path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9"></path><path d="M2 20h20"></path>',
       watch: '<circle cx="12" cy="12" r="6"></circle><path d="M12 9v3l2 1"></path><path d="m9 2 1 4"></path><path d="m15 2-1 4"></path><path d="m9 22 1-4"></path><path d="m15 22-1-4"></path>',
       package: '<path d="m7.5 4.3 9 5.2"></path><path d="M21 8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7Z"></path><path d="M3.3 7 12 12l8.7-5"></path><path d="M12 22V12"></path>',
+      "layout-grid": '<rect width="7" height="7" x="3" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="3" rx="1"></rect><rect width="7" height="7" x="14" y="14" rx="1"></rect><rect width="7" height="7" x="3" y="14" rx="1"></rect>',
+      list: '<path d="M8 6h13"></path><path d="M8 12h13"></path><path d="M8 18h13"></path><path d="M3 6h.01"></path><path d="M3 12h.01"></path><path d="M3 18h.01"></path>',
       "sliders-horizontal": '<line x1="21" x2="14" y1="4" y2="4"></line><line x1="10" x2="3" y1="4" y2="4"></line><line x1="21" x2="12" y1="12" y2="12"></line><line x1="8" x2="3" y1="12" y2="12"></line><line x1="21" x2="16" y1="20" y2="20"></line><line x1="12" x2="3" y1="20" y2="20"></line><line x1="14" x2="14" y1="2" y2="6"></line><line x1="8" x2="8" y1="10" y2="14"></line><line x1="16" x2="16" y1="18" y2="22"></line>',
       navigation: '<polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>',
       instagram: '<rect width="20" height="20" x="2" y="2" rx="5"></rect><path d="M16 11.4A4 4 0 1 1 12.6 8 4 4 0 0 1 16 11.4Z"></path><path d="M17.5 6.5h.01"></path>',
