@@ -738,7 +738,7 @@ async function requireAdmin(request, env) {
 
   const userResponse = await fetch(`${trimTrailingSlash(env.SUPABASE_URL)}/auth/v1/user`, {
     headers: {
-      apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+      apikey: getSupabaseServiceRoleKey(env),
       Authorization: `Bearer ${token}`,
     },
   });
@@ -904,9 +904,10 @@ async function supabaseAuthAdmin(env, path, options = {}) {
 }
 
 async function supabaseFetch(env, path, options = {}) {
+  const serviceRoleKey = getSupabaseServiceRoleKey(env);
   const headers = {
-    apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-    Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+    apikey: serviceRoleKey,
+    Authorization: `Bearer ${serviceRoleKey}`,
     ...(options.body ? { "Content-Type": "application/json" } : {}),
     ...(options.headers || {}),
   };
@@ -925,9 +926,20 @@ async function supabaseFetch(env, path, options = {}) {
 }
 
 function ensureSupabaseAdminEnv(env) {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new HttpError(503, "SUPABASE_SERVER_NOT_CONFIGURED", "La conexion segura con Supabase no esta configurada.");
+  if (!env.SUPABASE_URL) {
+    throw new HttpError(503, "SUPABASE_URL_MISSING", "Falta configurar SUPABASE_URL en el runtime del Worker.");
   }
+  if (!getSupabaseServiceRoleKey(env)) {
+    throw new HttpError(
+      503,
+      "SUPABASE_SERVICE_ROLE_KEY_MISSING",
+      "Falta configurar SUPABASE_SERVICE_ROLE_KEY en el runtime del Worker."
+    );
+  }
+}
+
+function getSupabaseServiceRoleKey(env) {
+  return env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_SERVICE_ROLE || "";
 }
 
 function extractTranslatedText(response) {
