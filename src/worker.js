@@ -168,16 +168,13 @@ async function handleAdminOrders(request, env) {
 
   if (request.method === "GET" && new URL(request.url).pathname === "/api/admin/orders") {
     try {
-      const orders = await supabaseRest(
-        env,
-        "/orders?select=*,items:order_items(*)&order=created_at.desc&limit=120",
-        { method: "GET" }
-      );
-      return json({ success: true, data: Array.isArray(orders) ? orders.map(sanitizeOrderForAdmin) : [] });
+      const orders = await supabaseRest(env, "/orders?select=*&order=created_at.desc&limit=120", { method: "GET" });
+      const ordersWithItems = await attachOrderItems(env, Array.isArray(orders) ? orders : []);
+      return json({ success: true, data: ordersWithItems.map(sanitizeOrderForAdmin) });
     } catch (error) {
       return errorResponse(error, {
         code: "ADMIN_ORDERS_UNAVAILABLE",
-        message: "No se pudo cargar pedidos.",
+        message: `No se pudo cargar pedidos. ${error.message || ""}`.trim(),
         status: 502,
       });
     }
@@ -230,7 +227,7 @@ async function handleAdminOrders(request, env) {
     }
 
     try {
-      const updated = await supabaseRest(env, `/orders?id=eq.${encodeURIComponent(orderId)}&select=*,items:order_items(*)`, {
+      const updated = await supabaseRest(env, `/orders?id=eq.${encodeURIComponent(orderId)}&select=*`, {
         method: "PATCH",
         headers: {
           Prefer: "return=representation",
@@ -244,6 +241,7 @@ async function handleAdminOrders(request, env) {
       if (!order) {
         throw new HttpError(404, "ORDER_NOT_FOUND", "Pedido no encontrado.");
       }
+      const [orderWithItems] = await attachOrderItems(env, [order]);
       await recordAuditLog(env, actor, {
         table_name: "orders",
         record_id: orderId,
@@ -253,11 +251,11 @@ async function handleAdminOrders(request, env) {
           admin_notes: adminNotes,
         },
       });
-      return json({ success: true, data: sanitizeOrderForAdmin(order) });
+      return json({ success: true, data: sanitizeOrderForAdmin(orderWithItems || order) });
     } catch (error) {
       return errorResponse(error, {
         code: "ORDER_UPDATE_FAILED",
-        message: "No se pudo actualizar el pedido.",
+        message: `No se pudo actualizar el pedido. ${error.message || ""}`.trim(),
         status: 502,
       });
     }
@@ -393,11 +391,35 @@ function buildOrderItem(item, variant) {
 async function findOrderForCustomer(env, { orderNumber, whatsapp }) {
   const orders = await supabaseRest(
     env,
-    `/orders?select=*,items:order_items(*)&order_number=eq.${encodeURIComponent(orderNumber)}&customer_whatsapp=eq.${encodeURIComponent(whatsapp)}&limit=1`,
+    `/orders?select=*&order_number=eq.${encodeURIComponent(orderNumber)}&customer_whatsapp=eq.${encodeURIComponent(whatsapp)}&limit=1`,
     { method: "GET" }
   );
   const order = Array.isArray(orders) ? orders[0] : null;
-  return order ? sanitizeOrderForCustomer(order) : null;
+  if (!order) return null;
+  const [orderWithItems] = await attachOrderItems(env, [order]);
+  return sanitizeOrderForCustomer(orderWithItems || order);
+}
+
+async function attachOrderItems(env, orders) {
+  const orderIds = orders.map((order) => order.id).filter(Boolean);
+  if (!orderIds.length) return orders.map((order) => ({ ...order, items: [] }));
+
+  const items = await supabaseRest(
+    env,
+    `/order_items?select=*&order_id=in.(${orderIds.join(",")})&order=created_at.asc`,
+    { method: "GET" }
+  );
+  const itemsByOrder = new Map();
+  (Array.isArray(items) ? items : []).forEach((item) => {
+    const list = itemsByOrder.get(item.order_id) || [];
+    list.push(item);
+    itemsByOrder.set(item.order_id, list);
+  });
+
+  return orders.map((order) => ({
+    ...order,
+    items: itemsByOrder.get(order.id) || [],
+  }));
 }
 
 function sanitizeOrderForCustomer(order) {

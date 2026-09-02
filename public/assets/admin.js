@@ -382,7 +382,7 @@
     if (state.ordersError) {
       els.ordersTable.innerHTML = `
         <div class="admin-notice">
-          No se pudo cargar pedidos. Verifica SUPABASE_SERVICE_ROLE_KEY y ejecuta la migracion de pedidos.
+          No se pudo cargar pedidos. ${escapeHtml(state.ordersError)}
         </div>
       `;
       return;
