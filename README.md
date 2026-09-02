@@ -158,6 +158,7 @@ supabase/migrations/20260822143000_exchange_rates_settings.sql
 supabase/migrations/20260825150000_audit_logs.sql
 supabase/migrations/20260826103000_variant_public_codes.sql
 supabase/migrations/20260827100000_variant_images.sql
+supabase/migrations/20260902100000_orders.sql
 ```
 
 Crea el primer usuario administrador desde Supabase Auth y asigna rol:
@@ -324,6 +325,21 @@ No se carga `sku` en Excel. El codigo publico de 5 digitos lo genera Supabase po
 Las fotos no se cargan desde Excel; se editan en el panel.
 
 El catalogo publico permite alternar entre vista de cards y vista de lista. En celular, la vista de cards muestra dos productos por fila cuando el ancho lo permite.
+
+## Carrito y pedidos
+
+La web publica permite agregar productos al carrito y enviar una solicitud de pedido. El cliente recibe un numero del tipo `SS-YYMMDD-0000` y puede consultar el estado desde la seccion `Consulta tu pedido`.
+
+El panel `/admin -> Pedidos` permite ver pedidos, revisar items y cambiar estados:
+
+- `Recibido`
+- `Confirmado`
+- `En preparacion`
+- `Listo para retirar`
+- `Entregado`
+- `Cancelado`
+
+Esta etapa no implementa pagos, checkout completo ni facturacion. El pedido no descuenta stock automaticamente; sirve como solicitud comercial para que el equipo confirme disponibilidad y actualice stock desde el admin cuando corresponda.
 
 ## Checks
 

@@ -228,6 +228,32 @@
     return callAdminEndpoint("/api/admin/audit-logs", { method: "GET" });
   }
 
+  async function createOrder(payload) {
+    return callPublicEndpoint("/api/orders", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async function getOrderStatus({ orderNumber, whatsapp }) {
+    const params = new URLSearchParams({
+      orderNumber: String(orderNumber || "").trim(),
+      whatsapp: String(whatsapp || "").trim(),
+    });
+    return callPublicEndpoint(`/api/orders/status?${params.toString()}`, { method: "GET" });
+  }
+
+  async function listOrders() {
+    return callAdminEndpoint("/api/admin/orders", { method: "GET" });
+  }
+
+  async function updateOrderStatus(orderId, payload) {
+    return callAdminEndpoint(`/api/admin/orders/${encodeURIComponent(orderId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  }
+
   async function assertAdmin(userId) {
     if (!userId) throw new Error("Sesion no valida.");
     const { data, error } = await requireClient()
@@ -251,6 +277,21 @@
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
+        ...(options.headers || {}),
+      },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.success === false) {
+      throw new Error(payload.error?.message || "No pudimos completar la accion.");
+    }
+    return payload.data;
+  }
+
+  async function callPublicEndpoint(path, options = {}) {
+    const response = await fetch(path, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
         ...(options.headers || {}),
       },
     });
@@ -493,6 +534,10 @@
     listAdminUsers,
     createAdminUser,
     listAuditLogs,
+    createOrder,
+    getOrderStatus,
+    listOrders,
+    updateOrderStatus,
     uploadImage,
     toSlug,
   };

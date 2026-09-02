@@ -10,6 +10,18 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
+    if (url.pathname === "/api/orders") {
+      return handleOrders(request, env);
+    }
+
+    if (url.pathname === "/api/orders/status") {
+      return handleOrderStatus(request, env);
+    }
+
+    if (url.pathname === "/api/admin/orders" || url.pathname.startsWith("/api/admin/orders/")) {
+      return handleAdminOrders(request, env);
+    }
+
     if (url.pathname === "/api/admin/users") {
       return handleAdminUsers(request, env);
     }
@@ -38,6 +50,413 @@ export default {
     return env.ASSETS.fetch(request);
   },
 };
+
+async function handleOrders(request, env) {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: securityHeaders() });
+  }
+
+  if (request.method !== "POST") {
+    return methodNotAllowed();
+  }
+
+  let input;
+  try {
+    input = await request.json();
+  } catch {
+    return json(
+      {
+        success: false,
+        error: {
+          code: "INVALID_JSON",
+          message: "JSON invalido.",
+        },
+      },
+      400
+    );
+  }
+
+  let orderInput;
+  try {
+    orderInput = validateOrderInput(input);
+  } catch (error) {
+    return json(
+      {
+        success: false,
+        error: {
+          code: "INVALID_ORDER",
+          message: error.message,
+        },
+      },
+      400
+    );
+  }
+
+  try {
+    const order = await createCustomerOrder(env, orderInput);
+    return json({ success: true, data: order }, 201);
+  } catch (error) {
+    return errorResponse(error, {
+      code: "ORDER_CREATE_FAILED",
+      message: "No pudimos crear el pedido.",
+      status: 502,
+    });
+  }
+}
+
+async function handleOrderStatus(request, env) {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: securityHeaders() });
+  }
+
+  if (request.method !== "GET") {
+    return methodNotAllowed();
+  }
+
+  const url = new URL(request.url);
+  const orderNumber = normalizeOrderNumber(url.searchParams.get("orderNumber") || url.searchParams.get("code"));
+  const whatsapp = normalizePhone(url.searchParams.get("whatsapp"));
+
+  if (!orderNumber || !whatsapp) {
+    return json(
+      {
+        success: false,
+        error: {
+          code: "INVALID_STATUS_LOOKUP",
+          message: "Numero de pedido y WhatsApp son obligatorios.",
+        },
+      },
+      400
+    );
+  }
+
+  try {
+    const order = await findOrderForCustomer(env, { orderNumber, whatsapp });
+    if (!order) {
+      return json(
+        {
+          success: false,
+          error: {
+            code: "ORDER_NOT_FOUND",
+            message: "No encontramos un pedido con esos datos.",
+          },
+        },
+        404
+      );
+    }
+    return json({ success: true, data: order });
+  } catch (error) {
+    return errorResponse(error, {
+      code: "ORDER_STATUS_FAILED",
+      message: "No pudimos consultar el estado del pedido.",
+      status: 502,
+    });
+  }
+}
+
+async function handleAdminOrders(request, env) {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: securityHeaders() });
+  }
+
+  let actor;
+  try {
+    actor = await requireAdmin(request, env);
+  } catch (error) {
+    return errorResponse(error);
+  }
+
+  if (request.method === "GET" && new URL(request.url).pathname === "/api/admin/orders") {
+    try {
+      const orders = await supabaseRest(
+        env,
+        "/orders?select=*,items:order_items(*)&order=created_at.desc&limit=120",
+        { method: "GET" }
+      );
+      return json({ success: true, data: Array.isArray(orders) ? orders.map(sanitizeOrderForAdmin) : [] });
+    } catch (error) {
+      return errorResponse(error, {
+        code: "ADMIN_ORDERS_UNAVAILABLE",
+        message: "No se pudo cargar pedidos.",
+        status: 502,
+      });
+    }
+  }
+
+  if (request.method === "PATCH") {
+    const orderId = new URL(request.url).pathname.replace("/api/admin/orders/", "").trim();
+    if (!isUuid(orderId)) {
+      return json(
+        {
+          success: false,
+          error: {
+            code: "INVALID_ORDER_ID",
+            message: "Pedido invalido.",
+          },
+        },
+        400
+      );
+    }
+
+    let input;
+    try {
+      input = await request.json();
+    } catch {
+      return json(
+        {
+          success: false,
+          error: {
+            code: "INVALID_JSON",
+            message: "JSON invalido.",
+          },
+        },
+        400
+      );
+    }
+
+    const status = normalizeOrderStatus(input.status);
+    const adminNotes = String(input.admin_notes || input.adminNotes || "").trim().slice(0, 1000);
+    if (!status) {
+      return json(
+        {
+          success: false,
+          error: {
+            code: "INVALID_ORDER_STATUS",
+            message: "Estado de pedido invalido.",
+          },
+        },
+        400
+      );
+    }
+
+    try {
+      const updated = await supabaseRest(env, `/orders?id=eq.${encodeURIComponent(orderId)}&select=*,items:order_items(*)`, {
+        method: "PATCH",
+        headers: {
+          Prefer: "return=representation",
+        },
+        body: JSON.stringify({
+          status,
+          admin_notes: adminNotes,
+        }),
+      });
+      const order = Array.isArray(updated) ? updated[0] : null;
+      if (!order) {
+        throw new HttpError(404, "ORDER_NOT_FOUND", "Pedido no encontrado.");
+      }
+      await recordAuditLog(env, actor, {
+        table_name: "orders",
+        record_id: orderId,
+        action: "UPDATE",
+        new_data: {
+          status,
+          admin_notes: adminNotes,
+        },
+      });
+      return json({ success: true, data: sanitizeOrderForAdmin(order) });
+    } catch (error) {
+      return errorResponse(error, {
+        code: "ORDER_UPDATE_FAILED",
+        message: "No se pudo actualizar el pedido.",
+        status: 502,
+      });
+    }
+  }
+
+  return methodNotAllowed();
+}
+
+function validateOrderInput(input) {
+  const customer = input.customer || {};
+  const customerName = String(customer.name || input.customerName || "").trim().slice(0, 120);
+  const customerWhatsapp = normalizePhone(customer.whatsapp || input.customerWhatsapp);
+  const customerEmail = String(customer.email || input.customerEmail || "").trim().toLowerCase().slice(0, 160);
+  const notes = String(input.notes || "").trim().slice(0, 1000);
+  const items = Array.isArray(input.items) ? input.items : [];
+
+  if (customerName.length < 2) throw new Error("Escribe tu nombre para crear el pedido.");
+  if (!customerWhatsapp || customerWhatsapp.length < 8 || customerWhatsapp.length > 18) {
+    throw new Error("Escribe un WhatsApp valido para crear el pedido.");
+  }
+  if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+    throw new Error("El email no tiene un formato valido.");
+  }
+  if (!items.length) throw new Error("Agrega al menos un producto al carrito.");
+  if (items.length > 40) throw new Error("El carrito tiene demasiados productos.");
+
+  const normalizedItems = items.map((item) => {
+    const variantId = String(item.variantId || item.productVariantId || "").trim();
+    const quantity = Number(item.quantity || 0);
+    if (!isUuid(variantId)) throw new Error("Uno de los productos del carrito no es valido.");
+    if (!Number.isInteger(quantity) || quantity <= 0 || quantity > 99) {
+      throw new Error("La cantidad de cada producto debe estar entre 1 y 99.");
+    }
+    return { variantId, quantity };
+  });
+
+  return {
+    customerName,
+    customerWhatsapp,
+    customerEmail,
+    notes,
+    items: mergeOrderItems(normalizedItems),
+  };
+}
+
+function mergeOrderItems(items) {
+  const byVariant = new Map();
+  items.forEach((item) => {
+    const current = byVariant.get(item.variantId) || { ...item, quantity: 0 };
+    current.quantity += item.quantity;
+    byVariant.set(item.variantId, current);
+  });
+  return [...byVariant.values()];
+}
+
+async function createCustomerOrder(env, input) {
+  const variants = await loadOrderVariants(env, input.items.map((item) => item.variantId));
+  const variantMap = new Map(variants.map((variant) => [variant.id, variant]));
+  const orderItems = input.items.map((item) => buildOrderItem(item, variantMap.get(item.variantId)));
+  const subtotal = roundMoney(orderItems.reduce((sum, item) => sum + item.subtotal_usd, 0));
+
+  const insertedOrders = await supabaseRest(env, "/orders?select=*", {
+    method: "POST",
+    headers: {
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify({
+      customer_name: input.customerName,
+      customer_whatsapp: input.customerWhatsapp,
+      customer_email: input.customerEmail || null,
+      status: "new",
+      subtotal_usd: subtotal,
+      total_usd: subtotal,
+      currency: "USD",
+      notes: input.notes,
+    }),
+  });
+  const order = Array.isArray(insertedOrders) ? insertedOrders[0] : null;
+  if (!order?.id) throw new Error("Invalid order insert response");
+
+  const insertedItems = await supabaseRest(env, "/order_items?select=*", {
+    method: "POST",
+    headers: {
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify(orderItems.map((item) => ({ ...item, order_id: order.id }))),
+  });
+
+  return sanitizeOrderForCustomer({
+    ...order,
+    items: Array.isArray(insertedItems) ? insertedItems : [],
+  });
+}
+
+async function loadOrderVariants(env, ids) {
+  const uniqueIds = [...new Set(ids)];
+  const idList = uniqueIds.join(",");
+  const variants = await supabaseRest(
+    env,
+    `/product_variants?select=id,product_id,name,sku,color,storage,price,stock,active,product:products(id,name,active)&id=in.(${idList})`,
+    { method: "GET" }
+  );
+  if (!Array.isArray(variants) || variants.length !== uniqueIds.length) {
+    throw new HttpError(400, "PRODUCT_UNAVAILABLE", "Uno de los productos ya no esta disponible.");
+  }
+  return variants;
+}
+
+function buildOrderItem(item, variant) {
+  if (!variant || variant.active === false || variant.product?.active === false) {
+    throw new HttpError(400, "PRODUCT_UNAVAILABLE", "Uno de los productos ya no esta disponible.");
+  }
+  const stock = Number(variant.stock || 0);
+  if (stock < item.quantity) {
+    throw new HttpError(409, "INSUFFICIENT_STOCK", `No hay stock suficiente para ${variant.product?.name || "un producto"}.`);
+  }
+
+  const unitPrice = roundMoney(Number(variant.price || 0));
+  const variantName = [variant.storage, variant.color].filter(Boolean).join(" / ") || variant.name || "";
+  return {
+    product_id: variant.product_id,
+    product_variant_id: variant.id,
+    product_name: variant.product?.name || "Producto SmartShop",
+    variant_name: variantName === "Default" ? "" : variantName,
+    public_code: variant.sku || "",
+    unit_price_usd: unitPrice,
+    quantity: item.quantity,
+    subtotal_usd: roundMoney(unitPrice * item.quantity),
+    image_url: null,
+  };
+}
+
+async function findOrderForCustomer(env, { orderNumber, whatsapp }) {
+  const orders = await supabaseRest(
+    env,
+    `/orders?select=*,items:order_items(*)&order_number=eq.${encodeURIComponent(orderNumber)}&customer_whatsapp=eq.${encodeURIComponent(whatsapp)}&limit=1`,
+    { method: "GET" }
+  );
+  const order = Array.isArray(orders) ? orders[0] : null;
+  return order ? sanitizeOrderForCustomer(order) : null;
+}
+
+function sanitizeOrderForCustomer(order) {
+  return {
+    id: order.id,
+    orderNumber: order.order_number,
+    customerName: order.customer_name,
+    status: order.status,
+    statusLabel: getOrderStatusLabel(order.status),
+    subtotalUsd: Number(order.subtotal_usd || 0),
+    totalUsd: Number(order.total_usd || 0),
+    currency: order.currency || "USD",
+    notes: order.notes || "",
+    createdAt: order.created_at,
+    updatedAt: order.updated_at,
+    items: sanitizeOrderItems(order.items || []),
+  };
+}
+
+function sanitizeOrderForAdmin(order) {
+  return {
+    ...sanitizeOrderForCustomer(order),
+    customerWhatsapp: order.customer_whatsapp,
+    customerEmail: order.customer_email || "",
+    adminNotes: order.admin_notes || "",
+  };
+}
+
+function sanitizeOrderItems(items) {
+  return (Array.isArray(items) ? items : []).map((item) => ({
+    id: item.id,
+    productId: item.product_id,
+    productVariantId: item.product_variant_id,
+    productName: item.product_name,
+    variantName: item.variant_name || "",
+    publicCode: item.public_code || "",
+    unitPriceUsd: Number(item.unit_price_usd || 0),
+    quantity: Number(item.quantity || 0),
+    subtotalUsd: Number(item.subtotal_usd || 0),
+    imageUrl: item.image_url || "",
+  }));
+}
+
+function normalizeOrderStatus(value) {
+  const status = String(value || "").trim().toLowerCase();
+  return ["new", "confirmed", "preparing", "ready", "delivered", "cancelled"].includes(status) ? status : "";
+}
+
+function getOrderStatusLabel(status) {
+  const labels = {
+    new: "Recibido",
+    confirmed: "Confirmado",
+    preparing: "En preparacion",
+    ready: "Listo para retirar",
+    delivered: "Entregado",
+    cancelled: "Cancelado",
+  };
+  return labels[status] || labels.new;
+}
 
 async function handleAdminUsers(request, env) {
   if (request.method === "OPTIONS") {
@@ -485,7 +904,7 @@ async function supabaseFetch(env, path, options = {}) {
 
 function ensureSupabaseAdminEnv(env) {
   if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new HttpError(503, "ADMIN_API_NOT_CONFIGURED", "La administracion de usuarios no esta configurada.");
+    throw new HttpError(503, "SUPABASE_SERVER_NOT_CONFIGURED", "La conexion segura con Supabase no esta configurada.");
   }
 }
 
@@ -587,6 +1006,22 @@ function isNotFoundError(error) {
   return error?.status === 404 || message.includes("404") || message.includes("not found");
 }
 
+function normalizePhone(value) {
+  return String(value || "").replace(/\D/g, "").slice(0, 18);
+}
+
+function normalizeOrderNumber(value) {
+  return String(value || "").trim().toUpperCase().replace(/\s+/g, "").slice(0, 32);
+}
+
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ""));
+}
+
+function roundMoney(value) {
+  return Math.round((Number(value) || 0) * 100) / 100;
+}
+
 function getBearerToken(request) {
   const authorization = request.headers.get("Authorization") || "";
   const match = authorization.match(/^Bearer\s+(.+)$/i);
@@ -607,7 +1042,7 @@ class HttpError extends Error {
 
 function securityHeaders() {
   return {
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Cache-Control": "private, max-age=0",
     "X-Content-Type-Options": "nosniff",

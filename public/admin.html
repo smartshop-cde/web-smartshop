@@ -92,6 +92,7 @@
           <aside class="admin-panel" aria-label="Navegacion de administracion">
             <nav class="admin-tabs" aria-label="Secciones del panel">
               <button class="admin-tab is-active" type="button" data-admin-tab="dashboardPanel">Dashboard</button>
+              <button class="admin-tab" type="button" data-admin-tab="ordersPanel">Pedidos</button>
               <button class="admin-tab" type="button" data-admin-tab="productsPanel">Productos</button>
               <button class="admin-tab" type="button" data-admin-tab="categoriesPanel">Categorias</button>
               <button class="admin-tab" type="button" data-admin-tab="sellersPanel">Vendedores</button>
@@ -116,6 +117,10 @@
                 <span>Vendedores</span>
                 <strong id="sellerCount">0</strong>
               </div>
+              <div>
+                <span>Pedidos abiertos</span>
+                <strong id="openOrdersCount">0</strong>
+              </div>
             </div>
             <p class="admin-notice">Los cambios se guardan en Supabase y se reflejan en la web sin redeploy.</p>
           </aside>
@@ -130,6 +135,18 @@
                 <span id="adminSyncStatus">Conectando con Supabase...</span>
               </div>
               <div id="dashboardCards" class="dashboard-cards"></div>
+            </section>
+
+            <section id="ordersPanel" class="admin-card admin-tab-panel" aria-labelledby="ordersTitle" hidden>
+              <div class="section-title-row">
+                <div>
+                  <p class="panel-kicker">Solicitudes</p>
+                  <h2 id="ordersTitle">Pedidos</h2>
+                </div>
+                <button id="refreshOrdersButton" class="admin-button" type="button">Actualizar pedidos</button>
+              </div>
+              <p class="admin-notice">Los pedidos entran como recibidos. Cambia el estado cuando confirmes disponibilidad con el cliente.</p>
+              <div id="ordersTable" class="admin-table-wrap"></div>
             </section>
 
             <section id="productsPanel" class="admin-card admin-tab-panel" aria-labelledby="productsTitle" hidden>

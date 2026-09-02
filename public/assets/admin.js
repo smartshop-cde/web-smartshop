@@ -53,6 +53,8 @@
     adminUsersError: "",
     auditLogs: [],
     auditLogsError: "",
+    orders: [],
+    ordersError: "",
     pendingImport: null,
     loading: false,
   };
@@ -111,7 +113,9 @@
     els.soldOutProductsCount = document.querySelector("#soldOutProductsCount");
     els.categoryCount = document.querySelector("#categoryCount");
     els.sellerCount = document.querySelector("#sellerCount");
+    els.openOrdersCount = document.querySelector("#openOrdersCount");
     els.productsTable = document.querySelector("#productsTable");
+    els.ordersTable = document.querySelector("#ordersTable");
     els.categoriesTable = document.querySelector("#categoriesTable");
     els.sellersTable = document.querySelector("#sellersTable");
     els.productEditor = document.querySelector("#productEditor");
@@ -127,6 +131,7 @@
     els.createAdminUserButton = document.querySelector("#createAdminUserButton");
     els.adminUsersTable = document.querySelector("#adminUsersTable");
     els.refreshAuditButton = document.querySelector("#refreshAuditButton");
+    els.refreshOrdersButton = document.querySelector("#refreshOrdersButton");
     els.auditLogsTable = document.querySelector("#auditLogsTable");
     els.importPreview = document.querySelector("#importPreview");
     els.downloadTemplateButton = document.querySelector("#downloadTemplateButton");
@@ -148,6 +153,7 @@
     els.reloadButton.addEventListener("click", () => loadAndRenderCatalog(true));
     els.createAdminUserForm.addEventListener("submit", handleCreateAdminUser);
     els.refreshAuditButton.addEventListener("click", () => loadAndRenderAuditLogs(true));
+    els.refreshOrdersButton.addEventListener("click", () => loadAndRenderOrders(true));
     els.downloadTemplateButton.addEventListener("click", downloadImportTemplate);
     els.importProductsInput.addEventListener("change", handleImportFile);
     els.newProductButton.addEventListener("click", () => openProductEditor());
@@ -159,6 +165,7 @@
     });
 
     els.productsTable.addEventListener("click", handleProductTableAction);
+    els.ordersTable.addEventListener("click", handleOrderTableAction);
     els.categoriesTable.addEventListener("click", handleCategoryTableAction);
     els.sellersTable.addEventListener("click", handleSellerTableAction);
     els.productEditor.addEventListener("submit", handleProductSubmit);
@@ -197,6 +204,8 @@
     state.adminUsersError = "";
     state.auditLogs = [];
     state.auditLogsError = "";
+    state.orders = [];
+    state.ordersError = "";
     showLogin();
     toast("Sesion cerrada.");
   }
@@ -268,6 +277,7 @@
     els.passwordSetupView.hidden = true;
     els.adminView.hidden = false;
     await loadAndRenderCatalog();
+    await loadAndRenderOrders();
     await loadAndRenderAdminUsers();
     await loadAndRenderAuditLogs();
   }
@@ -303,6 +313,7 @@
 
   function renderAll() {
     renderDashboard();
+    renderOrdersTable();
     renderProductsTable();
     renderCategoriesTable();
     renderSellersTable();
@@ -317,13 +328,16 @@
     const activeCategories = state.catalog.categories.filter((category) => category.active);
     const activeSellers = state.catalog.sellers.filter((seller) => seller.active);
     const totalStock = activeProducts.reduce((sum, product) => sum + getProductStock(product), 0);
+    const openOrders = state.orders.filter((order) => !["delivered", "cancelled"].includes(order.status));
 
     els.activeProductsCount.textContent = activeProducts.length;
     els.soldOutProductsCount.textContent = soldOut.length;
     els.categoryCount.textContent = activeCategories.length;
     els.sellerCount.textContent = activeSellers.length;
+    els.openOrdersCount.textContent = openOrders.length;
 
     els.dashboardCards.innerHTML = [
+      ["Pedidos abiertos", openOrders.length, "Solicitudes pendientes de confirmar o entregar."],
       ["Productos activos", activeProducts.length, "Publicados actualmente en el catalogo."],
       ["Productos sin stock", soldOut.length, "Aparecen como agotados si siguen activos."],
       ["Unidades disponibles", totalStock, "Suma de stock en variantes activas."],
@@ -347,6 +361,85 @@
     els.usdToBrlInput.value = rates.usdToBrl;
     els.usdToPygInput.value = rates.usdToPyg;
     renderExchangePreview();
+  }
+
+  async function loadAndRenderOrders(showNotice = false) {
+    state.ordersError = "";
+    try {
+      state.orders = await window.SmartShopSupabase.listOrders();
+      if (showNotice) toast("Pedidos actualizados.");
+    } catch (error) {
+      state.orders = [];
+      state.ordersError = error.message;
+      if (showNotice) toast(error.message, "error");
+    }
+    renderDashboard();
+    renderOrdersTable();
+  }
+
+  function renderOrdersTable() {
+    if (!els.ordersTable) return;
+    if (state.ordersError) {
+      els.ordersTable.innerHTML = `
+        <div class="admin-notice">
+          No se pudo cargar pedidos. Verifica SUPABASE_SERVICE_ROLE_KEY y ejecuta la migracion de pedidos.
+        </div>
+      `;
+      return;
+    }
+
+    const rows = state.orders
+      .map(
+        (order) => `
+          <article class="admin-order-row">
+            <div class="admin-order-main">
+              <div class="admin-product-head">
+                <div>
+                  <strong>${escapeHtml(order.orderNumber || "")}</strong>
+                  <small>${escapeHtml(order.customerName || "")} | ${escapeHtml(order.customerWhatsapp || "")}</small>
+                </div>
+                <span class="status-pill ${getOrderStatusClass(order.status)}">${escapeHtml(getOrderStatusLabel(order.status))}</span>
+              </div>
+              <div class="admin-product-meta">
+                <span>Total: <strong>${formatPrice(order.totalUsd)}</strong></span>
+                <span>Fecha: <strong>${formatDate(order.createdAt)}</strong></span>
+                <span>Items: <strong>${Number(order.items?.length || 0)}</strong></span>
+              </div>
+              <div class="admin-order-items">
+                ${(order.items || [])
+                  .map(
+                    (item) => `
+                      <span>
+                        ${Number(item.quantity || 0)}x ${escapeHtml(item.productName || "")}${item.variantName ? ` | ${escapeHtml(item.variantName)}` : ""}${item.publicCode ? ` | Codigo ${escapeHtml(item.publicCode)}` : ""}
+                      </span>
+                    `
+                  )
+                  .join("")}
+              </div>
+            </div>
+            <div class="admin-order-controls">
+              <label class="admin-field">
+                <span>Estado</span>
+                <select class="admin-input" data-order-status="${escapeHtml(order.id)}">
+                  ${renderOrderStatusOptions(order.status)}
+                </select>
+              </label>
+              <label class="admin-field">
+                <span>Nota interna</span>
+                <input class="admin-input" type="text" value="${escapeHtml(order.adminNotes || "")}" data-order-notes="${escapeHtml(order.id)}">
+              </label>
+              <button class="admin-button is-primary" type="button" data-order-action="save" data-id="${escapeHtml(order.id)}">Guardar</button>
+            </div>
+          </article>
+        `
+      )
+      .join("");
+
+    els.ordersTable.innerHTML = `
+      <div class="admin-order-list">
+        ${rows || `<div class="admin-empty-row">Todavia no hay pedidos.</div>`}
+      </div>
+    `;
   }
 
   async function loadAndRenderAdminUsers() {
@@ -1028,6 +1121,28 @@
     }
   }
 
+  async function handleOrderTableAction(event) {
+    const button = event.target.closest("[data-order-action]");
+    if (!button) return;
+    const orderId = button.dataset.id;
+    const statusInput = els.ordersTable.querySelector(`[data-order-status="${cssEscape(orderId)}"]`);
+    const notesInput = els.ordersTable.querySelector(`[data-order-notes="${cssEscape(orderId)}"]`);
+    setButtonLoading(button, true);
+    try {
+      await window.SmartShopSupabase.updateOrderStatus(orderId, {
+        status: statusInput?.value || "new",
+        admin_notes: notesInput?.value || "",
+      });
+      await loadAndRenderOrders();
+      await loadAndRenderAuditLogs();
+      toast("Pedido actualizado.");
+    } catch (error) {
+      toast(error.message, "error");
+    } finally {
+      setButtonLoading(button, false);
+    }
+  }
+
   async function handleCategoryTableAction(event) {
     const button = event.target.closest("[data-category-action]");
     if (!button) return;
@@ -1546,10 +1661,40 @@
       products: "Productos",
       product_variants: "Variantes",
       product_images: "Imagenes",
+      orders: "Pedidos",
+      order_items: "Items de pedido",
       sellers: "Vendedores",
       store_settings: "Cotizaciones",
     };
     return labels[tableName] || tableName || "Registro";
+  }
+
+  function renderOrderStatusOptions(selectedStatus) {
+    return Object.entries(getOrderStatusLabels())
+      .map(([status, label]) => `<option value="${status}" ${status === selectedStatus ? "selected" : ""}>${label}</option>`)
+      .join("");
+  }
+
+  function getOrderStatusLabels() {
+    return {
+      new: "Recibido",
+      confirmed: "Confirmado",
+      preparing: "En preparacion",
+      ready: "Listo para retirar",
+      delivered: "Entregado",
+      cancelled: "Cancelado",
+    };
+  }
+
+  function getOrderStatusLabel(status) {
+    return getOrderStatusLabels()[status] || getOrderStatusLabels().new;
+  }
+
+  function getOrderStatusClass(status) {
+    if (status === "cancelled") return "is-sold-out";
+    if (status === "delivered" || status === "ready") return "is-active";
+    if (status === "preparing" || status === "confirmed") return "is-inactive";
+    return "";
   }
 
   function getAuditRecordLabel(log) {
@@ -1575,6 +1720,11 @@
     }
     if (log.table_name === "store_settings") {
       return "Cotizacion actualizada";
+    }
+    if (log.table_name === "orders") {
+      return [data.order_number || "Pedido", data.status ? `Estado ${getOrderStatusLabel(data.status)}` : ""]
+        .filter(Boolean)
+        .join(" | ");
     }
     return log.record_id || "";
   }
@@ -1881,5 +2031,10 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
+  }
+
+  function cssEscape(value) {
+    if (window.CSS?.escape) return window.CSS.escape(String(value || ""));
+    return String(value || "").replace(/"/g, '\\"');
   }
 })();

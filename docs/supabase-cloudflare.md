@@ -133,6 +133,31 @@ supabase/migrations/20260827100000_variant_images.sql
 
 Esto agrega `image_url` a `product_variants` para que cada variante pueda tener su propia foto desde el panel admin. Si una variante no tiene foto, la web usa la imagen principal del producto.
 
+## Pedidos
+
+Ejecuta tambien:
+
+```text
+supabase/migrations/20260902100000_orders.sql
+```
+
+Esto crea `orders` y `order_items` para el carrito publico y seguimiento de pedidos. El cliente puede enviar una solicitud desde el carrito y consultar el estado con numero de pedido + WhatsApp. El admin puede ver y actualizar estados desde:
+
+```text
+/admin -> Pedidos
+```
+
+Estados disponibles:
+
+- `new`: Recibido
+- `confirmed`: Confirmado
+- `preparing`: En preparacion
+- `ready`: Listo para retirar
+- `delivered`: Entregado
+- `cancelled`: Cancelado
+
+El Worker usa `SUPABASE_SERVICE_ROLE_KEY` solamente del lado servidor para crear pedidos y consultar estados sin exponer pedidos privados al frontend.
+
 ## Migrar datos actuales
 
 Para generar un SQL desde `public/assets/store-data.js`:

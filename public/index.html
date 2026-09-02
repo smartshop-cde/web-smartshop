@@ -89,10 +89,10 @@
           <span data-icon="user" aria-hidden="true"></span>
           <span data-i18n="nav.login">Iniciar Sesion</span>
         </a>
-        <a class="icon-button cart-link" href="#catalogo" aria-label="Carrito" data-i18n-aria="nav.cartAria">
+        <button id="cartButton" class="icon-button cart-link" type="button" aria-label="Carrito" data-i18n-aria="nav.cartAria">
           <span data-icon="shopping-cart" aria-hidden="true"></span>
           <span class="cart-badge" aria-label="0 productos en carrito" data-i18n-aria="nav.cartCountAria">0</span>
-        </a>
+        </button>
       </nav>
     </header>
 
@@ -261,6 +261,28 @@
         </div>
       </section>
 
+      <section class="section-band order-status-section" id="pedidos" aria-labelledby="orderStatusTitle">
+        <div class="section-title-row">
+          <div>
+            <p class="eyebrow" data-i18n="orders.eyebrow">Seguimiento</p>
+            <h2 id="orderStatusTitle" data-i18n="orders.title">Consulta tu pedido</h2>
+          </div>
+          <span data-i18n="orders.copy">Ingresa el numero de pedido y tu WhatsApp para ver el estado.</span>
+        </div>
+        <form id="orderStatusForm" class="order-status-form">
+          <label>
+            <span data-i18n="orders.numberLabel">Numero de pedido</span>
+            <input id="orderNumberInput" class="filter-input" type="text" autocomplete="off" placeholder="SS-260902-0001">
+          </label>
+          <label>
+            <span data-i18n="orders.whatsappLabel">WhatsApp</span>
+            <input id="orderWhatsappInput" class="filter-input" type="tel" inputmode="tel" autocomplete="tel" placeholder="595...">
+          </label>
+          <button id="orderStatusButton" class="primary-link" type="submit" data-i18n="orders.checkStatus">Consultar estado</button>
+        </form>
+        <div id="orderStatusResult" class="order-status-result" hidden></div>
+      </section>
+
       <section class="section-band" id="vendedores" aria-labelledby="sellerTitle">
         <div class="section-title-row">
           <div>
@@ -332,6 +354,7 @@
       <div class="footer-column">
         <strong data-i18n="footer.help">Ayuda</strong>
         <a href="#vendedores">WhatsApp</a>
+        <a href="#pedidos" data-i18n="footer.orders">Estado de pedido</a>
         <a href="#ubicacion" data-i18n="footer.location">Ubicacion</a>
         <a href="#ubicacion" data-i18n="footer.hours">Horarios</a>
       </div>
@@ -359,6 +382,40 @@
           x
         </button>
         <div id="dialogContent"></div>
+      </div>
+    </dialog>
+
+    <dialog id="cartDialog" class="cart-dialog" aria-labelledby="cartTitle">
+      <div class="cart-shell">
+        <button id="cartClose" class="dialog-close" type="button" aria-label="Cerrar carrito" data-i18n-aria="cart.closeAria">x</button>
+        <div class="cart-head">
+          <p class="eyebrow" data-i18n="cart.eyebrow">Carrito</p>
+          <h2 id="cartTitle" data-i18n="cart.title">Tu pedido SmartShop</h2>
+          <p data-i18n="cart.copy">Agrega productos y envia la solicitud para que nuestro equipo confirme disponibilidad.</p>
+        </div>
+        <div id="cartItems" class="cart-items"></div>
+        <div id="cartEmpty" class="empty-state" hidden>
+          <strong data-i18n="cart.emptyTitle">Tu carrito esta vacio.</strong>
+          <p data-i18n="cart.emptyText">Elige productos del catalogo para preparar tu pedido.</p>
+          <a class="ghost-button" href="#catalogo" data-cart-close data-i18n="cart.goCatalog">Ver catalogo</a>
+        </div>
+        <div id="cartSummary" class="cart-summary"></div>
+        <form id="checkoutForm" class="checkout-form">
+          <label class="admin-field">
+            <span data-i18n="cart.nameLabel">Nombre</span>
+            <input id="checkoutNameInput" class="admin-input" type="text" autocomplete="name" required>
+          </label>
+          <label class="admin-field">
+            <span data-i18n="cart.whatsappLabel">WhatsApp</span>
+            <input id="checkoutWhatsappInput" class="admin-input" type="tel" inputmode="tel" autocomplete="tel" placeholder="595..." required>
+          </label>
+          <label class="admin-field is-wide">
+            <span data-i18n="cart.notesLabel">Nota opcional</span>
+            <textarea id="checkoutNotesInput" class="admin-input admin-textarea" rows="3" data-i18n-placeholder="cart.notesPlaceholder" placeholder="Ej: Paso a retirar hoy por la tarde."></textarea>
+          </label>
+          <button id="checkoutButton" class="primary-link is-wide" type="submit" data-i18n="cart.submit">Enviar pedido</button>
+        </form>
+        <div id="checkoutResult" class="checkout-result" hidden></div>
       </div>
     </dialog>
   </body>
