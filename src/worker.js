@@ -11,7 +11,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/orders") {
-      return handleOrders(request, env);
+      return handleOrders(request, env, ctx);
     }
 
     if (url.pathname === "/api/orders/status") {
@@ -51,7 +51,7 @@ export default {
   },
 };
 
-async function handleOrders(request, env) {
+async function handleOrders(request, env, ctx) {
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: securityHeaders() });
   }
@@ -94,6 +94,7 @@ async function handleOrders(request, env) {
 
   try {
     const order = await createCustomerOrder(env, orderInput);
+    ctx.waitUntil(sendOrderNotificationEmail(env, order));
     return json({ success: true, data: order }, 201);
   } catch (error) {
     return errorResponse(error, {
@@ -273,7 +274,7 @@ function validateOrderInput(input) {
   const items = Array.isArray(input.items) ? input.items : [];
 
   if (customerName.length < 2) throw new Error("Escribe tu nombre para crear el pedido.");
-  if (!customerWhatsapp || customerWhatsapp.length < 8 || customerWhatsapp.length > 18) {
+  if (!customerWhatsapp || customerWhatsapp.length < 8 || customerWhatsapp.length > 20) {
     throw new Error("Escribe un WhatsApp valido para crear el pedido.");
   }
   if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
@@ -348,6 +349,98 @@ async function createCustomerOrder(env, input) {
     ...order,
     items: Array.isArray(insertedItems) ? insertedItems : [],
   });
+}
+
+async function sendOrderNotificationEmail(env, order) {
+  if (!env.ORDER_EMAIL || !env.ORDER_NOTIFY_TO || !env.ORDER_NOTIFY_FROM) return;
+
+  try {
+    await env.ORDER_EMAIL.send({
+      to: env.ORDER_NOTIFY_TO,
+      from: env.ORDER_NOTIFY_FROM,
+      subject: `Nuevo pedido SmartShop ${order.orderNumber}`,
+      text: buildOrderNotificationText(order),
+      html: buildOrderNotificationHtml(order),
+    });
+  } catch (error) {
+    console.warn("No se pudo enviar la notificacion de pedido.", error);
+  }
+}
+
+function buildOrderNotificationText(order) {
+  const items = (order.items || [])
+    .map((item) =>
+      [
+        `${item.quantity}x ${item.productName}`,
+        item.variantName,
+        item.publicCode ? `Codigo ${item.publicCode}` : "",
+        `US$ ${formatMoney(item.subtotalUsd)}`,
+      ]
+        .filter(Boolean)
+        .join(" | ")
+    )
+    .join("\n");
+
+  return [
+    `Nuevo pedido SmartShop: ${order.orderNumber}`,
+    "",
+    `Cliente: ${order.customerName}`,
+    `WhatsApp: ${order.customerWhatsapp || ""}`,
+    `Abrir chat: ${getCustomerWhatsappUrl(order.customerWhatsapp)}`,
+    `Total: US$ ${formatMoney(order.totalUsd)}`,
+    `Estado: ${order.statusLabel || getOrderStatusLabel(order.status)}`,
+    "",
+    "Productos:",
+    items || "Sin items",
+    "",
+    order.notes ? `Nota del cliente: ${order.notes}` : "",
+    "Revisar en /admin -> Pedidos",
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
+}
+
+function buildOrderNotificationHtml(order) {
+  const items = (order.items || [])
+    .map(
+      (item) => `
+        <tr>
+          <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;">${Number(item.quantity || 0)}</td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;">
+            <strong>${escapeEmailHtml(item.productName || "")}</strong>
+            ${item.variantName ? `<br><span style="color:#64748b;">${escapeEmailHtml(item.variantName)}</span>` : ""}
+            ${item.publicCode ? `<br><span style="color:#64748b;">Codigo ${escapeEmailHtml(item.publicCode)}</span>` : ""}
+          </td>
+          <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;">US$ ${formatMoney(item.subtotalUsd)}</td>
+        </tr>
+      `
+    )
+    .join("");
+
+  return `
+    <div style="font-family:Arial,sans-serif;color:#0f172a;line-height:1.5;">
+      <h1 style="margin:0 0 8px;font-size:24px;">Nuevo pedido SmartShop</h1>
+      <p style="margin:0 0 18px;color:#334155;">Pedido <strong>${escapeEmailHtml(order.orderNumber || "")}</strong></p>
+      <div style="margin-bottom:18px;padding:14px;border:1px solid #dbeafe;border-radius:12px;background:#f8fbff;">
+        <p style="margin:0;"><strong>Cliente:</strong> ${escapeEmailHtml(order.customerName || "")}</p>
+        <p style="margin:0;"><strong>WhatsApp:</strong> <a href="${escapeEmailHtml(getCustomerWhatsappUrl(order.customerWhatsapp))}">${escapeEmailHtml(order.customerWhatsapp || "")}</a></p>
+        <p style="margin:0;"><strong>Estado:</strong> ${escapeEmailHtml(order.statusLabel || getOrderStatusLabel(order.status))}</p>
+        <p style="margin:0;"><strong>Total:</strong> US$ ${formatMoney(order.totalUsd)}</p>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:18px;">
+        <thead>
+          <tr>
+            <th style="padding:8px 10px;text-align:left;background:#eff6ff;">Cant.</th>
+            <th style="padding:8px 10px;text-align:left;background:#eff6ff;">Producto</th>
+            <th style="padding:8px 10px;text-align:right;background:#eff6ff;">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>${items || ""}</tbody>
+      </table>
+      ${order.notes ? `<p style="margin:0 0 18px;"><strong>Nota del cliente:</strong><br>${escapeEmailHtml(order.notes)}</p>` : ""}
+      <p style="margin:0;color:#64748b;">Revisar en /admin -> Pedidos</p>
+    </div>
+  `;
 }
 
 async function loadOrderVariants(env, ids) {
@@ -1041,7 +1134,12 @@ function isNotFoundError(error) {
 }
 
 function normalizePhone(value) {
-  return String(value || "").replace(/\D/g, "").slice(0, 18);
+  return String(value || "").replace(/\D/g, "").slice(0, 20);
+}
+
+function getCustomerWhatsappUrl(phone) {
+  const cleanPhone = normalizePhone(phone);
+  return cleanPhone ? `https://wa.me/${cleanPhone}` : "";
 }
 
 function normalizeOrderNumber(value) {
@@ -1054,6 +1152,21 @@ function isUuid(value) {
 
 function roundMoney(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
+}
+
+function formatMoney(value) {
+  return roundMoney(value).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function escapeEmailHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function getBearerToken(request) {

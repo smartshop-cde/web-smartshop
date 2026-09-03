@@ -193,11 +193,15 @@ Environment variables:
   SUPABASE_URL (build y runtime)
   SUPABASE_ANON_KEY (build/publica)
   SUPABASE_SERVICE_ROLE_KEY (secret runtime, no publico)
+  ORDER_NOTIFY_TO (runtime, smartshopcde@gmail.com)
+  ORDER_NOTIFY_FROM (runtime, pedidos@smartshop.com.py)
 ```
 
-`wrangler.jsonc` publica el Worker `smartshop` con `assets.directory = "./dist"`. El Worker solo intercepta `/api/*` para traducir contenido dinamico mediante `/api/translate`; los assets estaticos siguen sirviendose desde `dist/`.
+`wrangler.jsonc` publica el Worker `smartshop` con `assets.directory = "./dist"`. El Worker intercepta `/api/*` para traduccion, pedidos y funciones privadas del panel; los assets estaticos siguen sirviendose desde `dist/`.
 
 La traduccion dinamica usa Cloudflare Workers AI con el modelo `@cf/meta/m2m100-1.2b` mediante el binding `AI`. No requiere una API key de Google.
+
+La notificacion de pedidos usa Cloudflare Email Service mediante el binding `ORDER_EMAIL`. Al crear un pedido, el Worker intenta enviar un email a `smartshopcde@gmail.com` desde `pedidos@smartshop.com.py`. Si Email Service no esta configurado todavia, el pedido se guarda igual y el error queda solo en logs del Worker.
 
 El script de build copia `public/` a `dist/`, crea `dist/admin/index.html` para que `/admin` funcione como ruta estatica y genera `assets/supabase-env.js` con las variables publicas de Supabase.
 
@@ -330,6 +334,8 @@ El catalogo publico permite alternar entre vista de cards y vista de lista. En c
 
 La web publica permite agregar productos al carrito y enviar una solicitud de pedido. El cliente recibe un numero del tipo `SS-YYMMDD-0000` y puede consultar el estado desde la seccion `Consulta tu pedido`.
 
+El WhatsApp del cliente acepta formato internacional con `+`, espacios, guiones o parentesis. Antes de guardar y consultar pedidos, el sistema lo normaliza a solo numeros para abrir el chat directo con `wa.me`.
+
 El panel `/admin -> Pedidos` permite ver pedidos, revisar items y cambiar estados:
 
 - `Recibido`
@@ -340,6 +346,8 @@ El panel `/admin -> Pedidos` permite ver pedidos, revisar items y cambiar estado
 - `Cancelado`
 
 Esta etapa no implementa pagos, checkout completo ni facturacion. El pedido no descuenta stock automaticamente; sirve como solicitud comercial para que el equipo confirme disponibilidad y actualice stock desde el admin cuando corresponda.
+
+Al recibir un pedido, el Worker intenta enviar una notificacion a `smartshopcde@gmail.com` con el detalle del pedido y link directo al WhatsApp del cliente.
 
 ## Checks
 

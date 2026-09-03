@@ -9,11 +9,19 @@
     "run_worker_first": ["/api/*"]
   },
   "vars": {
-    "SUPABASE_URL": "https://ujydiaksthrjgvkffego.supabase.co"
+    "SUPABASE_URL": "https://ujydiaksthrjgvkffego.supabase.co",
+    "ORDER_NOTIFY_TO": "smartshopcde@gmail.com",
+    "ORDER_NOTIFY_FROM": "pedidos@smartshop.com.py"
   },
   "secrets": {
     "required": ["SUPABASE_SERVICE_ROLE_KEY"]
   },
+  "send_email": [
+    {
+      "name": "ORDER_EMAIL",
+      "destination_address": "smartshopcde@gmail.com"
+    }
+  ],
   "ai": {
     "binding": "AI"
   }

@@ -396,7 +396,10 @@
               <div class="admin-product-head">
                 <div>
                   <strong>${escapeHtml(order.orderNumber || "")}</strong>
-                  <small>${escapeHtml(order.customerName || "")} | ${escapeHtml(order.customerWhatsapp || "")}</small>
+                  <small>
+                    ${escapeHtml(order.customerName || "")} | ${escapeHtml(order.customerWhatsapp || "")}
+                    ${order.customerWhatsapp ? `<a class="admin-whatsapp-link" href="${getCustomerWhatsAppUrl(order.customerWhatsapp)}" target="_blank" rel="noopener">Abrir WhatsApp</a>` : ""}
+                  </small>
                 </div>
                 <span class="status-pill ${getOrderStatusClass(order.status)}">${escapeHtml(getOrderStatusLabel(order.status))}</span>
               </div>
@@ -1953,6 +1956,11 @@
 
   function formatPrice(value) {
     return formatUsdPrice(value);
+  }
+
+  function getCustomerWhatsAppUrl(phone) {
+    const cleanPhone = String(phone || "").replace(/\D/g, "");
+    return `https://wa.me/${cleanPhone}`;
   }
 
   function getExchangeRates() {

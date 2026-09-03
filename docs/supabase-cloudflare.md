@@ -81,17 +81,44 @@ Root directory: /
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
-    "run_worker_first": ["/api/*"]
-  },
-  "ai": {
-    "binding": "AI"
+      "run_worker_first": ["/api/*"]
+    },
+    "vars": {
+      "SUPABASE_URL": "https://ujydiaksthrjgvkffego.supabase.co",
+      "ORDER_NOTIFY_TO": "smartshopcde@gmail.com",
+      "ORDER_NOTIFY_FROM": "pedidos@smartshop.com.py"
+    },
+    "send_email": [
+      {
+        "name": "ORDER_EMAIL",
+        "destination_address": "smartshopcde@gmail.com"
+      }
+    ],
+    "ai": {
+      "binding": "AI"
+    }
   }
-}
 ```
 
-El Worker solo corre antes para `/api/*`. La ruta `/api/translate` usa Cloudflare Workers AI con el modelo `@cf/meta/m2m100-1.2b`. El resto del sitio sigue funcionando como assets estaticos.
+El Worker solo corre antes para `/api/*`. La ruta `/api/translate` usa Cloudflare Workers AI con el modelo `@cf/meta/m2m100-1.2b`. Las rutas de pedidos usan Supabase y el binding `ORDER_EMAIL` para avisar nuevos pedidos por correo. El resto del sitio sigue funcionando como assets estaticos.
 
 El build copia `public/` a `dist/`, genera `dist/admin/index.html` para la ruta `/admin` y escribe `dist/assets/supabase-env.js` con las variables publicas de Supabase.
+
+## Notificaciones por email
+
+Cada pedido nuevo intenta enviar un aviso a:
+
+```text
+smartshopcde@gmail.com
+```
+
+El remitente configurado es:
+
+```text
+pedidos@smartshop.com.py
+```
+
+Para que Cloudflare pueda enviar, activa Cloudflare Email Service / Email Sending para `smartshop.com.py` y verifica el remitente o dominio. Si Email Service no esta listo, los pedidos se siguen guardando normalmente; solo no llega la notificacion.
 
 ## Auditoria
 
