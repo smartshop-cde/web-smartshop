@@ -66,6 +66,16 @@
         <button type="button" data-language-option="pt" aria-pressed="false">PT</button>
       </div>
 
+      <div class="header-actions" aria-label="Cuenta y carrito" data-i18n-aria="nav.customerActionsAria">
+        <button id="accountButton" class="icon-button login-link" type="button" aria-label="Iniciar sesion" data-i18n-aria="nav.loginAria">
+          <span data-icon="user" aria-hidden="true"></span>
+        </button>
+        <button id="cartButton" class="icon-button cart-link" type="button" aria-label="Carrito" data-i18n-aria="nav.cartAria">
+          <span data-icon="shopping-cart" aria-hidden="true"></span>
+          <span class="cart-badge" aria-label="0 productos en carrito" data-i18n-aria="nav.cartCountAria">0</span>
+        </button>
+      </div>
+
       <button id="mobileMenuToggle" class="icon-button mobile-menu-toggle" type="button" aria-label="Abrir menu" data-i18n-aria="nav.menuAria" aria-controls="siteNav" aria-expanded="false">
         <span data-icon="menu" aria-hidden="true"></span>
       </button>
@@ -82,17 +92,6 @@
           <div id="navSellerList" class="nav-dropdown" aria-label="Vendedores disponibles" data-i18n-aria="nav.sellersAria"></div>
         </div>
         <a href="#ubicacion" data-i18n="nav.location">Ubicacion</a>
-        <a class="icon-button" href="#catalogo" aria-label="Favoritos" data-i18n-aria="nav.favoritesAria">
-          <span data-icon="heart" aria-hidden="true"></span>
-        </a>
-        <a class="icon-button login-link" href="/admin" aria-label="Iniciar sesion en el panel privado" data-i18n-aria="nav.loginAria">
-          <span data-icon="user" aria-hidden="true"></span>
-          <span data-i18n="nav.login">Iniciar Sesion</span>
-        </a>
-        <button id="cartButton" class="icon-button cart-link" type="button" aria-label="Carrito" data-i18n-aria="nav.cartAria">
-          <span data-icon="shopping-cart" aria-hidden="true"></span>
-          <span class="cart-badge" aria-label="0 productos en carrito" data-i18n-aria="nav.cartCountAria">0</span>
-        </button>
       </nav>
     </header>
 
@@ -416,6 +415,18 @@
           <button id="checkoutButton" class="primary-link is-wide" type="submit" data-i18n="cart.submit">Enviar pedido</button>
         </form>
         <div id="checkoutResult" class="checkout-result" hidden></div>
+      </div>
+    </dialog>
+
+    <dialog id="accountDialog" class="cart-dialog account-dialog" aria-labelledby="accountTitle">
+      <div class="cart-shell account-shell">
+        <button id="accountClose" class="dialog-close" type="button" aria-label="Cerrar cuenta" data-i18n-aria="account.closeAria">x</button>
+        <div class="cart-head">
+          <p class="eyebrow" data-i18n="account.eyebrow">Cuenta SmartShop</p>
+          <h2 id="accountTitle" data-i18n="account.title">Mi cuenta</h2>
+          <p data-i18n="account.copy">Guarda tu carrito y tus favoritos para volver cuando quieras.</p>
+        </div>
+        <div id="accountContent" class="account-content"></div>
       </div>
     </dialog>
   </body>

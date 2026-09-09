@@ -8,6 +8,7 @@
   const LANGUAGE_STORAGE_KEY = "smartshop-language";
   const TRANSLATION_CACHE_STORAGE_KEY = "smartshop-translation-cache-v2";
   const CART_STORAGE_KEY = "smartshop-cart-v1";
+  const FAVORITES_STORAGE_KEY = "smartshop-favorites-v1";
   const DEFAULT_LANGUAGE = "es";
   const HERO_SLIDES = [
     "assets/hero-slides/slide-01.png",
@@ -51,7 +52,8 @@
       "nav.categoriesAria": "Categorias disponibles",
       "nav.sellersAria": "Vendedores disponibles",
       "nav.favoritesAria": "Favoritos",
-      "nav.loginAria": "Iniciar sesion en el panel privado",
+      "nav.loginAria": "Abrir mi cuenta",
+      "nav.customerActionsAria": "Cuenta y carrito",
       "nav.cartAria": "Carrito",
       "nav.cartCountAria": "0 productos en carrito",
       "nav.home": "Inicio",
@@ -93,6 +95,49 @@
       "cart.successCopy": "Guarda este numero para consultar el estado.",
       "cart.error": "No pudimos crear el pedido.",
       "cart.stockLimit": "No hay mas stock disponible para este producto.",
+      "account.closeAria": "Cerrar cuenta",
+      "account.eyebrow": "Cuenta SmartShop",
+      "account.title": "Mi cuenta",
+      "account.copy": "Guarda tu carrito y tus favoritos para volver cuando quieras.",
+      "account.loginTab": "Iniciar sesion",
+      "account.registerTab": "Crear cuenta",
+      "account.email": "Email",
+      "account.password": "Contrasena",
+      "account.confirmPassword": "Repetir contrasena",
+      "account.fullName": "Nombre y apellido",
+      "account.whatsapp": "WhatsApp",
+      "account.login": "Entrar",
+      "account.create": "Crear mi cuenta",
+      "account.forgot": "Olvide mi contrasena",
+      "account.reset": "Enviar enlace de recuperacion",
+      "account.resetHelp": "Te enviaremos un enlace seguro para crear una contrasena nueva.",
+      "account.resetSent": "Revisa tu email para continuar.",
+      "account.newPassword": "Nueva contrasena",
+      "account.savePassword": "Guardar contrasena",
+      "account.passwordSaved": "Tu contrasena fue actualizada.",
+      "account.passwordMismatch": "Las contrasenas no coinciden.",
+      "account.passwordLength": "La contrasena debe tener al menos 8 caracteres.",
+      "account.loginSuccess": "Sesion iniciada.",
+      "account.registerSuccess": "Cuenta creada. Revisa tu email para confirmarla.",
+      "account.profileTitle": "Tus datos",
+      "account.saveProfile": "Guardar datos",
+      "account.profileSaved": "Datos guardados.",
+      "account.logout": "Cerrar sesion",
+      "account.cartSaved": "Carrito guardado",
+      "account.favoritesTitle": "Tus favoritos",
+      "account.favoritesEmpty": "Todavia no agregaste productos a favoritos.",
+      "account.localNote": "Sin iniciar sesion se guardan solamente en este dispositivo.",
+      "account.syncNote": "Tu carrito y tus favoritos estan sincronizados con tu cuenta.",
+      "account.adminPanel": "Abrir panel administrativo",
+      "account.showPassword": "Mostrar contrasena",
+      "account.hidePassword": "Ocultar contrasena",
+      "account.openProduct": "Ver producto",
+      "account.removeFavorite": "Quitar favorito",
+      "account.loading": "Cargando tu cuenta...",
+      "account.error": "No pudimos completar la operacion.",
+      "favorite.added": "Producto guardado en favoritos.",
+      "favorite.removed": "Producto quitado de favoritos.",
+      "favorite.local": "Se guardo en este dispositivo. Inicia sesion para sincronizarlo.",
       "hero.title1": "Descubrí una manera Smart",
       "hero.title2": "para comprar",
       "hero.lead":
@@ -198,6 +243,7 @@
       "product.consultRestock": "Consultar reposicion",
       "product.addCart": "Agregar",
       "product.addFavorite": "Agregar {name} a favoritos",
+      "product.removeFavorite": "Quitar {name} de favoritos",
       "product.code": "Codigo",
       "product.view": "Ver producto",
       "product.brand": "Marca",
@@ -240,7 +286,8 @@
       "nav.categoriesAria": "Categorias disponíveis",
       "nav.sellersAria": "Vendedores disponíveis",
       "nav.favoritesAria": "Favoritos",
-      "nav.loginAria": "Entrar no painel privado",
+      "nav.loginAria": "Abrir minha conta",
+      "nav.customerActionsAria": "Conta e carrinho",
       "nav.cartAria": "Carrinho",
       "nav.cartCountAria": "0 produtos no carrinho",
       "nav.home": "Inicio",
@@ -282,6 +329,49 @@
       "cart.successCopy": "Guarde este numero para consultar o estado.",
       "cart.error": "Não conseguimos criar o pedido.",
       "cart.stockLimit": "Não há mais estoque disponível para este produto.",
+      "account.closeAria": "Fechar conta",
+      "account.eyebrow": "Conta SmartShop",
+      "account.title": "Minha conta",
+      "account.copy": "Salve seu carrinho e seus favoritos para voltar quando quiser.",
+      "account.loginTab": "Entrar",
+      "account.registerTab": "Criar conta",
+      "account.email": "E-mail",
+      "account.password": "Senha",
+      "account.confirmPassword": "Repetir senha",
+      "account.fullName": "Nome e sobrenome",
+      "account.whatsapp": "WhatsApp",
+      "account.login": "Entrar",
+      "account.create": "Criar minha conta",
+      "account.forgot": "Esqueci minha senha",
+      "account.reset": "Enviar link de recuperação",
+      "account.resetHelp": "Enviaremos um link seguro para você criar uma nova senha.",
+      "account.resetSent": "Confira seu e-mail para continuar.",
+      "account.newPassword": "Nova senha",
+      "account.savePassword": "Salvar senha",
+      "account.passwordSaved": "Sua senha foi atualizada.",
+      "account.passwordMismatch": "As senhas não coincidem.",
+      "account.passwordLength": "A senha deve ter pelo menos 8 caracteres.",
+      "account.loginSuccess": "Sessão iniciada.",
+      "account.registerSuccess": "Conta criada. Confira seu e-mail para confirmá-la.",
+      "account.profileTitle": "Seus dados",
+      "account.saveProfile": "Salvar dados",
+      "account.profileSaved": "Dados salvos.",
+      "account.logout": "Sair",
+      "account.cartSaved": "Carrinho salvo",
+      "account.favoritesTitle": "Seus favoritos",
+      "account.favoritesEmpty": "Você ainda não adicionou produtos aos favoritos.",
+      "account.localNote": "Sem entrar, eles ficam salvos somente neste dispositivo.",
+      "account.syncNote": "Seu carrinho e seus favoritos estão sincronizados com sua conta.",
+      "account.adminPanel": "Abrir painel administrativo",
+      "account.showPassword": "Mostrar senha",
+      "account.hidePassword": "Ocultar senha",
+      "account.openProduct": "Ver produto",
+      "account.removeFavorite": "Remover favorito",
+      "account.loading": "Carregando sua conta...",
+      "account.error": "Não conseguimos concluir a operação.",
+      "favorite.added": "Produto salvo nos favoritos.",
+      "favorite.removed": "Produto removido dos favoritos.",
+      "favorite.local": "Foi salvo neste dispositivo. Entre para sincronizá-lo.",
       "hero.title1": "Descubra uma forma Smart",
       "hero.title2": "de comprar",
       "hero.lead":
@@ -387,6 +477,7 @@
       "product.consultRestock": "Consultar reposição",
       "product.addCart": "Adicionar",
       "product.addFavorite": "Adicionar {name} aos favoritos",
+      "product.removeFavorite": "Remover {name} dos favoritos",
       "product.code": "Código",
       "product.view": "Ver produto",
       "product.brand": "Marca",
@@ -427,12 +518,18 @@
   let searchTimer = 0;
   let searchRequestId = 0;
   let heroSliderTimer = 0;
+  let customerCartSyncTimer = 0;
 
   redirectAuthCallbackToAdmin();
 
   const state = {
     language: getInitialLanguage(),
     cart: loadCart(),
+    favoriteIds: new Set(loadFavoriteIds()),
+    customerSession: null,
+    customerProfile: null,
+    customerReady: false,
+    accountMode: isCustomerRecoveryFlow() ? "recovery" : "login",
     category: "Todos",
     onlyAvailable: false,
     brand: "Todas",
@@ -454,8 +551,14 @@
   function redirectAuthCallbackToAdmin() {
     const params = getAuthCallbackParams();
     const type = String(params.get("type") || "").toLowerCase();
+    if (params.get("account") === "customer") return;
     if (!["invite", "recovery"].includes(type) || window.location.pathname.startsWith("/admin")) return;
     window.location.replace(`/admin${window.location.search || ""}${window.location.hash || ""}`);
+  }
+
+  function isCustomerRecoveryFlow() {
+    const params = getAuthCallbackParams();
+    return params.get("account") === "customer" && String(params.get("type") || "").toLowerCase() === "recovery";
   }
 
   function getAuthCallbackParams() {
@@ -472,7 +575,9 @@
     applyTranslations();
     renderAll();
     await loadCatalog();
+    await initializeCustomerAccount();
     renderAll();
+    if (getAuthCallbackParams().get("account") === "customer") openAccountDialog();
   }
 
   function cacheElements() {
@@ -520,6 +625,10 @@
     els.footerTiktokLink = document.querySelector("#footerTiktokLink");
     els.heroWhatsappLink = document.querySelector("#heroWhatsappLink");
     els.floatingWhatsapp = document.querySelector("#floatingWhatsapp");
+    els.accountButton = document.querySelector("#accountButton");
+    els.accountDialog = document.querySelector("#accountDialog");
+    els.accountClose = document.querySelector("#accountClose");
+    els.accountContent = document.querySelector("#accountContent");
     els.cartButton = document.querySelector("#cartButton");
     els.cartBadges = Array.from(document.querySelectorAll(".cart-badge"));
     els.cartDialog = document.querySelector("#cartDialog");
@@ -679,6 +788,13 @@
     els.featuredGrid.addEventListener("click", handleProductDetailClick);
     document.addEventListener("click", handleCartClick);
     document.addEventListener("change", handleCartQuantityChange);
+    els.accountButton.addEventListener("click", () => openAccountDialog());
+    els.accountClose.addEventListener("click", () => closeAccountDialog());
+    els.accountDialog.addEventListener("click", (event) => {
+      if (event.target === els.accountDialog) closeAccountDialog();
+    });
+    els.accountContent.addEventListener("click", handleAccountClick);
+    els.accountContent.addEventListener("submit", handleAccountSubmit);
     els.cartButton.addEventListener("click", () => openCartDialog());
     els.cartClose.addEventListener("click", () => closeCartDialog());
     els.cartDialog.addEventListener("click", (event) => {
@@ -694,6 +810,7 @@
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && els.productDialog.open) closeProductDialog();
       if (event.key === "Escape" && els.cartDialog.open) closeCartDialog();
+      if (event.key === "Escape" && els.accountDialog.open) closeAccountDialog();
     });
   }
 
@@ -819,6 +936,7 @@
     renderFeaturedProducts();
     renderProducts();
     renderCart();
+    renderAccount();
     injectStructuredData();
     queueProductTranslations();
   }
@@ -1155,12 +1273,13 @@
     const variant = product.variant || "";
     const description = getTranslatedText(product.description);
     const cartVariant = getDefaultCartVariant(product);
+    const isFavorite = state.favoriteIds.has(product.id);
 
     return `
       <article class="product-card ${stockStatus.className}${options.compact ? " is-compact" : ""}">
         <div class="product-image">
           ${product.badge ? `<span class="product-badge">${escapeHtml(product.badge)}</span>` : ""}
-          <button class="wishlist-button" type="button" aria-label="${escapeHtml(t("product.addFavorite", { name: product.name }))}">${iconSvg("heart")}</button>
+          <button class="wishlist-button${isFavorite ? " is-active" : ""}" type="button" data-favorite-product="${escapeHtml(product.id)}" aria-label="${escapeHtml(t(isFavorite ? "product.removeFavorite" : "product.addFavorite", { name: product.name }))}" aria-pressed="${isFavorite}">${iconSvg("heart")}</button>
           <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy" decoding="async" width="760" height="760" onerror="this.parentElement.classList.add('image-fallback'); this.remove();">
         </div>
         <div class="product-body">
@@ -1342,7 +1461,415 @@
     }
   }
 
+  async function initializeCustomerAccount() {
+    state.customerReady = false;
+    if (!window.SmartShopSupabase?.isConfigured()) {
+      state.customerReady = true;
+      renderAccount();
+      return;
+    }
+    try {
+      const session = await window.SmartShopSupabase?.getSession();
+      state.customerSession = session || null;
+      state.customerProfile = null;
+      if (!session?.user) return;
+
+      const [profile, savedCart, savedFavorites] = await Promise.all([
+        window.SmartShopSupabase.getCustomerProfile(),
+        window.SmartShopSupabase.loadCustomerCart(),
+        window.SmartShopSupabase.loadCustomerFavorites(),
+      ]);
+      state.customerProfile = profile;
+      state.cart = mergeCustomerCart(state.cart, savedCart);
+      state.favoriteIds = new Set([...state.favoriteIds, ...savedFavorites]);
+      syncCartWithCatalog();
+      saveLocalCart();
+      saveLocalFavorites();
+      prefillCustomerFields();
+
+      await Promise.allSettled([
+        window.SmartShopSupabase.saveCustomerCart(serializeCustomerCart()),
+        window.SmartShopSupabase.saveCustomerFavorites([...state.favoriteIds]),
+      ]);
+    } catch (error) {
+      console.warn("No pudimos sincronizar la cuenta del cliente.", error);
+    } finally {
+      state.customerReady = true;
+      renderCart();
+      renderProducts();
+      renderFeaturedProducts();
+      renderAccount();
+    }
+  }
+
+  function mergeCustomerCart(localItems, savedItems) {
+    const merged = new Map();
+    [...(Array.isArray(savedItems) ? savedItems : []), ...(Array.isArray(localItems) ? localItems : [])].forEach(
+      (item) => {
+        if (!item?.variantId || !item?.productId) return;
+        const current = merged.get(item.variantId);
+        merged.set(item.variantId, {
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: Math.max(Number(current?.quantity || 0), Number(item.quantity || 1)),
+        });
+      },
+    );
+
+    return [...merged.values()]
+      .map((item) => {
+        const line = buildCartLine(item.productId, item.variantId);
+        if (!line || line.stock <= 0) return null;
+        return { ...line, quantity: Math.max(1, Math.min(item.quantity, line.stock)) };
+      })
+      .filter(Boolean);
+  }
+
+  function serializeCustomerCart() {
+    return state.cart.map((item) => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      quantity: item.quantity,
+    }));
+  }
+
+  function openAccountDialog() {
+    renderAccount();
+    if (typeof els.accountDialog.showModal === "function") {
+      els.accountDialog.showModal();
+    } else {
+      els.accountDialog.setAttribute("open", "");
+    }
+    window.setTimeout(() => els.accountContent.querySelector("input")?.focus(), 40);
+  }
+
+  function closeAccountDialog() {
+    if (typeof els.accountDialog.close === "function") {
+      els.accountDialog.close();
+    } else {
+      els.accountDialog.removeAttribute("open");
+    }
+  }
+
+  function renderAccount() {
+    if (!els.accountContent || !els.accountButton) return;
+    const isSignedIn = Boolean(state.customerSession?.user);
+    els.accountButton.classList.toggle("has-session", isSignedIn);
+    els.accountButton.setAttribute(
+      "aria-label",
+      isSignedIn ? `${t("account.title")}: ${state.customerSession.user.email || ""}` : t("nav.loginAria"),
+    );
+
+    if (!state.customerReady) {
+      els.accountContent.innerHTML = `<div class="account-loading" aria-live="polite">${escapeHtml(t("account.loading"))}</div>`;
+      return;
+    }
+
+    els.accountContent.innerHTML = isSignedIn ? renderSignedInAccount() : renderGuestAccount();
+  }
+
+  function renderSignedInAccount() {
+    const profile = state.customerProfile || {};
+    const email = state.customerSession?.user?.email || "";
+    const cartCount = state.cart.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+    const favoriteProducts = products.filter((product) => state.favoriteIds.has(product.id));
+    const initial = String(profile.fullName || email || "S").trim().charAt(0).toUpperCase();
+    const adminLink = profile.role === "admin"
+      ? `<a class="ghost-button account-admin-link" href="/admin">${escapeHtml(t("account.adminPanel"))}</a>`
+      : "";
+
+    return `
+      <div class="account-identity">
+        <span class="account-avatar" aria-hidden="true">${escapeHtml(initial)}</span>
+        <div><strong>${escapeHtml(profile.fullName || email)}</strong><small>${escapeHtml(email)}</small></div>
+        <button class="ghost-button account-logout" type="button" data-account-action="logout">${escapeHtml(t("account.logout"))}</button>
+      </div>
+      <div class="account-stats" aria-label="${escapeHtml(t("account.syncNote"))}">
+        <div><strong>${cartCount}</strong><span>${escapeHtml(t("account.cartSaved"))}</span></div>
+        <div><strong>${favoriteProducts.length}</strong><span>${escapeHtml(t("account.favoritesTitle"))}</span></div>
+      </div>
+      <p class="account-sync-note">${escapeHtml(t("account.syncNote"))}</p>
+      <form class="account-form" data-account-form="profile">
+        <h3>${escapeHtml(t("account.profileTitle"))}</h3>
+        <div class="account-form-grid">
+          <label class="admin-field"><span>${escapeHtml(t("account.fullName"))}</span><input class="admin-input" name="fullName" type="text" autocomplete="name" maxlength="120" value="${escapeHtml(profile.fullName || "")}" required></label>
+          <label class="admin-field"><span>${escapeHtml(t("account.whatsapp"))}</span><input class="admin-input" name="whatsapp" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" value="${escapeHtml(profile.whatsapp || "")}" required></label>
+        </div>
+        <button class="primary-link" type="submit">${escapeHtml(t("account.saveProfile"))}</button>
+        <p class="account-status" role="status"></p>
+      </form>
+      <section class="account-favorites" aria-labelledby="accountFavoritesTitle">
+        <div class="account-section-head"><h3 id="accountFavoritesTitle">${escapeHtml(t("account.favoritesTitle"))}</h3>${adminLink}</div>
+        ${favoriteProducts.length ? favoriteProducts.map(renderAccountFavorite).join("") : `<p class="account-empty">${escapeHtml(t("account.favoritesEmpty"))}</p>`}
+      </section>
+    `;
+  }
+
+  function renderAccountFavorite(product) {
+    return `
+      <article class="account-favorite-item">
+        <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy" decoding="async">
+        <div><strong>${escapeHtml(product.name)}</strong><small>${formatUsdPrice(product.price)}</small></div>
+        <div class="account-favorite-actions">
+          <button class="icon-button" type="button" data-account-product="${escapeHtml(product.id)}" aria-label="${escapeHtml(t("account.openProduct"))}">${iconSvg("eye")}</button>
+          <button class="icon-button is-danger" type="button" data-favorite-product="${escapeHtml(product.id)}" aria-label="${escapeHtml(t("account.removeFavorite"))}">${iconSvg("trash-2")}</button>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderGuestAccount() {
+    if (state.accountMode === "recovery") return renderPasswordRecoveryForm();
+    if (state.accountMode === "reset") return renderPasswordResetRequestForm();
+    const isRegister = state.accountMode === "register";
+    return `
+      <div class="account-mode-switch" role="tablist" aria-label="${escapeHtml(t("account.title"))}">
+        <button type="button" role="tab" data-account-mode="login" aria-selected="${!isRegister}" class="${isRegister ? "" : "is-active"}">${escapeHtml(t("account.loginTab"))}</button>
+        <button type="button" role="tab" data-account-mode="register" aria-selected="${isRegister}" class="${isRegister ? "is-active" : ""}">${escapeHtml(t("account.registerTab"))}</button>
+      </div>
+      ${isRegister ? renderCustomerRegisterForm() : renderCustomerLoginForm()}
+      <p class="account-sync-note">${escapeHtml(t("account.localNote"))}</p>
+    `;
+  }
+
+  function renderCustomerLoginForm() {
+    return `
+      <form class="account-form" data-account-form="login">
+        <label class="admin-field"><span>${escapeHtml(t("account.email"))}</span><input class="admin-input" name="email" type="email" autocomplete="email" required></label>
+        <label class="admin-field"><span>${escapeHtml(t("account.password"))}</span>${renderPasswordInput("customerLoginPassword", "password", "current-password")}</label>
+        <button class="primary-link" type="submit">${escapeHtml(t("account.login"))}</button>
+        <button class="account-text-button" type="button" data-account-mode="reset">${escapeHtml(t("account.forgot"))}</button>
+        <p class="account-status" role="status"></p>
+      </form>
+    `;
+  }
+
+  function renderCustomerRegisterForm() {
+    return `
+      <form class="account-form" data-account-form="register">
+        <div class="account-form-grid">
+          <label class="admin-field"><span>${escapeHtml(t("account.fullName"))}</span><input class="admin-input" name="fullName" type="text" autocomplete="name" maxlength="120" required></label>
+          <label class="admin-field"><span>${escapeHtml(t("account.whatsapp"))}</span><input class="admin-input" name="whatsapp" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="595..." required></label>
+        </div>
+        <label class="admin-field"><span>${escapeHtml(t("account.email"))}</span><input class="admin-input" name="email" type="email" autocomplete="email" required></label>
+        <label class="admin-field"><span>${escapeHtml(t("account.password"))}</span>${renderPasswordInput("customerRegisterPassword", "password", "new-password")}</label>
+        <label class="admin-field"><span>${escapeHtml(t("account.confirmPassword"))}</span>${renderPasswordInput("customerRegisterConfirm", "confirmPassword", "new-password")}</label>
+        <button class="primary-link" type="submit">${escapeHtml(t("account.create"))}</button>
+        <p class="account-status" role="status"></p>
+      </form>
+    `;
+  }
+
+  function renderPasswordResetRequestForm() {
+    return `
+      <form class="account-form" data-account-form="reset">
+        <p>${escapeHtml(t("account.resetHelp"))}</p>
+        <label class="admin-field"><span>${escapeHtml(t("account.email"))}</span><input class="admin-input" name="email" type="email" autocomplete="email" required></label>
+        <button class="primary-link" type="submit">${escapeHtml(t("account.reset"))}</button>
+        <button class="account-text-button" type="button" data-account-mode="login">${escapeHtml(t("account.loginTab"))}</button>
+        <p class="account-status" role="status"></p>
+      </form>
+    `;
+  }
+
+  function renderPasswordRecoveryForm() {
+    return `
+      <form class="account-form" data-account-form="recovery">
+        <label class="admin-field"><span>${escapeHtml(t("account.newPassword"))}</span>${renderPasswordInput("customerRecoveryPassword", "password", "new-password")}</label>
+        <label class="admin-field"><span>${escapeHtml(t("account.confirmPassword"))}</span>${renderPasswordInput("customerRecoveryConfirm", "confirmPassword", "new-password")}</label>
+        <button class="primary-link" type="submit">${escapeHtml(t("account.savePassword"))}</button>
+        <p class="account-status" role="status"></p>
+      </form>
+    `;
+  }
+
+  function renderPasswordInput(id, name, autocomplete) {
+    return `<span class="password-control account-password-control"><input id="${id}" class="admin-input" name="${name}" type="password" autocomplete="${autocomplete}" minlength="8" required><button class="password-toggle account-password-toggle" type="button" data-password-visibility="#${id}" aria-label="${escapeHtml(t("account.showPassword"))}" aria-pressed="false">${iconSvg("eye")}</button></span>`;
+  }
+
+  async function handleAccountSubmit(event) {
+    const form = event.target.closest("[data-account-form]");
+    if (!form) return;
+    event.preventDefault();
+    const formData = new FormData(form);
+    const action = form.dataset.accountForm;
+    const submitButton = form.querySelector('button[type="submit"]');
+    setAccountFormBusy(form, true);
+    setAccountStatus(form, "");
+
+    try {
+      if (action === "login") {
+        await window.SmartShopSupabase.signInCustomer(formData.get("email"), formData.get("password"));
+        await initializeCustomerAccount();
+        showToast(t("account.loginSuccess"));
+        return;
+      }
+
+      if (action === "register") {
+        validateMatchingPasswords(formData);
+        const result = await window.SmartShopSupabase.signUpCustomer({
+          email: String(formData.get("email") || "").trim(),
+          password: String(formData.get("password") || ""),
+          fullName: String(formData.get("fullName") || "").trim(),
+          whatsapp: String(formData.get("whatsapp") || "").trim(),
+        });
+        if (result.session) {
+          await initializeCustomerAccount();
+          showToast(t("account.loginSuccess"));
+        } else {
+          state.accountMode = "login";
+          renderAccount();
+          setAccountStatus(els.accountContent.querySelector("[data-account-form]"), t("account.registerSuccess"), "success");
+        }
+        return;
+      }
+
+      if (action === "profile") {
+        const profile = await window.SmartShopSupabase.updateCustomerProfile({
+          fullName: String(formData.get("fullName") || "").trim(),
+          whatsapp: String(formData.get("whatsapp") || "").trim(),
+        });
+        state.customerProfile = { ...state.customerProfile, fullName: profile.full_name, whatsapp: profile.whatsapp };
+        prefillCustomerFields();
+        renderAccount();
+        setAccountStatus(els.accountContent.querySelector("[data-account-form='profile']"), t("account.profileSaved"), "success");
+        return;
+      }
+
+      if (action === "reset") {
+        await window.SmartShopSupabase.sendCustomerPasswordReset(String(formData.get("email") || "").trim());
+        setAccountStatus(form, t("account.resetSent"), "success");
+        return;
+      }
+
+      if (action === "recovery") {
+        validateMatchingPasswords(formData);
+        await window.SmartShopSupabase.updatePassword(String(formData.get("password") || ""));
+        state.accountMode = "login";
+        clearCustomerAuthCallback();
+        await initializeCustomerAccount();
+        showToast(t("account.passwordSaved"));
+      }
+    } catch (error) {
+      setAccountStatus(form, error.message || t("account.error"), "error");
+    } finally {
+      if (submitButton?.isConnected) setAccountFormBusy(form, false);
+    }
+  }
+
+  async function handleAccountClick(event) {
+    const modeButton = event.target.closest("[data-account-mode]");
+    if (modeButton) {
+      state.accountMode = modeButton.dataset.accountMode;
+      renderAccount();
+      return;
+    }
+
+    const visibilityButton = event.target.closest("[data-password-visibility]");
+    if (visibilityButton) {
+      const input = els.accountContent.querySelector(visibilityButton.dataset.passwordVisibility);
+      if (!input) return;
+      const shouldShow = input.type === "password";
+      input.type = shouldShow ? "text" : "password";
+      visibilityButton.innerHTML = iconSvg(shouldShow ? "eye-off" : "eye");
+      visibilityButton.setAttribute("aria-pressed", String(shouldShow));
+      visibilityButton.setAttribute("aria-label", t(shouldShow ? "account.hidePassword" : "account.showPassword"));
+      return;
+    }
+
+    if (event.target.closest("[data-account-action='logout']")) {
+      await window.SmartShopSupabase.signOut();
+      state.customerSession = null;
+      state.customerProfile = null;
+      state.accountMode = "login";
+      renderAccount();
+      showToast(t("account.logout"));
+      return;
+    }
+
+    const productButton = event.target.closest("[data-account-product]");
+    if (productButton) {
+      const product = products.find((item) => item.id === productButton.dataset.accountProduct);
+      if (product) {
+        closeAccountDialog();
+        openProductDialog(product);
+      }
+    }
+  }
+
+  function validateMatchingPasswords(formData) {
+    const password = String(formData.get("password") || "");
+    const confirmation = String(formData.get("confirmPassword") || "");
+    if (password.length < 8) throw new Error(t("account.passwordLength"));
+    if (password !== confirmation) throw new Error(t("account.passwordMismatch"));
+  }
+
+  function setAccountFormBusy(form, isBusy) {
+    form.querySelectorAll("input,button").forEach((control) => {
+      control.disabled = isBusy;
+    });
+  }
+
+  function setAccountStatus(form, message, type = "") {
+    const status = form?.querySelector(".account-status");
+    if (!status) return;
+    status.textContent = message;
+    status.className = `account-status${type ? ` is-${type}` : ""}`;
+  }
+
+  function clearCustomerAuthCallback() {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("account");
+    url.searchParams.delete("type");
+    url.hash = "";
+    window.history.replaceState({}, "", `${url.pathname}${url.search}`);
+  }
+
+  function prefillCustomerFields() {
+    if (!state.customerProfile) return;
+    if (!els.checkoutNameInput.value) els.checkoutNameInput.value = state.customerProfile.fullName || "";
+    if (!els.checkoutWhatsappInput.value) els.checkoutWhatsappInput.value = state.customerProfile.whatsapp || "";
+    if (!els.orderWhatsappInput.value) els.orderWhatsappInput.value = state.customerProfile.whatsapp || "";
+  }
+
+  async function toggleFavorite(productId) {
+    const product = products.find((item) => item.id === productId);
+    if (!product) return;
+    const wasFavorite = state.favoriteIds.has(productId);
+    if (wasFavorite) state.favoriteIds.delete(productId);
+    else state.favoriteIds.add(productId);
+    saveLocalFavorites();
+    renderProducts();
+    renderFeaturedProducts();
+    renderAccount();
+
+    try {
+      if (state.customerSession?.user) {
+        await window.SmartShopSupabase.setCustomerFavorite(productId, !wasFavorite);
+      }
+      const message = !state.customerSession?.user && !wasFavorite
+        ? `${t("favorite.added")} ${t("favorite.local")}`
+        : t(wasFavorite ? "favorite.removed" : "favorite.added");
+      showToast(message);
+    } catch (error) {
+      if (wasFavorite) state.favoriteIds.add(productId);
+      else state.favoriteIds.delete(productId);
+      saveLocalFavorites();
+      renderProducts();
+      renderFeaturedProducts();
+      renderAccount();
+      showToast(error.message || t("account.error"), "error");
+    }
+  }
+
   function handleCartClick(event) {
+    const favoriteButton = event.target.closest("[data-favorite-product]");
+    if (favoriteButton) {
+      event.preventDefault();
+      toggleFavorite(favoriteButton.dataset.favoriteProduct);
+      return;
+    }
+
     const addButton = event.target.closest("[data-add-to-cart]");
     if (addButton) {
       event.preventDefault();
@@ -1633,10 +2160,44 @@
   }
 
   function saveCart() {
+    saveLocalCart();
+    queueCustomerCartSync();
+  }
+
+  function saveLocalCart() {
     try {
       localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(state.cart));
     } catch {
       // El carrito sigue disponible en memoria si el navegador bloquea localStorage.
+    }
+  }
+
+  function queueCustomerCartSync() {
+    window.clearTimeout(customerCartSyncTimer);
+    if (!state.customerReady || !state.customerSession?.user) return;
+    customerCartSyncTimer = window.setTimeout(async () => {
+      try {
+        await window.SmartShopSupabase.saveCustomerCart(serializeCustomerCart());
+      } catch (error) {
+        showToast(error.message || t("account.error"), "error");
+      }
+    }, 320);
+  }
+
+  function loadFavoriteIds() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(FAVORITES_STORAGE_KEY) || "[]");
+      return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveLocalFavorites() {
+    try {
+      localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...state.favoriteIds]));
+    } catch {
+      // Los favoritos siguen disponibles en memoria si el navegador bloquea localStorage.
     }
   }
 
@@ -2146,6 +2707,9 @@
       x: '<path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>',
       heart: '<path d="M19.5 12.6 12 20l-7.5-7.4a5 5 0 0 1 7.1-7.1l.4.4.4-.4a5 5 0 0 1 7.1 7.1Z"></path>',
       user: '<path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle>',
+      eye: '<path d="M2.1 12a10.5 10.5 0 0 1 19.8 0 10.5 10.5 0 0 1-19.8 0Z"></path><circle cx="12" cy="12" r="3"></circle>',
+      "eye-off": '<path d="m3 3 18 18"></path><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"></path><path d="M9.9 4.2A10.5 10.5 0 0 1 21.9 12a10.8 10.8 0 0 1-2.1 3.2"></path><path d="M6.6 6.6A10.7 10.7 0 0 0 2.1 12a10.5 10.5 0 0 0 14.7 5.2"></path>',
+      "trash-2": '<path d="M3 6h18"></path><path d="M8 6V4h8v2"></path><path d="m19 6-1 14H6L5 6"></path><path d="M10 11v5"></path><path d="M14 11v5"></path>',
       "shopping-cart": '<circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.1 2.1h2l2.7 12.7a2 2 0 0 0 2 1.6h8.9a2 2 0 0 0 2-1.6l1.2-6.7H5.4"></path>',
       "chevron-right": '<path d="m9 18 6-6-6-6"></path>',
       "message-circle": '<path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.9 8.9 0 0 1-4-.9L3 20l1.1-4.8a8.3 8.3 0 0 1-.9-3.8 8.4 8.4 0 0 1 17.8.1Z"></path>',

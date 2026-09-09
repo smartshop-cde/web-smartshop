@@ -208,6 +208,181 @@
     return data;
   }
 
+  async function signInCustomer(email, password) {
+    const { data, error } = await requireClient().auth.signInWithPassword({ email, password });
+    if (error) throw new Error("Email o contrasena incorrectos.");
+    return data;
+  }
+
+  async function signUpCustomer({ email, password, fullName = "", whatsapp = "" }) {
+    const { data, error } = await requireClient().auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/?account=customer`,
+        data: {
+          full_name: fullName,
+          whatsapp: normalizePhone(whatsapp),
+        },
+      },
+    });
+    if (error) throw new Error("No pudimos crear tu cuenta.");
+    if (data.session?.user) {
+      await updateCustomerProfile({ fullName, whatsapp }).catch(() => null);
+    }
+    return data;
+  }
+
+  async function getCustomerProfile() {
+    const session = await getSession();
+    if (!session?.user?.id) return null;
+    const { data, error } = await requireClient()
+      .from("profiles")
+      .select("id,role,full_name,whatsapp")
+      .eq("id", session.user.id)
+      .maybeSingle();
+    if (error) throw new Error("No pudimos cargar tu cuenta.");
+    return {
+      id: data?.id || session.user.id,
+      email: session.user.email || "",
+      role: data?.role || "viewer",
+      fullName: data?.full_name || session.user.user_metadata?.full_name || "",
+      whatsapp: data?.whatsapp || session.user.user_metadata?.whatsapp || "",
+    };
+  }
+
+  async function updateCustomerProfile({ fullName = "", whatsapp = "" }) {
+    const session = await getSession();
+    if (!session?.user?.id) throw new Error("Inicia sesion para guardar tus datos.");
+    const { data, error } = await requireClient()
+      .from("profiles")
+      .update({
+        full_name: String(fullName || "").trim().slice(0, 120),
+        whatsapp: normalizePhone(whatsapp),
+      })
+      .eq("id", session.user.id)
+      .select("id,role,full_name,whatsapp")
+      .maybeSingle();
+    if (error) throw new Error("No pudimos guardar tu perfil.");
+    return data;
+  }
+
+  async function loadCustomerCart() {
+    const session = await getSession();
+    if (!session?.user?.id) return [];
+    const { data, error } = await requireClient()
+      .from("customer_cart_items")
+      .select("product_id,product_variant_id,quantity")
+      .eq("user_id", session.user.id)
+      .order("updated_at", { ascending: false });
+    if (error) throw new Error("No pudimos cargar tu carrito guardado.");
+    return (data || []).map((item) => ({
+      productId: item.product_id,
+      variantId: item.product_variant_id,
+      quantity: Number(item.quantity || 1),
+    }));
+  }
+
+  async function saveCustomerCart(items) {
+    const session = await getSession();
+    if (!session?.user?.id) return [];
+    const supabase = requireClient();
+    const rows = (Array.isArray(items) ? items : [])
+      .filter((item) => item?.productId && item?.variantId && Number(item.quantity || 0) > 0)
+      .map((item) => ({
+        user_id: session.user.id,
+        product_id: item.productId,
+        product_variant_id: item.variantId,
+        quantity: Math.max(1, Math.min(99, Number(item.quantity || 1))),
+      }));
+
+    if (!rows.length) {
+      const { error } = await supabase.from("customer_cart_items").delete().eq("user_id", session.user.id);
+      if (error) throw new Error("No pudimos sincronizar tu carrito.");
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("customer_cart_items")
+      .upsert(rows, { onConflict: "user_id,product_variant_id" })
+      .select("product_variant_id,quantity");
+    if (error) throw new Error("No pudimos guardar tu carrito.");
+
+    const variantIds = rows.map((row) => row.product_variant_id);
+    const staleResult = await supabase
+      .from("customer_cart_items")
+      .delete()
+      .eq("user_id", session.user.id)
+      .not("product_variant_id", "in", `(${variantIds.join(",")})`);
+    if (staleResult.error) throw new Error("No pudimos sincronizar tu carrito.");
+    return data || [];
+  }
+
+  async function loadCustomerFavorites() {
+    const session = await getSession();
+    if (!session?.user?.id) return [];
+    const { data, error } = await requireClient()
+      .from("customer_favorites")
+      .select("product_id")
+      .eq("user_id", session.user.id)
+      .order("created_at", { ascending: false });
+    if (error) throw new Error("No pudimos cargar tus favoritos.");
+    return (data || []).map((item) => item.product_id).filter(Boolean);
+  }
+
+  async function setCustomerFavorite(productId, isFavorite) {
+    const session = await getSession();
+    if (!session?.user?.id) throw new Error("Inicia sesion para guardar favoritos.");
+    if (isFavorite) {
+      const { error } = await requireClient()
+        .from("customer_favorites")
+        .upsert({ user_id: session.user.id, product_id: productId }, { onConflict: "user_id,product_id" });
+      if (error) throw new Error("No pudimos guardar favorito.");
+      return true;
+    }
+    const { error } = await requireClient()
+      .from("customer_favorites")
+      .delete()
+      .eq("user_id", session.user.id)
+      .eq("product_id", productId);
+    if (error) throw new Error("No pudimos quitar favorito.");
+    return false;
+  }
+
+  async function saveCustomerFavorites(productIds) {
+    const session = await getSession();
+    if (!session?.user?.id) return [];
+    const supabase = requireClient();
+    const ids = [...new Set((Array.isArray(productIds) ? productIds : []).filter(Boolean))];
+
+    if (!ids.length) {
+      const { error } = await supabase.from("customer_favorites").delete().eq("user_id", session.user.id);
+      if (error) throw new Error("No pudimos sincronizar tus favoritos.");
+      return [];
+    }
+
+    const rows = ids.map((productId) => ({ user_id: session.user.id, product_id: productId }));
+    const { data, error } = await supabase
+      .from("customer_favorites")
+      .upsert(rows, { onConflict: "user_id,product_id" })
+      .select("product_id");
+    if (error) throw new Error("No pudimos guardar tus favoritos.");
+
+    const staleResult = await supabase
+      .from("customer_favorites")
+      .delete()
+      .eq("user_id", session.user.id)
+      .not("product_id", "in", `(${ids.join(",")})`);
+    if (staleResult.error) throw new Error("No pudimos sincronizar tus favoritos.");
+    return data || [];
+  }
+
+  async function sendCustomerPasswordReset(email) {
+    const redirectTo = `${window.location.origin}/?account=customer`;
+    const { error } = await requireClient().auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw new Error("No pudimos enviar el enlace para recuperar tu contrasena.");
+  }
+
   async function getAccessToken() {
     const session = await getSession();
     return session?.access_token || "";
@@ -506,6 +681,10 @@
     return [...new Map(rows.map((row) => [row.id, row])).values()];
   }
 
+  function normalizePhone(value) {
+    return String(value || "").replace(/\D/g, "").slice(0, 20);
+  }
+
   function toSlug(value) {
     return String(value || "")
       .normalize("NFD")
@@ -530,6 +709,16 @@
     getSession,
     sendPasswordReset,
     updatePassword,
+    signInCustomer,
+    signUpCustomer,
+    getCustomerProfile,
+    updateCustomerProfile,
+    loadCustomerCart,
+    saveCustomerCart,
+    loadCustomerFavorites,
+    setCustomerFavorite,
+    saveCustomerFavorites,
+    sendCustomerPasswordReset,
     assertAdmin,
     listAdminUsers,
     createAdminUser,

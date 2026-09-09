@@ -6,7 +6,7 @@ export default [
     ignores: ["node_modules/**", ".wrangler/**", "public/assets/store-data.js"],
   },
   {
-    files: ["**/*.js"],
+    files: ["**/*.{js,mjs}"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",

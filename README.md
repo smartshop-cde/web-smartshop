@@ -159,6 +159,7 @@ supabase/migrations/20260825150000_audit_logs.sql
 supabase/migrations/20260826103000_variant_public_codes.sql
 supabase/migrations/20260827100000_variant_images.sql
 supabase/migrations/20260902100000_orders.sql
+supabase/migrations/20260909100000_customer_accounts.sql
 ```
 
 Crea el primer usuario administrador desde Supabase Auth y asigna rol:
@@ -348,6 +349,24 @@ El panel `/admin -> Pedidos` permite ver pedidos, revisar items y cambiar estado
 Esta etapa no implementa pagos, checkout completo ni facturacion. El pedido no descuenta stock automaticamente; sirve como solicitud comercial para que el equipo confirme disponibilidad y actualice stock desde el admin cuando corresponda.
 
 Al recibir un pedido, el Worker intenta enviar una notificacion a `smartshopcde@gmail.com` con el detalle del pedido y link directo al WhatsApp del cliente.
+
+## Cuentas de clientes
+
+La web publica permite crear una cuenta con email y contrasena desde el icono de usuario del encabezado. El carrito y los favoritos funcionan localmente sin cuenta; despues del acceso se combinan con los datos guardados en Supabase y quedan disponibles en otros dispositivos.
+
+Ejecuta `supabase/migrations/20260909100000_customer_accounts.sql` en Supabase SQL Editor. Esta migracion agrega los datos basicos del cliente a `profiles` y crea `customer_cart_items` y `customer_favorites` con RLS. Cada cliente solo puede administrar sus propios registros y el rol nuevo siempre es `viewer`.
+
+En Supabase, configura `Authentication -> URL Configuration`:
+
+```text
+Site URL: https://smartshop.com.py
+Redirect URLs:
+  https://smartshop.com.py/**
+  http://localhost:*/**
+  http://127.0.0.1:*/**
+```
+
+En `Authentication -> Providers -> Email`, habilita el registro por email. Puedes mantener la confirmacion por email activa; en ese caso la cuenta queda disponible despues de abrir el enlace recibido. No se necesitan variables nuevas en Cloudflare.
 
 ## Checks
 

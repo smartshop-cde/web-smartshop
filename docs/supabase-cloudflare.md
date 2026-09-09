@@ -185,6 +185,28 @@ Estados disponibles:
 
 El Worker usa `SUPABASE_SERVICE_ROLE_KEY` solamente del lado servidor para crear pedidos y consultar estados sin exponer pedidos privados al frontend.
 
+## Cuentas de clientes
+
+Ejecuta tambien:
+
+```text
+supabase/migrations/20260909100000_customer_accounts.sql
+```
+
+La migracion crea `customer_cart_items` y `customer_favorites`, agrega nombre y WhatsApp a `profiles`, y mantiene `viewer` como rol obligatorio para registros publicos. Las politicas RLS limitan cada carrito, favorito y perfil al usuario autenticado propietario.
+
+Configura en `Authentication -> URL Configuration`:
+
+```text
+Site URL: https://smartshop.com.py
+Redirect URLs:
+  https://smartshop.com.py/**
+  http://localhost:*/**
+  http://127.0.0.1:*/**
+```
+
+En `Authentication -> Providers -> Email`, habilita el registro por email. La confirmacion por email puede permanecer activa. El frontend usa exclusivamente `SUPABASE_ANON_KEY`; esta funcionalidad no necesita ni expone `service_role`.
+
 ## Migrar datos actuales
 
 Para generar un SQL desde `public/assets/store-data.js`:
